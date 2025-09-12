@@ -8,6 +8,7 @@ public class EnemyController : MonoBehaviour
     public float attackRate = 1f; // seconds between attacks
 
     private float attackCooldown = 0f;
+    public float attackRange = 1.5f;
 
     void Start()
     {
@@ -24,21 +25,21 @@ public class EnemyController : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, targetTower.transform.position);
 
-        if (distance > 1.5f) // not in attack range yet
+        if (distance > attackRange)
         {
             // Move toward the tower
             Vector3 direction = (targetTower.transform.position - transform.position).normalized;
             transform.position += direction * speed * Time.deltaTime;
-
             transform.LookAt(targetTower.transform);
         }
         else
         {
-            // Attack if cooldown expired
+            attackCooldown -= Time.deltaTime;
+
             if (attackCooldown <= 0f)
             {
                 AttackTower();
-                attackCooldown = attackRate;
+                attackCooldown = attackRate; // reset cooldown
             }
         }
     }
