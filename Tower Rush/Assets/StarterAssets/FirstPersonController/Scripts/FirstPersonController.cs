@@ -71,6 +71,7 @@ namespace StarterAssets
 		private CharacterController _controller;
 		private StarterAssetsInputs _input;
 		private GameObject _mainCamera;
+		private PlayerWeapon _playerWeapon;
 
 		private const float _threshold = 0.01f;
 
@@ -108,6 +109,13 @@ namespace StarterAssets
 			// reset our timeouts on start
 			_jumpTimeoutDelta = JumpTimeout;
 			_fallTimeoutDelta = FallTimeout;
+
+			// Add the PlayerWeapon component if it doesn't exist
+			_playerWeapon = GetComponent<PlayerWeapon>();
+			if (_playerWeapon == null)
+			{
+				_playerWeapon = gameObject.AddComponent<PlayerWeapon>();
+			}
 		}
 
 		private void Update()
@@ -115,6 +123,7 @@ namespace StarterAssets
 			JumpAndGravity();
 			GroundedCheck();
 			Move();
+			HandleShooting();
 		}
 
 		private void LateUpdate()
@@ -251,6 +260,14 @@ namespace StarterAssets
 			if (lfAngle < -360f) lfAngle += 360f;
 			if (lfAngle > 360f) lfAngle -= 360f;
 			return Mathf.Clamp(lfAngle, lfMin, lfMax);
+		}
+
+		private void HandleShooting()
+		{
+			if (_playerWeapon != null && _input.primaryAttack)
+			{
+				_playerWeapon.Fire();
+			}
 		}
 
 		private void OnDrawGizmosSelected()

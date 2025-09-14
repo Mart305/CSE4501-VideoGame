@@ -13,6 +13,10 @@ namespace StarterAssets
 		public bool jump;
 		public bool sprint;
 
+		[Header("Combat Input Values")]
+		public bool primaryAttack;
+		public bool secondaryAttack;
+
 		[Header("Movement Settings")]
 		public bool analogMovement;
 
@@ -43,6 +47,16 @@ namespace StarterAssets
 		{
 			SprintInput(value.isPressed);
 		}
+
+		public void OnPrimaryAttack(InputValue value)
+		{
+			PrimaryAttackInput(value.isPressed);
+		}
+
+		public void OnSecondaryAttack(InputValue value)
+		{
+			SecondaryAttackInput(value.isPressed);
+		}
 #endif
 
 
@@ -64,6 +78,16 @@ namespace StarterAssets
 		public void SprintInput(bool newSprintState)
 		{
 			sprint = newSprintState;
+		}
+
+		public void PrimaryAttackInput(bool newPrimaryAttackState)
+		{
+			primaryAttack = newPrimaryAttackState;
+		}
+
+		public void SecondaryAttackInput(bool newSecondaryAttackState)
+		{
+			secondaryAttack = newSecondaryAttackState;
 		}
 
 		private void OnApplicationFocus(bool hasFocus)
