@@ -9,10 +9,42 @@ public class EnemyController : MonoBehaviour
 
     private float attackCooldown = 0f;
     public float attackRange = 1.5f;
+    
+    private Health health;
+    private Renderer enemyRenderer;
+    private Color originalColor;
 
     void Start()
     {
         targetTower = FindNearestTower();
+        
+        // Add Health component if it doesn't exist
+        health = GetComponent<Health>();
+        if (health == null)
+        {
+            health = gameObject.AddComponent<Health>();
+        }
+        
+        // Subscribe to health events
+        health.OnDamageTaken.AddListener(OnDamageTaken);
+        health.OnDeath.AddListener(OnDeath);
+        
+        // Get renderer for visual feedback
+        enemyRenderer = GetComponent<Renderer>();
+        if (enemyRenderer != null)
+        {
+            originalColor = enemyRenderer.material.color;
+        }
+        
+        // Add health bar if it doesn't exist
+        EnemyHealthBar healthBar = GetComponentInChildren<EnemyHealthBar>();
+        if (healthBar == null)
+        {
+            GameObject healthBarObj = new GameObject("HealthBar");
+            healthBarObj.transform.SetParent(transform);
+            healthBarObj.transform.localPosition = Vector3.zero;
+            healthBarObj.AddComponent<EnemyHealthBar>();
+        }
     }
 
     void Update()
@@ -70,5 +102,40 @@ public class EnemyController : MonoBehaviour
         }
 
         return nearest;
+    }
+    
+    private void OnDamageTaken(float damage)
+    {
+        // Flash red when hit
+        if (enemyRenderer != null)
+        {
+            StartCoroutine(FlashRed());
+        }
+    }
+    
+    private void OnDeath()
+    {
+        // Play death animation or effects here if needed
+        // For now, the Health component will destroy the GameObject
+    }
+    
+    private System.Collections.IEnumerator FlashRed()
+    {
+        if (enemyRenderer != null)
+        {
+            enemyRenderer.material.color = Color.red;
+            yield return new WaitForSeconds(0.1f);
+            enemyRenderer.material.color = originalColor;
+        }
+    }
+    
+    void OnDestroy()
+    {
+        // Unsubscribe from events to prevent memory leaks
+        if (health != null)
+        {
+            health.OnDamageTaken.RemoveListener(OnDamageTaken);
+            health.OnDeath.RemoveListener(OnDeath);
+        }
     }
 }
