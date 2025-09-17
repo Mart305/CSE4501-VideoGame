@@ -13,6 +13,16 @@ public class Health : MonoBehaviour
     
     private bool isDead = false;
     
+    void Awake()
+    {
+        // Initialize UnityEvents to prevent null reference exceptions
+        if (OnHealthChanged == null)
+            OnHealthChanged = new UnityEvent<float>();
+        if (OnDamageTaken == null)
+            OnDamageTaken = new UnityEvent<float>();
+        if (OnDeath == null)
+            OnDeath = new UnityEvent();
+    }
     void Start()
     {
         currentHealth = maxHealth;
