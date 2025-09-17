@@ -51,27 +51,56 @@ public class EnemyController : MonoBehaviour
     {
         if (targetTower == null || targetTower.IsDestroyed())
         {
-            targetTower = FindNearestTower();
-            if (targetTower == null) return; // no towers left
+            Tower newTarget = FindNearestTower();
+            if (newTarget != null)
+            {
+                targetTower = newTarget;
+            }
+            else
+            {
+                // No towers left - stop moving but don't reset rotation
+                return;
+            }
         }
 
-        float distance = Vector3.Distance(transform.position, targetTower.transform.position);
+        // Get positions
+        Vector3 towerPos = targetTower.transform.position;
+        Vector3 myPos = transform.position;
+        
+        // Calculate 2D distance (ignore Y)
+        float distance = Vector2.Distance(
+            new Vector2(myPos.x, myPos.z), 
+            new Vector2(towerPos.x, towerPos.z)
+        );
 
         if (distance > attackRange)
         {
-            // Move toward the tower
-            Vector3 direction = (targetTower.transform.position - transform.position).normalized;
-            transform.position += direction * speed * Time.deltaTime;
-            transform.LookAt(targetTower.transform);
+            // Calculate direction (only X and Z)
+            Vector3 direction = (towerPos - myPos);
+            direction.y = 0; // Keep on ground
+            direction.Normalize();
+            
+            // Move towards tower
+            Vector3 newPos = myPos + direction * speed * Time.deltaTime;
+            newPos.y = myPos.y; // Lock Y position
+            transform.position = newPos;
+            
+            // Smoothly rotate to face tower
+            Vector3 lookDirection = new Vector3(towerPos.x, myPos.y, towerPos.z) - myPos;
+            if (lookDirection != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
+            }
         }
         else
         {
+            // Attack when close enough
             attackCooldown -= Time.deltaTime;
-
             if (attackCooldown <= 0f)
             {
                 AttackTower();
-                attackCooldown = attackRate; // reset cooldown
+                attackCooldown = attackRate;
             }
         }
     }

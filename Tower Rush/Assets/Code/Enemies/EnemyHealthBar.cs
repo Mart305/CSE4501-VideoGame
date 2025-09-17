@@ -3,142 +3,133 @@ using UnityEngine.UI;
 
 public class EnemyHealthBar : MonoBehaviour
 {
+    [Header("Health Bar Components - Assign in Inspector")]
     [SerializeField] private Slider healthSlider;
-    [SerializeField] private Vector3 offset = new Vector3(0, 2, 0);
-    [SerializeField] private Gradient healthColorGradient;
+    [SerializeField] private Image fillImage;
     
-    private Health health;
-    private Camera mainCamera;
-    private Canvas canvas;
-    private Image fillImage;
+    [Header("Settings")]
+    [SerializeField] private Vector3 offset = new Vector3(0, 1.5f, 0);
+    [SerializeField] private bool faceCamera = true;
+    
+    [Header("Colors")]
+    [SerializeField] private Color healthyColor = Color.green;
+    [SerializeField] private Color damageColor = Color.yellow;
+    [SerializeField] private Color criticalColor = Color.red;
+    
+    private Camera playerCamera;
+    private Health enemyHealth;
     
     void Start()
     {
-        // Create a Canvas if it doesn't exist
-        canvas = GetComponentInChildren<Canvas>();
-        if (canvas == null)
+        playerCamera = Camera.main;
+        if (playerCamera == null)
+            playerCamera = FindObjectOfType<Camera>();
+        
+        // Don't modify transform position - let it stay at parent's position
+        // The offset will be handled by the canvas positioning
+        
+        // Get the Health component from parent
+        enemyHealth = GetComponentInParent<Health>();
+        if (enemyHealth != null)
         {
-            CreateHealthBarUI();
-        }
-        
-        // Get the Health component
-        health = GetComponentInParent<Health>();
-        if (health == null)
-        {
-            Debug.LogWarning("EnemyHealthBar: No Health component found on parent!");
-            return;
-        }
-        
-        // Subscribe to health changes
-        health.OnHealthChanged.AddListener(UpdateHealthBar);
-        
-        // Get camera reference
-        mainCamera = Camera.main;
-        
-        // Initialize the health bar
-        UpdateHealthBar(health.GetHealthPercentage());
-    }
-    
-    void CreateHealthBarUI()
-    {
-        // Create Canvas
-        GameObject canvasObj = new GameObject("HealthBarCanvas");
-        canvasObj.transform.SetParent(transform);
-        canvas = canvasObj.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-        
-        // Set canvas size
-        RectTransform canvasRect = canvasObj.GetComponent<RectTransform>();
-        canvasRect.sizeDelta = new Vector2(1, 0.2f);
-        canvasRect.localPosition = offset;
-        canvasRect.localScale = Vector3.one * 0.01f;
-        
-        // Create background
-        GameObject backgroundObj = new GameObject("Background");
-        backgroundObj.transform.SetParent(canvasObj.transform);
-        Image background = backgroundObj.AddComponent<Image>();
-        background.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
-        
-        RectTransform bgRect = backgroundObj.GetComponent<RectTransform>();
-        bgRect.sizeDelta = new Vector2(100, 20);
-        bgRect.anchoredPosition = Vector2.zero;
-        
-        // Create slider
-        GameObject sliderObj = new GameObject("HealthSlider");
-        sliderObj.transform.SetParent(canvasObj.transform);
-        healthSlider = sliderObj.AddComponent<Slider>();
-        
-        RectTransform sliderRect = sliderObj.GetComponent<RectTransform>();
-        sliderRect.sizeDelta = new Vector2(100, 20);
-        sliderRect.anchoredPosition = Vector2.zero;
-        
-        // Create fill area
-        GameObject fillAreaObj = new GameObject("Fill Area");
-        fillAreaObj.transform.SetParent(sliderObj.transform);
-        RectTransform fillAreaRect = fillAreaObj.AddComponent<RectTransform>();
-        fillAreaRect.sizeDelta = new Vector2(90, 10);
-        fillAreaRect.anchoredPosition = Vector2.zero;
-        
-        // Create fill
-        GameObject fillObj = new GameObject("Fill");
-        fillObj.transform.SetParent(fillAreaObj.transform);
-        fillImage = fillObj.AddComponent<Image>();
-        fillImage.color = Color.green;
-        
-        RectTransform fillRect = fillObj.GetComponent<RectTransform>();
-        fillRect.sizeDelta = new Vector2(90, 10);
-        fillRect.anchorMin = new Vector2(0, 0);
-        fillRect.anchorMax = new Vector2(1, 1);
-        fillRect.anchoredPosition = Vector2.zero;
-        
-        healthSlider.fillRect = fillRect;
-        healthSlider.targetGraphic = fillImage;
-        
-        // Setup gradient
-        if (healthColorGradient == null)
-        {
-            healthColorGradient = new Gradient();
-            GradientColorKey[] colorKeys = new GradientColorKey[3];
-            colorKeys[0] = new GradientColorKey(Color.red, 0.0f);
-            colorKeys[1] = new GradientColorKey(Color.yellow, 0.5f);
-            colorKeys[2] = new GradientColorKey(Color.green, 1.0f);
+            // Initialize with max health first
+            Initialize(enemyHealth.GetMaxHealth());
             
-            GradientAlphaKey[] alphaKeys = new GradientAlphaKey[2];
-            alphaKeys[0] = new GradientAlphaKey(1.0f, 0.0f);
-            alphaKeys[1] = new GradientAlphaKey(1.0f, 1.0f);
+            // Subscribe to health events
+            enemyHealth.OnHealthChanged.AddListener(OnHealthChanged);
+            enemyHealth.OnDeath.AddListener(OnDeath);
             
-            healthColorGradient.SetKeys(colorKeys, alphaKeys);
+            // Update with current health (this should be max health at start)
+            UpdateHealth(enemyHealth.GetHealth(), enemyHealth.GetMaxHealth());
+        }
+        else
+        {
+            // Fallback initialization if no health component found
+            Initialize(100f);
         }
     }
     
     void Update()
     {
-        if (canvas != null && mainCamera != null)
+        // Position health bar above enemy using world position
+        if (transform.parent != null)
         {
-            // Make the health bar face the camera
-            canvas.transform.LookAt(canvas.transform.position + mainCamera.transform.rotation * Vector3.forward,
-                mainCamera.transform.rotation * Vector3.up);
+            Vector3 worldOffset = transform.parent.position + offset;
+            transform.position = worldOffset;
+        }
+        
+        // Make health bar face camera
+        if (faceCamera && playerCamera != null)
+        {
+            Vector3 direction = playerCamera.transform.position - transform.position;
+            transform.rotation = Quaternion.LookRotation(-direction);
         }
     }
     
-    void UpdateHealthBar(float healthPercentage)
+    public void Initialize(float maxHealth)
     {
         if (healthSlider != null)
         {
-            healthSlider.value = healthPercentage;
-            
-            if (fillImage != null && healthColorGradient != null)
-            {
-                fillImage.color = healthColorGradient.Evaluate(healthPercentage);
-            }
+            healthSlider.maxValue = maxHealth;
+            healthSlider.value = maxHealth;
         }
+        if (fillImage != null)
+        {
+            fillImage.fillAmount = 1.0f; // Start at full
+            fillImage.color = healthyColor;
+        }
+    }
+    
+    public void UpdateHealth(float currentHealth, float maxHealth)
+    {
+        if (fillImage != null && maxHealth > 0)
+        {
+            float healthPercentage = Mathf.Clamp01(currentHealth / maxHealth);
+            fillImage.fillAmount = healthPercentage;
+            
+            // Update color based on health percentage
+            if (healthPercentage > 0.6f)
+                fillImage.color = healthyColor;
+            else if (healthPercentage > 0.3f)
+                fillImage.color = damageColor;
+            else
+                fillImage.color = criticalColor;
+        }
+    }
+    
+    private void UpdateColor(float healthPercent)
+    {
+        if (fillImage == null) return;
+        
+        if (healthPercent > 0.6f)
+            fillImage.color = healthyColor;
+        else if (healthPercent > 0.3f)
+            fillImage.color = damageColor;
+        else
+            fillImage.color = criticalColor;
+    }
+    
+    private void OnHealthChanged(float healthPercent)
+    {
+        if (enemyHealth != null)
+        {
+            UpdateHealth(enemyHealth.GetHealth(), enemyHealth.GetMaxHealth());
+        }
+    }
+    
+    private void OnDeath()
+    {
+        // Hide health bar when enemy dies
+        gameObject.SetActive(false);
     }
     
     void OnDestroy()
     {
-        if (health != null)
+        // Unsubscribe from events to prevent memory leaks
+        if (enemyHealth != null)
         {
-            health.OnHealthChanged.RemoveListener(UpdateHealthBar);
+            enemyHealth.OnHealthChanged.RemoveListener(OnHealthChanged);
+            enemyHealth.OnDeath.RemoveListener(OnDeath);
         }
     }
 }
