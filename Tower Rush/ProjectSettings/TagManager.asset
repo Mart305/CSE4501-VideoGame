@@ -6,6 +6,7 @@ TagManager:
   tags:
   - CinemachineTarget
   - Enemy
+  - Tower
   layers:
   - Default
   - TransparentFX
