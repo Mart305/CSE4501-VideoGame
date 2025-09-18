@@ -100,10 +100,7 @@ public class TowerUpgradeUI : MonoBehaviour
             
             // Position UI at fixed world position and make it face camera
             if (selectedTower != null)
-            {
-                // Fixed position for 1x1 canvas
-                upgradePanel.transform.position = new Vector3(0, 2, 0);
-                
+            {   
                 // Make panel face the camera
                 Vector3 directionToCamera = playerCamera.transform.position - upgradePanel.transform.position;
                 directionToCamera.y = 0; // Keep panel upright

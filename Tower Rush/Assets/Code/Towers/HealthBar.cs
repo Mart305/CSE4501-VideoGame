@@ -9,7 +9,7 @@ public class HealthBar : MonoBehaviour
     [SerializeField] private Slider healthSlider;
     [SerializeField] private Image fillImage;
     [Header("Settings")]
-    [SerializeField] private Vector3 offset = new Vector3(0, 2f, 0);
+    [SerializeField] private Vector3 offset = new Vector3(0, 1.2f, 0);
     [SerializeField] private bool faceCamera = true;
     [Header("Colors")]
     [SerializeField] private Color healthyColor = Color.green;
