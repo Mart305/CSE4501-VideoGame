@@ -250,8 +250,6 @@ public class Tower : MonoBehaviour
         {
             healthBar.UpdateHealth(currentHealth, maxHealth);
         }
-        
-        Debug.Log($"Tower repaired! Health: {currentHealth}/{maxHealth}");
     }
     
     public void UpgradeMaxHealth()
@@ -268,15 +266,11 @@ public class Tower : MonoBehaviour
             healthBar.Initialize(maxHealth);
             healthBar.UpdateHealth(currentHealth, maxHealth);
         }
-        
-        Debug.Log($"Max health upgraded! Level {maxHealthUpgrades}, Max Health: {maxHealth}");
     }
     
     public void UpgradeDamageResistance(float resistanceIncrease)
     {
         damageResistance = Mathf.Min(damageResistance + resistanceIncrease, 0.8f); // Cap at 80%
-        
-        Debug.Log($"Damage resistance upgraded! Resistance: {damageResistance * 100f}%");
     }
 
     // Public accessors
