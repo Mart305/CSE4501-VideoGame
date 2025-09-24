@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerWeapon : MonoBehaviour
 {
@@ -18,11 +19,35 @@ public class PlayerWeapon : MonoBehaviour
     [Header("Audio")]
     [SerializeField] private AudioClip fireSound;
     [SerializeField] private AudioClip reloadSound;
+    [SerializeField] private float fireSoundVolume = 0.7f;
+    [SerializeField] private float reloadSoundVolume = 0.5f;
+    
+    [Header("Visual Effects")]
+    [SerializeField] private GameObject muzzleFlashPrefab;
+    [SerializeField] private float muzzleFlashDuration = 0.1f;
+    [SerializeField] private Light muzzleFlashLight;
+    [SerializeField] private float lightIntensity = 2f;
+    [SerializeField] private float lightRange = 10f;
+    [SerializeField] private Color muzzleFlashColor = new Color(1f, 0.8f, 0.3f);
+    
+    [Header("Animation")]
+    [SerializeField] private float recoilAmount = 0.1f;
+    [SerializeField] private float recoilSpeed = 10f;
+    [SerializeField] private float recoilRecoverySpeed = 5f;
+    [SerializeField] private AnimationCurve recoilCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    
+    [Header("Camera Shake")]
+    [SerializeField] private float shakeAmount = 0.05f;
+    [SerializeField] private float shakeDuration = 0.1f;
     
     private float nextFireTime = 0f;
     private bool isReloading = false;
     private AudioSource audioSource;
     private Camera playerCamera;
+    private Vector3 originalPosition;
+    private Quaternion originalRotation;
+    private Coroutine recoilCoroutine;
+    private Coroutine cameraShakeCoroutine;
     
     void Start()
     {
@@ -32,6 +57,8 @@ public class PlayerWeapon : MonoBehaviour
         {
             audioSource = gameObject.AddComponent<AudioSource>();
         }
+        audioSource.spatialBlend = 0f;
+        audioSource.volume = 1f;
         
         playerCamera = Camera.main;
         if (playerCamera == null)
@@ -46,6 +73,11 @@ public class PlayerWeapon : MonoBehaviour
             firePointObj.transform.localPosition = new Vector3(0.2f, -0.1f, 0.5f);
             firePoint = firePointObj.transform;
         }
+        
+        originalPosition = transform.localPosition;
+        originalRotation = transform.localRotation;
+        
+        SetupMuzzleFlashLight();
         
         if (projectilePrefab == null)
         {
@@ -95,10 +127,7 @@ public class PlayerWeapon : MonoBehaviour
             proj.SetSpeed(projectileSpeed);
         }
         
-        if (fireSound != null && audioSource != null)
-        {
-            audioSource.PlayOneShot(fireSound);
-        }
+        PlayFireEffects();
         
         if (useAmmo)
         {
@@ -115,9 +144,10 @@ public class PlayerWeapon : MonoBehaviour
         
         if (reloadSound != null && audioSource != null)
         {
-            audioSource.PlayOneShot(reloadSound);
+            audioSource.PlayOneShot(reloadSound, reloadSoundVolume);
         }
         
+        StartCoroutine(ReloadAnimation());
         Invoke(nameof(FinishReload), reloadTime);
     }
     
@@ -153,6 +183,144 @@ public class PlayerWeapon : MonoBehaviour
         
         projectilePrefab = defaultProjectile;
         defaultProjectile.SetActive(false);
+    }
+    
+    void PlayFireEffects()
+    {
+        if (fireSound != null && audioSource != null)
+        {
+            audioSource.pitch = Random.Range(0.95f, 1.05f);
+            audioSource.PlayOneShot(fireSound, fireSoundVolume);
+        }
+        
+        if (muzzleFlashPrefab != null)
+        {
+            GameObject flash = Instantiate(muzzleFlashPrefab, firePoint.position, firePoint.rotation);
+            flash.transform.SetParent(firePoint);
+            Destroy(flash, muzzleFlashDuration);
+        }
+        
+        if (muzzleFlashLight != null)
+        {
+            StartCoroutine(MuzzleFlashLight());
+        }
+        
+        if (recoilCoroutine != null)
+            StopCoroutine(recoilCoroutine);
+        recoilCoroutine = StartCoroutine(ApplyRecoil());
+        
+        if (cameraShakeCoroutine != null)
+            StopCoroutine(cameraShakeCoroutine);
+        cameraShakeCoroutine = StartCoroutine(CameraShake());
+    }
+    
+    IEnumerator ApplyRecoil()
+    {
+        float elapsed = 0f;
+        Vector3 targetRecoil = new Vector3(-recoilAmount, Random.Range(-recoilAmount * 0.3f, recoilAmount * 0.3f), 0);
+        Quaternion targetRotation = originalRotation * Quaternion.Euler(targetRecoil * 10f);
+        
+        while (elapsed < 1f / recoilSpeed)
+        {
+            elapsed += Time.deltaTime;
+            float t = recoilCurve.Evaluate(elapsed * recoilSpeed);
+            transform.localPosition = Vector3.Lerp(originalPosition, originalPosition + targetRecoil, t);
+            transform.localRotation = Quaternion.Slerp(originalRotation, targetRotation, t);
+            yield return null;
+        }
+        
+        elapsed = 0f;
+        while (elapsed < 1f / recoilRecoverySpeed)
+        {
+            elapsed += Time.deltaTime;
+            float t = recoilCurve.Evaluate(elapsed * recoilRecoverySpeed);
+            transform.localPosition = Vector3.Lerp(transform.localPosition, originalPosition, t);
+            transform.localRotation = Quaternion.Slerp(transform.localRotation, originalRotation, t);
+            yield return null;
+        }
+        
+        transform.localPosition = originalPosition;
+        transform.localRotation = originalRotation;
+    }
+    
+    IEnumerator CameraShake()
+    {
+        if (playerCamera == null) yield break;
+        
+        Vector3 originalCamPos = playerCamera.transform.localPosition;
+        float elapsed = 0f;
+        
+        while (elapsed < shakeDuration)
+        {
+            float x = Random.Range(-shakeAmount, shakeAmount);
+            float y = Random.Range(-shakeAmount, shakeAmount);
+            
+            playerCamera.transform.localPosition = originalCamPos + new Vector3(x, y, 0);
+            
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        
+        playerCamera.transform.localPosition = originalCamPos;
+    }
+    
+    IEnumerator MuzzleFlashLight()
+    {
+        muzzleFlashLight.enabled = true;
+        float elapsed = 0f;
+        float startIntensity = lightIntensity;
+        
+        while (elapsed < muzzleFlashDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / muzzleFlashDuration;
+            muzzleFlashLight.intensity = Mathf.Lerp(startIntensity, 0, t);
+            yield return null;
+        }
+        
+        muzzleFlashLight.enabled = false;
+    }
+    
+    IEnumerator ReloadAnimation()
+    {
+        float elapsed = 0f;
+        Vector3 startPos = transform.localPosition;
+        Vector3 reloadPos = startPos + new Vector3(0, -0.2f, 0);
+        
+        while (elapsed < reloadTime * 0.3f)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / (reloadTime * 0.3f);
+            transform.localPosition = Vector3.Lerp(startPos, reloadPos, t);
+            yield return null;
+        }
+        
+        elapsed = 0f;
+        while (elapsed < reloadTime * 0.7f)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / (reloadTime * 0.7f);
+            transform.localPosition = Vector3.Lerp(reloadPos, startPos, t);
+            yield return null;
+        }
+        
+        transform.localPosition = startPos;
+    }
+    
+    void SetupMuzzleFlashLight()
+    {
+        if (muzzleFlashLight == null && firePoint != null)
+        {
+            GameObject lightObj = new GameObject("MuzzleFlashLight");
+            lightObj.transform.SetParent(firePoint);
+            lightObj.transform.localPosition = Vector3.zero;
+            muzzleFlashLight = lightObj.AddComponent<Light>();
+            muzzleFlashLight.type = LightType.Point;
+            muzzleFlashLight.color = muzzleFlashColor;
+            muzzleFlashLight.intensity = 0;
+            muzzleFlashLight.range = lightRange;
+            muzzleFlashLight.enabled = false;
+        }
     }
     
     public int GetCurrentAmmo() => currentAmmo;
