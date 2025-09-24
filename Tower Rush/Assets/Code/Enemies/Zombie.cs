@@ -8,6 +8,7 @@ public class Zombie : Enemy
     {
         // Zombie stats
         moveSpeed = 1.5f;
+        health = 50f;
         damage = 15f;
         attackCooldown = 2f;
 

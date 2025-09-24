@@ -8,6 +8,7 @@ public class Ghost : Enemy
     {
         // Ghost stats
         moveSpeed = 3.5f;
+        health = 20f;
         damage = 5f;
         attackCooldown = 1f;
 

@@ -7,6 +7,13 @@ public class Projectile : MonoBehaviour
     [SerializeField] private float lifeTime = 3f;
     [SerializeField] private LayerMask damageableLayers = -1;
     
+    [Header("Visual Effects")]
+    [SerializeField] private TrailRenderer trailRenderer;
+    [SerializeField] private ParticleSystem impactEffect;
+    [SerializeField] private Light projectileLight;
+    [SerializeField] private float lightIntensity = 1f;
+    [SerializeField] private Color projectileColor = new Color(1f, 0.9f, 0.3f);
+    
     private Rigidbody rb;
     private Collider projectileCollider;
     private float lifeTimer;
@@ -17,10 +24,9 @@ public class Projectile : MonoBehaviour
         if (rb == null)
         {
             rb = gameObject.AddComponent<Rigidbody>();
+            rb.useGravity = false;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         }
-        
-        rb.useGravity = false;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         
         projectileCollider = GetComponent<Collider>();
         if (projectileCollider == null)
@@ -31,6 +37,8 @@ public class Projectile : MonoBehaviour
         }
         
         projectileCollider.isTrigger = true;
+        
+        SetupVisualEffects();
     }
     
     void Start()
@@ -58,6 +66,8 @@ public class Projectile : MonoBehaviour
                 health.TakeDamage(damage);
             }
             
+            PlayImpactEffect(other.ClosestPoint(transform.position));
+            
             Destroy(gameObject);
         }
     }
@@ -73,6 +83,90 @@ public class Projectile : MonoBehaviour
         if (rb != null)
         {
             rb.velocity = transform.forward * speed;
+        }
+    }
+    
+    void SetupVisualEffects()
+    {
+        if (trailRenderer == null)
+        {
+            trailRenderer = gameObject.AddComponent<TrailRenderer>();
+            trailRenderer.time = 0.2f;
+            trailRenderer.startWidth = 0.1f;
+            trailRenderer.endWidth = 0.02f;
+            trailRenderer.material = new Material(Shader.Find("Sprites/Default"));
+            
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new GradientColorKey[] {
+                    new GradientColorKey(projectileColor, 0.0f),
+                    new GradientColorKey(projectileColor * 0.7f, 0.5f),
+                    new GradientColorKey(new Color(projectileColor.r, projectileColor.g, projectileColor.b, 0), 1.0f)
+                },
+                new GradientAlphaKey[] {
+                    new GradientAlphaKey(1.0f, 0.0f),
+                    new GradientAlphaKey(0.5f, 0.5f),
+                    new GradientAlphaKey(0.0f, 1.0f)
+                }
+            );
+            trailRenderer.colorGradient = gradient;
+        }
+        
+        if (projectileLight == null)
+        {
+            GameObject lightObj = new GameObject("ProjectileLight");
+            lightObj.transform.SetParent(transform);
+            lightObj.transform.localPosition = Vector3.zero;
+            projectileLight = lightObj.AddComponent<Light>();
+            projectileLight.type = LightType.Point;
+            projectileLight.color = projectileColor;
+            projectileLight.intensity = lightIntensity;
+            projectileLight.range = 5f;
+        }
+        
+        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+        if (meshRenderer != null)
+        {
+            Material mat = new Material(Shader.Find("Standard"));
+            mat.color = projectileColor;
+            mat.SetFloat("_Emission", 1f);
+            mat.SetColor("_EmissionColor", projectileColor * 2f);
+            meshRenderer.material = mat;
+        }
+    }
+    
+    void PlayImpactEffect(Vector3 impactPoint)
+    {
+        if (impactEffect != null)
+        {
+            Instantiate(impactEffect, impactPoint, Quaternion.LookRotation(-transform.forward));
+        }
+        else
+        {
+            GameObject impactObj = new GameObject("ImpactEffect");
+            impactObj.transform.position = impactPoint;
+            
+            ParticleSystem ps = impactObj.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.duration = 0.2f;
+            main.startLifetime = 0.3f;
+            main.startSpeed = 5f;
+            main.startSize = 0.1f;
+            main.startColor = projectileColor;
+            
+            var emission = ps.emission;
+            emission.SetBursts(new ParticleSystem.Burst[] {
+                new ParticleSystem.Burst(0.0f, 15)
+            });
+            
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.1f;
+            
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            renderer.material = new Material(Shader.Find("Sprites/Default"));
+            
+            Destroy(impactObj, 2f);
         }
     }
 }
