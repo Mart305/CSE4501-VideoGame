@@ -16,6 +16,7 @@ public class TowerUpgradeUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI repairButtonText;
     [SerializeField] private TextMeshProUGUI maxHealthButtonText;
     [SerializeField] private TextMeshProUGUI resistanceButtonText;
+    [SerializeField] private TextMeshProUGUI currencyText;
     
     [Header("Upgrade Costs")]
     [SerializeField] private int repairCost = 50;
@@ -43,18 +44,38 @@ public class TowerUpgradeUI : MonoBehaviour
         if (damageResistanceButton != null)
             damageResistanceButton.onClick.AddListener(UpgradeDamageResistance);
         if (closeButton != null)
+        {
+            // Clear any existing listeners and add our close method
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(CloseUpgradeMenu);
+        }
+            
+        // Subscribe to currency changes
+        if (CurrencyManager.Instance != null)
+        {
+            CurrencyManager.Instance.OnCurrencyChanged.AddListener(OnCurrencyChanged);
+            
+            // Initialize currency display
+            UpdateCurrencyDisplay();
+        }
     }
     
     void Update()
     {
         CheckTowerSelection();
         
-        // Unlock cursor when upgrade panel is open
+        // Manage cursor state for web builds
         if (upgradePanel != null && upgradePanel.activeInHierarchy)
         {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            // For web builds, ensure cursor is always visible and unlocked when UI is open
+            if (Cursor.lockState != CursorLockMode.None)
+            {
+                Cursor.lockState = CursorLockMode.None;
+            }
+            if (!Cursor.visible)
+            {
+                Cursor.visible = true;
+            }
         }
         
         // Make panel continuously face camera while open
@@ -68,19 +89,55 @@ public class TowerUpgradeUI : MonoBehaviour
     
     void CheckTowerSelection()
     {
-        Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-        
-        if (Physics.Raycast(ray, out hit))
+        // Only check for tower selection on mouse click, not every frame
+        if (Input.GetMouseButtonDown(0)) // Left mouse button
         {
-            // Only check for towers, ignore enemies
-            if (hit.collider.CompareTag("Tower"))
+            // Check if we clicked on UI first (don't close if clicking on UI)
+            if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
             {
-                Tower tower = hit.collider.GetComponent<Tower>();
-                if (tower != null)
+                // Clicked on UI, don't do anything
+                return;
+            }
+            
+            Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            
+            if (Physics.Raycast(ray, out hit))
+            {
+                // Only check for towers, ignore enemies
+                if (hit.collider.CompareTag("Tower"))
                 {
-                    SelectTower(tower);
+                    Tower tower = hit.collider.GetComponent<Tower>();
+                    if (tower != null)
+                    {
+                        SelectTower(tower);
+                    }
                 }
+                else
+                {
+                    // Clicked on something else (not UI, not tower), close upgrade menu if open
+                    if (upgradePanel != null && upgradePanel.activeInHierarchy)
+                    {
+                        CloseUpgradeMenu();
+                    }
+                }
+            }
+            else
+            {
+                // Clicked on empty space (not UI), close upgrade menu if open
+                if (upgradePanel != null && upgradePanel.activeInHierarchy)
+                {
+                    CloseUpgradeMenu();
+                }
+            }
+        }
+        
+        // Add keyboard shortcut to close menu (ESC key)
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (upgradePanel != null && upgradePanel.activeInHierarchy)
+            {
+                CloseUpgradeMenu();
             }
         }
     }
@@ -137,6 +194,9 @@ public class TowerUpgradeUI : MonoBehaviour
             resistanceButtonText.text = $"Resistance {resistance:F0}% ({resistanceCost} Gold)";
         }
         
+        // Update currency display
+        UpdateCurrencyDisplay();
+        
         // Enable/disable buttons based on conditions
         UpdateButtonStates();
     }
@@ -145,30 +205,33 @@ public class TowerUpgradeUI : MonoBehaviour
     {
         if (selectedTower == null) return;
         
-        // Repair button - disable if at full health
+        // Repair button - disable if at full health or not enough currency
         if (repairButton != null)
         {
             bool canRepair = selectedTower.GetCurrentHealth() < selectedTower.GetMaxHealth();
-            repairButton.interactable = canRepair; // && HasEnoughGold(repairCost);
+            bool hasEnoughCurrency = HasEnoughCurrency(repairCost);
+            repairButton.interactable = canRepair && hasEnoughCurrency;
         }
         
-        // Max health button - always available (could add level cap)
+        // Max health button - disable if not enough currency
         if (maxHealthButton != null)
         {
-            maxHealthButton.interactable = true; // && HasEnoughGold(maxHealthCost);
+            bool hasEnoughCurrency = HasEnoughCurrency(maxHealthCost);
+            maxHealthButton.interactable = hasEnoughCurrency;
         }
         
-        // Resistance button - disable if at max resistance
+        // Resistance button - disable if at max resistance or not enough currency
         if (damageResistanceButton != null)
         {
             bool canUpgrade = selectedTower.GetDamageResistance() < 0.8f;
-            damageResistanceButton.interactable = canUpgrade; // && HasEnoughGold(resistanceCost);
+            bool hasEnoughCurrency = HasEnoughCurrency(resistanceCost);
+            damageResistanceButton.interactable = canUpgrade && hasEnoughCurrency;
         }
     }
     
     public void RepairTower()
     {
-        if (selectedTower != null)
+        if (selectedTower != null && SpendCurrency(repairCost))
         {
             selectedTower.RepairTower();
             UpdateUI();
@@ -177,7 +240,7 @@ public class TowerUpgradeUI : MonoBehaviour
     
     public void UpgradeMaxHealth()
     {
-        if (selectedTower != null)
+        if (selectedTower != null && SpendCurrency(maxHealthCost))
         {
             selectedTower.UpgradeMaxHealth();
             UpdateUI();
@@ -186,7 +249,7 @@ public class TowerUpgradeUI : MonoBehaviour
     
     public void UpgradeDamageResistance()
     {
-        if (selectedTower != null)
+        if (selectedTower != null && SpendCurrency(resistanceCost))
         {
             selectedTower.UpgradeDamageResistance(0.1f); // 10% increase
             UpdateUI();
@@ -196,22 +259,67 @@ public class TowerUpgradeUI : MonoBehaviour
     public void CloseUpgradeMenu()
     {
         if (upgradePanel != null)
+        {
             upgradePanel.SetActive(false);
+        }
         selectedTower = null;
         
-        // Re-lock cursor when closing UI
+        // Only re-lock cursor if not in web build (web builds handle cursor differently)
+        #if !UNITY_WEBGL
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        #else
+        // For web builds, keep cursor visible but unlocked
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        #endif
     }
     
-    // TODO: Implement gold/currency system
-    // bool HasEnoughGold(int cost)
-    // {
-    //     return GameManager.Instance.GetGold() >= cost;
-    // }
+    // Alternative close method that can be called from UI buttons
+    public void OnCloseButtonPressed()
+    {
+        CloseUpgradeMenu();
+    }
     
-    // void SpendGold(int amount)
-    // {
-    //     GameManager.Instance.SpendGold(amount);
-    // }
+    // Currency system methods
+    bool HasEnoughCurrency(int cost)
+    {
+        return CurrencyManager.Instance != null && CurrencyManager.Instance.HasEnoughCurrency(cost);
+    }
+    
+    bool SpendCurrency(int amount)
+    {
+        return CurrencyManager.Instance != null && CurrencyManager.Instance.SpendCurrency(amount);
+    }
+    
+    // Currency event handler
+    private void OnCurrencyChanged(int newAmount)
+    {
+        // Update currency display immediately when currency changes
+        UpdateCurrencyDisplay();
+        
+        // Update button states as well since currency affects what can be purchased
+        if (selectedTower != null)
+        {
+            UpdateButtonStates();
+        }
+    }
+    
+    // Dedicated method to update currency display (like GameHUD)
+    private void UpdateCurrencyDisplay()
+    {
+        if (currencyText != null && CurrencyManager.Instance != null)
+        {
+            currencyText.text = $"Gold: {CurrencyManager.Instance.GetCurrentCurrency()}";
+        }
+    }
+    
+    void OnDestroy()
+    {
+        // Unsubscribe from events to prevent memory leaks
+        if (CurrencyManager.Instance != null)
+        {
+            CurrencyManager.Instance.OnCurrencyChanged.RemoveListener(OnCurrencyChanged);
+        }
+    }
 }

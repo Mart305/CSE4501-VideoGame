@@ -148,6 +148,7 @@ public class PlayerWeapon : MonoBehaviour
         }
         
         StartCoroutine(ReloadAnimation());
+        
         Invoke(nameof(FinishReload), reloadTime);
     }
     

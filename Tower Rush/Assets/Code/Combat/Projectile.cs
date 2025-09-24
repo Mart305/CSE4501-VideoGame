@@ -24,10 +24,9 @@ public class Projectile : MonoBehaviour
         if (rb == null)
         {
             rb = gameObject.AddComponent<Rigidbody>();
+            rb.useGravity = false;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         }
-        
-        rb.useGravity = false;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         
         projectileCollider = GetComponent<Collider>();
         if (projectileCollider == null)
@@ -68,6 +67,7 @@ public class Projectile : MonoBehaviour
             }
             
             PlayImpactEffect(other.ClosestPoint(transform.position));
+            
             Destroy(gameObject);
         }
     }
@@ -95,8 +95,21 @@ public class Projectile : MonoBehaviour
             trailRenderer.startWidth = 0.1f;
             trailRenderer.endWidth = 0.02f;
             trailRenderer.material = new Material(Shader.Find("Sprites/Default"));
-            trailRenderer.startColor = projectileColor;
-            trailRenderer.endColor = new Color(projectileColor.r, projectileColor.g, projectileColor.b, 0);
+            
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new GradientColorKey[] {
+                    new GradientColorKey(projectileColor, 0.0f),
+                    new GradientColorKey(projectileColor * 0.7f, 0.5f),
+                    new GradientColorKey(new Color(projectileColor.r, projectileColor.g, projectileColor.b, 0), 1.0f)
+                },
+                new GradientAlphaKey[] {
+                    new GradientAlphaKey(1.0f, 0.0f),
+                    new GradientAlphaKey(0.5f, 0.5f),
+                    new GradientAlphaKey(0.0f, 1.0f)
+                }
+            );
+            trailRenderer.colorGradient = gradient;
         }
         
         if (projectileLight == null)
@@ -111,18 +124,14 @@ public class Projectile : MonoBehaviour
             projectileLight.range = 5f;
         }
         
-        Renderer renderer = GetComponent<Renderer>();
-        if (renderer != null)
+        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+        if (meshRenderer != null)
         {
-            renderer.material.color = projectileColor;
-            renderer.material.SetFloat("_Metallic", 0.8f);
-            renderer.material.SetFloat("_Smoothness", 0.8f);
-            
-            if (renderer.material.HasProperty("_EmissionColor"))
-            {
-                renderer.material.EnableKeyword("_EMISSION");
-                renderer.material.SetColor("_EmissionColor", projectileColor * 2f);
-            }
+            Material mat = new Material(Shader.Find("Standard"));
+            mat.color = projectileColor;
+            mat.SetFloat("_Emission", 1f);
+            mat.SetColor("_EmissionColor", projectileColor * 2f);
+            meshRenderer.material = mat;
         }
     }
     
@@ -130,8 +139,7 @@ public class Projectile : MonoBehaviour
     {
         if (impactEffect != null)
         {
-            ParticleSystem effect = Instantiate(impactEffect, impactPoint, Quaternion.identity);
-            Destroy(effect.gameObject, 2f);
+            Instantiate(impactEffect, impactPoint, Quaternion.LookRotation(-transform.forward));
         }
         else
         {
@@ -141,13 +149,15 @@ public class Projectile : MonoBehaviour
             ParticleSystem ps = impactObj.AddComponent<ParticleSystem>();
             var main = ps.main;
             main.duration = 0.2f;
-            main.startLifetime = 0.5f;
+            main.startLifetime = 0.3f;
             main.startSpeed = 5f;
             main.startSize = 0.1f;
             main.startColor = projectileColor;
             
             var emission = ps.emission;
-            emission.SetBurst(0, new ParticleSystem.Burst(0, 20));
+            emission.SetBursts(new ParticleSystem.Burst[] {
+                new ParticleSystem.Burst(0.0f, 15)
+            });
             
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
