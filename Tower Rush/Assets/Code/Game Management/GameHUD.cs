@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
+using System.Collections;
 
 public class GameHUD : MonoBehaviour
 {
@@ -95,6 +97,19 @@ public class GameHUD : MonoBehaviour
             TowerPlacementManager.Instance.OnPlacementCancelled.AddListener(OnPlacementCancelled);
         }
         
+        // Subscribe to wave events
+        if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.OnWaveStarted.AddListener(OnWaveStarted);
+            WaveManager.Instance.OnWaveCompleted.AddListener(OnWaveCompleted);
+        }
+        
+        // Initialize wave display
+        if (WaveManager.Instance != null)
+        {
+            UpdateWaveDisplay(WaveManager.Instance.GetCurrentWave(), WaveManager.Instance.GetMaxWaves());
+        }
+        
         // Initialize tower buttons
         InitializeTowerButtons();
         
@@ -102,6 +117,37 @@ public class GameHUD : MonoBehaviour
         if (placementInstructions != null)
         {
             placementInstructions.SetActive(false);
+        }
+    }
+    
+    void OnDestroy()
+    {
+        // Unsubscribe from wave events
+        if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.OnWaveStarted.RemoveListener(OnWaveStarted);
+            WaveManager.Instance.OnWaveCompleted.RemoveListener(OnWaveCompleted);
+        }
+    }
+    
+    private void OnWaveStarted(int waveNumber)
+    {
+        // Show wave start notification
+        if (placementText != null)
+        {
+            StartCoroutine(ShowTemporaryMessage($"Wave {waveNumber} Starting!", 3f));
+        }
+        
+        // Update wave display
+        UpdateWaveDisplay(waveNumber, WaveManager.Instance?.GetMaxWaves() ?? -1);
+    }
+    
+    private void OnWaveCompleted(int waveNumber)
+    {
+        // Show wave completion notification
+        if (placementText != null)
+        {
+            StartCoroutine(ShowTemporaryMessage($"Wave {waveNumber} Complete!", 2f));
         }
     }
     
@@ -136,6 +182,12 @@ public class GameHUD : MonoBehaviour
             
             // Ensure cursor stays available for UI interaction
             EnsureCursorAvailable();
+        }
+        
+        // Update wave display with real-time progress
+        if (WaveManager.Instance != null && WaveManager.Instance.IsWaveActive())
+        {
+            UpdateWaveDisplay(WaveManager.Instance.GetCurrentWave(), WaveManager.Instance.GetMaxWaves());
         }
     }
     
@@ -238,19 +290,44 @@ public class GameHUD : MonoBehaviour
         }
     }
     
-    // Optional methods for other HUD elements
+    // Enhanced wave display with progress
     public void UpdateWaveDisplay(int currentWave, int totalWaves = -1)
     {
         if (waveText != null)
         {
-            if (totalWaves > 0)
+            string waveTextContent;
+            
+            if (WaveManager.Instance != null && WaveManager.Instance.IsWaveActive())
             {
-                waveText.text = $"Wave: {currentWave}/{totalWaves}";
+                int enemiesRemaining = WaveManager.Instance.GetEnemiesRemaining();
+                int totalEnemies = WaveManager.Instance.GetTotalEnemiesThisWave();
+                int enemiesKilled = totalEnemies - enemiesRemaining;
+                
+                // Calculate percentage of enemies killed
+                float killedPercentage = totalEnemies > 0 ? (float)enemiesKilled / totalEnemies * 100f : 0f;
+                
+                if (totalWaves > 0)
+                {
+                    waveTextContent = $"Wave: {currentWave}/{totalWaves}\n{enemiesRemaining} remaining, {killedPercentage:F0}% killed";
+                }
+                else
+                {
+                    waveTextContent = $"Wave: {currentWave}\n{enemiesRemaining} remaining, {killedPercentage:F0}% killed";
+                }
             }
             else
             {
-                waveText.text = $"Wave: {currentWave}";
+                if (totalWaves > 0)
+                {
+                    waveTextContent = $"Wave: {currentWave}/{totalWaves}";
+                }
+                else
+                {
+                    waveTextContent = $"Wave: {currentWave}";
+                }
             }
+            
+            waveText.text = waveTextContent;
         }
     }
     

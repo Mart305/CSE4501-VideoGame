@@ -82,4 +82,25 @@ public abstract class Enemy : MonoBehaviour
     {
         Destroy(gameObject);
     }
+    
+    // Public methods for wave scaling
+    public void SetMoveSpeed(float newSpeed)
+    {
+        moveSpeed = newSpeed;
+    }
+    
+    public void SetDamage(float newDamage)
+    {
+        damage = newDamage;
+    }
+    
+    public void SetAttackCooldown(float newCooldown)
+    {
+        attackCooldown = newCooldown;
+    }
+    
+    public void SetHealth(float newHealth)
+    {
+        health = newHealth;
+    }
 }
