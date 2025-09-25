@@ -6,29 +6,68 @@ public class EnemySpawner : MonoBehaviour
     public Transform[] spawnPoints;
     public GameObject zombiePrefab;
     public GameObject ghostPrefab;
-
-    public float spawnInterval = 3f;
-
-    private float timer;
-
-    void Update()
+    
+    [Header("Debug")]
+    [SerializeField] private bool showSpawnPoints = true;
+    
+    void Start()
     {
-        timer += Time.deltaTime;
-        if (timer >= spawnInterval)
+        // Validate spawn points
+        if (spawnPoints.Length == 0)
         {
-            SpawnEnemy();
-            timer = 0f;
+            Debug.LogError("EnemySpawner: No spawn points assigned!");
+        }
+        
+        // Validate prefabs
+        if (zombiePrefab == null)
+        {
+            Debug.LogError("EnemySpawner: Zombie prefab not assigned!");
+        }
+        
+        if (ghostPrefab == null)
+        {
+            Debug.LogError("EnemySpawner: Ghost prefab not assigned!");
         }
     }
-
+    
+    void OnDrawGizmos()
+    {
+        if (!showSpawnPoints || spawnPoints == null) return;
+        
+        // Draw spawn points in scene view
+        Gizmos.color = Color.red;
+        foreach (Transform spawnPoint in spawnPoints)
+        {
+            if (spawnPoint != null)
+            {
+                Gizmos.DrawWireSphere(spawnPoint.position, 0.5f);
+                Gizmos.DrawLine(spawnPoint.position, spawnPoint.position + Vector3.up * 2f);
+            }
+        }
+    }
+    
+    // This method is now called by WaveManager instead of running automatically
     public void SpawnEnemy()
     {
         if (spawnPoints.Length == 0) return;
-
+        
         Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
-
         GameObject enemyPrefab = (Random.value > 0.5f) ? zombiePrefab : ghostPrefab;
-
-        Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
+        
+        if (enemyPrefab != null)
+        {
+            Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
+        }
+    }
+    
+    // Method for WaveManager to spawn specific enemy types
+    public GameObject SpawnEnemyAtPoint(GameObject enemyPrefab, int spawnPointIndex = -1)
+    {
+        if (spawnPoints.Length == 0 || enemyPrefab == null) return null;
+        
+        int pointIndex = spawnPointIndex >= 0 ? spawnPointIndex : Random.Range(0, spawnPoints.Length);
+        Transform spawnPoint = spawnPoints[pointIndex];
+        
+        return Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
     }
 }
