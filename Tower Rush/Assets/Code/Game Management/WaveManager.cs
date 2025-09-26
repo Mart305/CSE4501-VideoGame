@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public class WaveManager : MonoBehaviour
 {
@@ -82,55 +83,59 @@ public class WaveManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
-    
-    void Start()
-    {
-        // Find references if not assigned
-        if (enemySpawner == null)
-            enemySpawner = FindObjectOfType<EnemySpawner>();
-        if (gameHUD == null)
-            gameHUD = GameHUD.Instance;
-            
-        // Start the wave system
-        StartCoroutine(WaveSystemLoop());
-    }
-    
-    IEnumerator WaveSystemLoop()
-    {
-        while (maxWaves == -1 || currentWave <= maxWaves)
-        {
-            yield return StartCoroutine(StartWave());
-            
-            // Wait for wave to complete
-            yield return StartCoroutine(WaitForWaveCompletion());
-            
-            // Wave completed
-            OnWaveCompleted?.Invoke(currentWave);
-            Debug.Log($"Wave {currentWave} completed!");
-            
-            // Check if all waves are done
-            if (maxWaves != -1 && currentWave >= maxWaves)
-            {
-                OnAllWavesCompleted?.Invoke();
-                Debug.Log("All waves completed! Victory!");
-                yield break;
-            }
-            
-            // Prepare for next wave
-            currentWave++;
-            
-            // Show wave preparation UI
-            if (gameHUD != null)
-            {
-                gameHUD.UpdateWaveDisplay(currentWave, maxWaves);
-            }
-            
-            // Wait between waves
-            yield return new WaitForSeconds(timeBetweenWaves);
-        }
-    }
-    
-    IEnumerator StartWave()
+
+	void Start()
+	{
+		StartCoroutine(InitializeAfterSceneLoad());
+	}
+
+	private IEnumerator InitializeAfterSceneLoad()
+	{
+		// If gameplaySceneNames is set, load the first gameplay scene additively
+		if (gameplaySceneNames != null && gameplaySceneNames.Length > 0) {
+			SceneManager.LoadSceneAsync(gameplaySceneNames[0], LoadSceneMode.Additive);
+		}
+
+		// Wait until the gameplay scene is loaded (sceneCount > 1)
+		while (SceneManager.sceneCount < 2)
+			yield return null;
+
+		// Now the gameplay scene is loaded, so EnemySpawner exists
+		if (enemySpawner == null)
+			enemySpawner = FindObjectOfType<EnemySpawner>();
+		if (gameHUD == null)
+			gameHUD = GameHUD.Instance;
+
+		StartCoroutine(WaveSystemLoop());
+	}
+
+	IEnumerator WaveSystemLoop()
+	{
+		while (maxWaves == -1 || currentWave <= maxWaves) {
+			yield return StartCoroutine(StartWave());
+			yield return StartCoroutine(WaitForWaveCompletion());
+
+			OnWaveCompleted?.Invoke(currentWave);
+			Debug.Log($"Wave {currentWave} completed!");
+
+			// --- Add this line ---
+			CheckAndChangeScene();
+
+			if (maxWaves != -1 && currentWave >= maxWaves) {
+				OnAllWavesCompleted?.Invoke();
+				Debug.Log("All waves completed! Victory!");
+				yield break;
+			}
+
+			currentWave++;
+			if (gameHUD != null) {
+				gameHUD.UpdateWaveDisplay(currentWave, maxWaves);
+			}
+			yield return new WaitForSeconds(timeBetweenWaves);
+		}
+	}
+
+	IEnumerator StartWave()
     {
         isWaveActive = true;
         enemiesSpawnedThisWave = 0;
@@ -349,4 +354,26 @@ public class WaveManager : MonoBehaviour
         useBatchSpawning = !useBatchSpawning;
         Debug.Log($"Batch spawning: {(useBatchSpawning ? "ON" : "OFF")}");
     }
+
+
+	// Add these fields to WaveManager
+	[SerializeField] private string[] gameplaySceneNames; // Assign your 4 scene names in the Inspector
+	private int currentSceneIndex = 0;
+
+	// Call this after each wave completes (e.g., at the end of WaitForWaveCompletion or after OnWaveCompleted)
+	private void CheckAndChangeScene()
+	{
+		if (currentWave > 1 && (currentWave - 1) % 5 == 0) {
+			// Unload current gameplay scene
+			string currentScene = gameplaySceneNames[currentSceneIndex];
+			SceneManager.UnloadSceneAsync(currentScene);
+
+			// Advance to next scene (loop back if needed)
+			currentSceneIndex = (currentSceneIndex + 1) % gameplaySceneNames.Length;
+			string nextScene = gameplaySceneNames[currentSceneIndex];
+
+			// Load next scene additively
+			SceneManager.LoadSceneAsync(nextScene, LoadSceneMode.Additive);
+		}
+	}
 }
