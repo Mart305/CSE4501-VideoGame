@@ -6,6 +6,18 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/ManagerScene.unity
+    guid: 5b1ac9106a82897439dc7763720c5b90
+  - enabled: 1
     path: Assets/Scenes/Tower Rush Functionality.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
+  - enabled: 1
+    path: Assets/Scenes/Waves 6-10.unity
+    guid: 7a03ba2c5b5ff5749a018d8037122cb4
+  - enabled: 1
+    path: Assets/Scenes/Waves 11-15.unity
+    guid: 564ff621f0fd9db40882c699691c5b6e
+  - enabled: 1
+    path: Assets/Scenes/Waves 16-20.unity
+    guid: 51e6ea6392acf964293ff4ea39d70b13
   m_configObjects: {}
