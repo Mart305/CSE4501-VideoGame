@@ -243,6 +243,41 @@ public class TowerPlacementManager : MonoBehaviour
             }
         }
         
+        // Disable particle systems (they look weird in preview)
+        ParticleSystem[] particles = obj.GetComponentsInChildren<ParticleSystem>();
+        foreach (ParticleSystem ps in particles)
+        {
+            ps.gameObject.SetActive(false);
+        }
+        
+        // Disable audio sources (no sounds in preview)
+        AudioSource[] audioSources = obj.GetComponentsInChildren<AudioSource>();
+        foreach (AudioSource audio in audioSources)
+        {
+            audio.enabled = false;
+        }
+        
+        // Disable light components (can be distracting in preview)
+        Light[] lights = obj.GetComponentsInChildren<Light>();
+        foreach (Light light in lights)
+        {
+            light.enabled = false;
+        }
+        
+        // Disable line renderers (laser beams shouldn't show in preview)
+        LineRenderer[] lineRenderers = obj.GetComponentsInChildren<LineRenderer>();
+        foreach (LineRenderer lr in lineRenderers)
+        {
+            lr.enabled = false;
+        }
+        
+        // Disable trail renderers
+        TrailRenderer[] trailRenderers = obj.GetComponentsInChildren<TrailRenderer>();
+        foreach (TrailRenderer tr in trailRenderers)
+        {
+            tr.enabled = false;
+        }
+        
         // Disable health component
         Health healthComponent = obj.GetComponent<Health>();
         if (healthComponent != null)
@@ -267,6 +302,10 @@ public class TowerPlacementManager : MonoBehaviour
                 
             // Skip null components
             if (behaviour == null)
+                continue;
+                
+            // Skip components we want to keep for visual purposes
+            if (behaviour is Renderer || behaviour is MeshFilter || behaviour is Transform)
                 continue;
                 
             behaviour.enabled = false;
@@ -350,6 +389,9 @@ public class TowerPlacementManager : MonoBehaviour
             // Ensure the new tower has proper tag and components enabled
             newTower.tag = "Tower";
             
+            // Restore original materials to the new tower (in case preview materials were applied)
+            RestoreOriginalMaterials(newTower);
+            
             // Add to placed towers list
             placedTowers.Add(newTower);
             
@@ -395,24 +437,40 @@ public class TowerPlacementManager : MonoBehaviour
         return true;
     }
     
+    // Store original materials for restoration
+    private Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
+    
     private void MakePreviewTransparent(GameObject obj)
     {
         Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
         foreach (Renderer renderer in renderers)
         {
+            // Store original materials
+            originalMaterials[renderer] = renderer.materials;
+            
             Material[] materials = renderer.materials;
             for (int i = 0; i < materials.Length; i++)
             {
                 if (previewMaterial != null)
                 {
+                    // Use assigned preview material
                     materials[i] = previewMaterial;
                 }
                 else
                 {
-                    // Fallback: make existing material transparent
-                    Material mat = new Material(materials[i]);
-                    mat.color = new Color(mat.color.r, mat.color.g, mat.color.b, 0.5f);
-                    materials[i] = mat;
+                    // Create a simple transparent material for preview
+                    Material previewMat = new Material(Shader.Find("Standard"));
+                    previewMat.color = new Color(1f, 1f, 1f, 0.5f);
+                    previewMat.SetFloat("_Mode", 3); // Transparent mode
+                    previewMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                    previewMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                    previewMat.SetInt("_ZWrite", 0);
+                    previewMat.DisableKeyword("_ALPHATEST_ON");
+                    previewMat.EnableKeyword("_ALPHABLEND_ON");
+                    previewMat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                    previewMat.renderQueue = 3000;
+                    
+                    materials[i] = previewMat;
                 }
             }
             renderer.materials = materials;
@@ -432,10 +490,49 @@ public class TowerPlacementManager : MonoBehaviour
             Material[] materials = renderer.materials;
             for (int i = 0; i < materials.Length; i++)
             {
-                materials[i].color = targetColor;
+                Material mat = materials[i];
+                
+                // Try different common color property names for custom shaders
+                if (mat.HasProperty("_Color"))
+                {
+                    mat.color = targetColor;
+                }
+                else if (mat.HasProperty("_BaseColor"))
+                {
+                    mat.SetColor("_BaseColor", targetColor);
+                }
+                else if (mat.HasProperty("_MainColor"))
+                {
+                    mat.SetColor("_MainColor", targetColor);
+                }
+                else if (mat.HasProperty("_Tint"))
+                {
+                    mat.SetColor("_Tint", targetColor);
+                }
+                else
+                {
+                    // If no color property found, replace with a simple colored material
+                    Material simpleMat = new Material(Shader.Find("Standard"));
+                    simpleMat.color = targetColor;
+                    simpleMat.SetFloat("_Mode", 3); // Transparent mode
+                    simpleMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                    simpleMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                    simpleMat.SetInt("_ZWrite", 0);
+                    simpleMat.EnableKeyword("_ALPHABLEND_ON");
+                    simpleMat.renderQueue = 3000;
+                    
+                    materials[i] = simpleMat;
+                }
             }
             renderer.materials = materials;
         }
+    }
+    
+    private void RestoreOriginalMaterials(GameObject obj)
+    {
+        // This ensures the placed tower uses its original materials, not preview materials
+        // The new tower is instantiated fresh from prefab, so it should already have correct materials
+        // This method is here for safety and future extensibility
     }
     
     // Public getters

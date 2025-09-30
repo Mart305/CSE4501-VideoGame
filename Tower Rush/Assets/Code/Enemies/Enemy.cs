@@ -11,10 +11,18 @@ public abstract class Enemy : MonoBehaviour
 
     protected Tower targetTower;
     private float lastAttackTime;
+    private SlowEffect slowEffect;
 
     protected virtual void Start()
     {
         FindTargetTower();
+        
+        // Get or add SlowEffect component
+        slowEffect = GetComponent<SlowEffect>();
+        if (slowEffect == null)
+        {
+            slowEffect = gameObject.AddComponent<SlowEffect>();
+        }
     }
 
     protected virtual void Update()
@@ -40,7 +48,15 @@ public abstract class Enemy : MonoBehaviour
     protected virtual void MoveTowardsTower()
     {
         Vector3 direction = (targetTower.transform.position - transform.position).normalized;
-        transform.position += direction * moveSpeed * Time.deltaTime;
+        
+        // Apply slow effect if present
+        float effectiveMoveSpeed = moveSpeed;
+        if (slowEffect != null)
+        {
+            effectiveMoveSpeed *= slowEffect.GetSpeedMultiplier();
+        }
+        
+        transform.position += direction * effectiveMoveSpeed * Time.deltaTime;
         transform.LookAt(targetTower.transform);
     }
 

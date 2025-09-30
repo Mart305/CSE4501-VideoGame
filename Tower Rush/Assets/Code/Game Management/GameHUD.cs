@@ -367,6 +367,26 @@ public class GameHUD : MonoBehaviour
             buttonObj.SetActive(true);
             ForceEnableAllComponents(buttonObj);
             
+            // Position buttons manually if no layout group is present
+            RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
+            if (buttonRect != null && towerButtonContainer.GetComponent<UnityEngine.UI.LayoutGroup>() == null)
+            {
+                // Position buttons to the right side with spacing
+                float buttonWidth = 100f;
+                float spacing = 10f;
+                
+                // Get container width
+                RectTransform containerRect = towerButtonContainer.GetComponent<RectTransform>();
+                float containerWidth = containerRect != null ? containerRect.rect.width : 800f;
+                
+                // Calculate starting position from the right edge
+                float totalButtonsWidth = availableTowers.Count * buttonWidth + (availableTowers.Count - 1) * spacing;
+                float startX = (containerWidth / 2f) - totalButtonsWidth + (i * (buttonWidth + spacing));
+                
+                buttonRect.anchoredPosition = new Vector2(startX, 0);
+                buttonRect.sizeDelta = new Vector2(buttonWidth, 100f);
+            }
+            
             TowerButton towerButton = buttonObj.GetComponent<TowerButton>();
             
             if (towerButton != null)
