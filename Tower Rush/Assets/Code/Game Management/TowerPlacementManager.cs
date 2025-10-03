@@ -74,7 +74,11 @@ public class TowerPlacementManager : MonoBehaviour
     
     void Update()
     {
-        if (isPlacingTower)
+		// Re-acquire camera if it was destroyed (scene changed)
+		if (playerCamera == null)
+			playerCamera = Camera.main;
+
+		if (isPlacingTower)
         {
             HandleTowerPlacement();
         }

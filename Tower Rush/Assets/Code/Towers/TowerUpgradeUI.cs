@@ -62,7 +62,11 @@ public class TowerUpgradeUI : MonoBehaviour
     
     void Update()
     {
-        CheckTowerSelection();
+		// Re-acquire camera if it was destroyed (scene changed)
+		if (playerCamera == null)
+			playerCamera = Camera.main;
+
+		CheckTowerSelection();
         
         // Manage cursor state for web builds
         if (upgradePanel != null && upgradePanel.activeInHierarchy)
