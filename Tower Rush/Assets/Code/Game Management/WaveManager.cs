@@ -94,12 +94,13 @@ public class WaveManager : MonoBehaviour
 		// If gameplaySceneNames is set, load the first gameplay scene additively
 		if (gameplaySceneNames != null && gameplaySceneNames.Length > 0) {
 			SceneManager.LoadSceneAsync(gameplaySceneNames[0], LoadSceneMode.Additive);
+			Debug.Log($"Loading first gameplay scene: {gameplaySceneNames[0]}");
 		}
 
 		// Wait until the gameplay scene is loaded (sceneCount > 1)
 		while (SceneManager.sceneCount < 2)
 			yield return null;
-
+		Debug.Log("First gameplay scene loaded and active.");
 		// Now the gameplay scene is loaded, so EnemySpawner exists
 		if (enemySpawner == null)
 			enemySpawner = FindObjectOfType<EnemySpawner>();
@@ -118,8 +119,9 @@ public class WaveManager : MonoBehaviour
 			OnWaveCompleted?.Invoke(currentWave);
 			Debug.Log($"Wave {currentWave} completed!");
 
-			// --- Add this line ---
-			CheckAndChangeScene();
+			Debug.Log($"About to check scene change for wave {currentWave}");
+			yield return StartCoroutine(CheckAndChangeScene());  // Changed to coroutine
+			Debug.Log($"Finished checking scene change for wave {currentWave}");
 
 			if (maxWaves != -1 && currentWave >= maxWaves) {
 				OnAllWavesCompleted?.Invoke();
@@ -361,19 +363,27 @@ public class WaveManager : MonoBehaviour
 	private int currentSceneIndex = 0;
 
 	// Call this after each wave completes (e.g., at the end of WaitForWaveCompletion or after OnWaveCompleted)
-	private void CheckAndChangeScene()
+	private IEnumerator CheckAndChangeScene()
 	{
-		if (currentWave > 1 && (currentWave - 1) % 5 == 0) {
-			// Unload current gameplay scene
-			string currentScene = gameplaySceneNames[currentSceneIndex];
-			SceneManager.UnloadSceneAsync(currentScene);
+		Debug.Log($"CheckAndChangeScene called. Current wave: {currentWave}");
+		bool condition = currentWave > 1 && (currentWave) % 5 == 0;
+		Debug.Log($"Scene change condition: {condition} (Wave {currentWave}, (Wave)%5 = {(currentWave) % 5})");
 
-			// Advance to next scene (loop back if needed)
+		if (condition) {
+			string currentScene = gameplaySceneNames[currentSceneIndex];
+			Debug.Log("Unloading scene: " + currentScene);
+			yield return SceneManager.UnloadSceneAsync(currentScene);
+
 			currentSceneIndex = (currentSceneIndex + 1) % gameplaySceneNames.Length;
 			string nextScene = gameplaySceneNames[currentSceneIndex];
+			Debug.Log("Loading scene: " + nextScene);
 
-			// Load next scene additively
-			SceneManager.LoadSceneAsync(nextScene, LoadSceneMode.Additive);
+			var loadOperation = SceneManager.LoadSceneAsync(nextScene, LoadSceneMode.Additive);
+			yield return loadOperation;
+
+			// Re-find the EnemySpawner in the new scene
+			enemySpawner = FindObjectOfType<EnemySpawner>();
+			Debug.Log($"Found new EnemySpawner: {(enemySpawner != null)}");
 		}
 	}
 }

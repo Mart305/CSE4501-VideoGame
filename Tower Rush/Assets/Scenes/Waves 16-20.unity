@@ -9822,7 +9822,7 @@ TerrainCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_TerrainData: {fileID: 15600000, guid: c7476d04aaf495048901dbcc2bf705fa, type: 2}
+  m_TerrainData: {fileID: 15600000, guid: 2e0b918367f4ded4dab19f6c648e4138, type: 2}
   m_EnableTreeColliders: 1
 --- !u!218 &2077929011
 Terrain:
