@@ -6,15 +6,15 @@ public class PlayerWeapon : MonoBehaviour
     [Header("Weapon Settings")]
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform firePoint;
-    [SerializeField] private float fireRate = 0.3f;
-    [SerializeField] private float projectileDamage = 25f;
-    [SerializeField] private float projectileSpeed = 20f;
+    [SerializeField] private float fireRate = 0.2f;  // Improved from 0.3f for smoother shooting
+    [SerializeField] private float projectileDamage = 30f;  // Increased from 25f for more rewarding hits
+    [SerializeField] private float projectileSpeed = 25f;  // Increased from 20f for better responsiveness
     
     [Header("Ammo Settings")]
     [SerializeField] private bool useAmmo = false;
     [SerializeField] private int maxAmmo = 30;
     [SerializeField] private int currentAmmo;
-    [SerializeField] private float reloadTime = 2f;
+    [SerializeField] private float reloadTime = 1.5f;  // Reduced from 2f for faster gameplay flow
     
     [Header("Audio")]
     [SerializeField] private AudioClip fireSound;
@@ -40,14 +40,14 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private float shakeAmount = 0.05f;
     [SerializeField] private float shakeDuration = 0.1f;
     
-    private float nextFireTime = 0f;
-    private bool isReloading = false;
-    private AudioSource audioSource;
-    private Camera playerCamera;
-    private Vector3 originalPosition;
-    private Quaternion originalRotation;
-    private Coroutine recoilCoroutine;
-    private Coroutine cameraShakeCoroutine;
+    protected float nextFireTime = 0f;
+    protected bool isReloading = false;
+    protected AudioSource audioSource;
+    protected Camera playerCamera;
+    protected Vector3 originalPosition;
+    protected Quaternion originalRotation;
+    protected Coroutine recoilCoroutine;
+    protected Coroutine cameraShakeCoroutine;
     
     void Start()
     {
@@ -135,24 +135,24 @@ public class PlayerWeapon : MonoBehaviour
         }
     }
     
-    void StartReload()
+    protected void StartReload()
     {
         if (isReloading || currentAmmo == maxAmmo)
             return;
-            
+
         isReloading = true;
-        
+
         if (reloadSound != null && audioSource != null)
         {
             audioSource.PlayOneShot(reloadSound, reloadSoundVolume);
         }
-        
+
         StartCoroutine(ReloadAnimation());
-        
+
         Invoke(nameof(FinishReload), reloadTime);
     }
-    
-    void FinishReload()
+
+    protected void FinishReload()
     {
         isReloading = false;
         currentAmmo = maxAmmo;
@@ -186,30 +186,30 @@ public class PlayerWeapon : MonoBehaviour
         defaultProjectile.SetActive(false);
     }
     
-    void PlayFireEffects()
+    protected virtual void PlayFireEffects()
     {
         if (fireSound != null && audioSource != null)
         {
             audioSource.pitch = Random.Range(0.95f, 1.05f);
             audioSource.PlayOneShot(fireSound, fireSoundVolume);
         }
-        
+
         if (muzzleFlashPrefab != null)
         {
             GameObject flash = Instantiate(muzzleFlashPrefab, firePoint.position, firePoint.rotation);
             flash.transform.SetParent(firePoint);
             Destroy(flash, muzzleFlashDuration);
         }
-        
+
         if (muzzleFlashLight != null)
         {
             StartCoroutine(MuzzleFlashLight());
         }
-        
+
         if (recoilCoroutine != null)
             StopCoroutine(recoilCoroutine);
         recoilCoroutine = StartCoroutine(ApplyRecoil());
-        
+
         if (cameraShakeCoroutine != null)
             StopCoroutine(cameraShakeCoroutine);
         cameraShakeCoroutine = StartCoroutine(CameraShake());
