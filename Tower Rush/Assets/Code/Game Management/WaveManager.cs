@@ -25,9 +25,16 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float batchSpawnDelay = 0.2f; // Small delay between enemies in same batch
     
     [Header("Wave Composition")]
-    [SerializeField] private float zombieChance = 0.6f; // 60% zombies, 40% ghosts
+    [SerializeField] private float zombieChance = 0.4f; // 40% zombies
+    [SerializeField] private float ghostChance = 0.3f; // 30% ghosts
+    [SerializeField] private float skeletonChance = 0.3f; // 30% skeletons
     [SerializeField] private float bossWaveInterval = 5f; // Every 5 waves
     [SerializeField] private bool enableBossWaves = true;
+    
+    [Header("Special Enemy Settings")]
+    [SerializeField] private float mutantZombieChance = 0.15f; // 15% chance in special waves
+    [SerializeField] private int mutantZombieWaveInterval = 3; // Every 3 waves
+    [SerializeField] private bool enableMutantZombies = true;
     
     [Header("Future Enemy Types")]
     [SerializeField] private GameObject[] futureEnemyTypes; // For later enemy variety
@@ -311,15 +318,32 @@ public class WaveManager : MonoBehaviour
             }
         }
         
+        // Special Mutant Zombie spawning (every 3 waves)
+        if (enableMutantZombies && currentWave % mutantZombieWaveInterval == 0)
+        {
+            if (Random.value < mutantZombieChance)
+            {
+                return enemySpawner.mutantZombiePrefab;
+            }
+        }
+        
         // Boss wave logic
         if (enableBossWaves && currentWave % bossWaveInterval == 0)
         {
-            // Boss waves have more ghosts (faster, more challenging)
-            return Random.value < 0.3f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
+            // Boss waves have more challenging enemy mix
+            float randomValue = Random.value;
+            if (randomValue < 0.2f) return enemySpawner.zombiePrefab;
+            else if (randomValue < 0.5f) return enemySpawner.ghostPrefab;
+            else if (randomValue < 0.8f) return enemySpawner.skeletonPrefab;
+            else return enemySpawner.mutantZombiePrefab; // 20% chance for mutant zombie in boss waves
         }
         
-        // Normal wave logic
-        return Random.value < zombieChance ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
+        // Normal wave logic with all enemy types
+        float random = Random.value;
+        if (random < zombieChance) return enemySpawner.zombiePrefab;
+        else if (random < zombieChance + ghostChance) return enemySpawner.ghostPrefab;
+        else if (random < zombieChance + ghostChance + skeletonChance) return enemySpawner.skeletonPrefab;
+        else return enemySpawner.zombiePrefab; // Fallback to zombie
     }
     
     private void SpawnEnemy(GameObject enemyPrefab)

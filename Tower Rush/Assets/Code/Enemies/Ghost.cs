@@ -19,7 +19,7 @@ public class Ghost : Enemy
         }
         
         // Set health through the Health component instead of the base Enemy health
-        healthComponent.SetMaxHealth(40f);
+        healthComponent.SetMaxHealth(60f);   // Increased from 40f to 60f
 
         base.Start();
     }

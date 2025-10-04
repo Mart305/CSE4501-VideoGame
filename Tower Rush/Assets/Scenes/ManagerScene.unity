@@ -132,7 +132,7 @@ GameObject:
   m_Component:
   - component: {fileID: 435784812}
   m_Layer: 0
-  m_Name: GhostSpawn1
+  m_Name: GhostSpawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -148,6 +148,37 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 9.17, y: 15, z: 6.71}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &724065755
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 724065756}
+  m_Layer: 0
+  m_Name: SkeletonSpawn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &724065756
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 724065755}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 9.59, y: 15, z: 14.27}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -279,8 +310,12 @@ MonoBehaviour:
   spawnPoints:
   - {fileID: 435784812}
   - {fileID: 1039903095}
+  - {fileID: 1859547141}
+  - {fileID: 724065756}
   zombiePrefab: {fileID: 9076115408730096218, guid: e39071724f2532840ac8a31b1fbda11d, type: 3}
   ghostPrefab: {fileID: 5163679325591557877, guid: 6f0b711772e2a8541b7916d6c58069e1, type: 3}
+  skeletonPrefab: {fileID: 1175757977416298233, guid: 99295d46eed46408eb968504f688f082, type: 3}
+  mutantZombiePrefab: {fileID: 3617769271492408877, guid: 7edc188522ef4418caa2777eccfea830, type: 3}
   showSpawnPoints: 1
 --- !u!4 &731426785
 Transform:
@@ -307,7 +342,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1039903095}
   m_Layer: 0
-  m_Name: ZombieSpawn1
+  m_Name: ZombieSpawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -485,6 +520,37 @@ LightingSettings:
   m_PVRTiledBaking: 0
   m_NumRaysToShootPerTexel: -1
   m_RespectSceneVisibilityWhenBakingGI: 0
+--- !u!1 &1859547140
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1859547141}
+  m_Layer: 0
+  m_Name: MutantZombieSpawn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1859547141
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1859547140}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 15.6, y: 15, z: 9.82}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1946827576
 GameObject:
   m_ObjectHideFlags: 0
@@ -526,8 +592,13 @@ MonoBehaviour:
   timeBetweenBatches: 3
   batchSpawnDelay: 0.2
   zombieChance: 0.6
+  ghostChance: 0.3
+  skeletonChance: 0.3
   bossWaveInterval: 5
   enableBossWaves: 1
+  mutantZombieChance: 0.15
+  mutantZombieWaveInterval: 3
+  enableMutantZombies: 1
   futureEnemyTypes: []
   enemyUnlockWaves: 
   OnWaveStarted:
@@ -634,4 +705,6 @@ SceneRoots:
   - {fileID: 1946827578}
   - {fileID: 435784812}
   - {fileID: 1039903095}
+  - {fileID: 1859547141}
+  - {fileID: 724065756}
   - {fileID: 1477658687}

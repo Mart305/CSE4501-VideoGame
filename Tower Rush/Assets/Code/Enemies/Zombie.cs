@@ -19,7 +19,7 @@ public class Zombie : Enemy
         }
         
         // Set health through the Health component instead of the base Enemy health
-        healthComponent.SetMaxHealth(50f);
+        healthComponent.SetMaxHealth(100f);  // Increased from 50f to 100f
 
         base.Start();
     }
