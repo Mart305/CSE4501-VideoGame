@@ -91,11 +91,12 @@ public class Projectile : MonoBehaviour
         if (trailRenderer == null)
         {
             trailRenderer = gameObject.AddComponent<TrailRenderer>();
-            trailRenderer.time = 0.2f;
-            trailRenderer.startWidth = 0.1f;
-            trailRenderer.endWidth = 0.02f;
+            trailRenderer.time = 0.15f;  // Reduced from 0.2f for better performance
+            trailRenderer.startWidth = 0.08f;  // Slightly reduced
+            trailRenderer.endWidth = 0.01f;  // Reduced for optimization
             trailRenderer.material = new Material(Shader.Find("Sprites/Default"));
-            
+            trailRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;  // Disable shadows for performance
+
             Gradient gradient = new Gradient();
             gradient.SetKeys(
                 new GradientColorKey[] {
@@ -111,7 +112,7 @@ public class Projectile : MonoBehaviour
             );
             trailRenderer.colorGradient = gradient;
         }
-        
+
         if (projectileLight == null)
         {
             GameObject lightObj = new GameObject("ProjectileLight");
@@ -120,8 +121,10 @@ public class Projectile : MonoBehaviour
             projectileLight = lightObj.AddComponent<Light>();
             projectileLight.type = LightType.Point;
             projectileLight.color = projectileColor;
-            projectileLight.intensity = lightIntensity;
-            projectileLight.range = 5f;
+            projectileLight.intensity = lightIntensity * 0.7f;  // Reduced intensity for performance
+            projectileLight.range = 4f;  // Reduced range from 5f for better performance
+            projectileLight.renderMode = LightRenderMode.ForceVertex;  // Use vertex lighting for performance
+            projectileLight.shadows = LightShadows.None;  // Disable shadows for performance
         }
         
         MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
@@ -145,28 +148,30 @@ public class Projectile : MonoBehaviour
         {
             GameObject impactObj = new GameObject("ImpactEffect");
             impactObj.transform.position = impactPoint;
-            
+
             ParticleSystem ps = impactObj.AddComponent<ParticleSystem>();
             var main = ps.main;
-            main.duration = 0.2f;
-            main.startLifetime = 0.3f;
-            main.startSpeed = 5f;
-            main.startSize = 0.1f;
+            main.duration = 0.15f;  // Reduced from 0.2f for performance
+            main.startLifetime = 0.25f;  // Reduced from 0.3f
+            main.startSpeed = 4f;  // Reduced from 5f
+            main.startSize = 0.08f;  // Reduced from 0.1f
             main.startColor = projectileColor;
-            
+            main.maxParticles = 10;  // Limit max particles for performance
+
             var emission = ps.emission;
             emission.SetBursts(new ParticleSystem.Burst[] {
-                new ParticleSystem.Burst(0.0f, 15)
+                new ParticleSystem.Burst(0.0f, 10)  // Reduced from 15 particles
             });
-            
+
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.1f;
-            
+            shape.radius = 0.08f;  // Reduced from 0.1f
+
             var renderer = ps.GetComponent<ParticleSystemRenderer>();
             renderer.material = new Material(Shader.Find("Sprites/Default"));
-            
-            Destroy(impactObj, 2f);
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;  // Disable shadows
+
+            Destroy(impactObj, 1f);  // Reduced from 2f to clean up faster
         }
     }
 }
