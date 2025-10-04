@@ -74,7 +74,11 @@ public class TowerPlacementManager : MonoBehaviour
     
     void Update()
     {
-        if (isPlacingTower)
+		// Re-acquire camera if it was destroyed (scene changed)
+		if (playerCamera == null)
+			playerCamera = Camera.main;
+
+		if (isPlacingTower)
         {
             HandleTowerPlacement();
         }
@@ -133,8 +137,17 @@ public class TowerPlacementManager : MonoBehaviour
         
         Debug.Log("Tower placement cancelled");
     }
-    
-    private void HandleTowerPlacement()
+
+	public void ClearPlacedTowers()
+	{
+		foreach (var tower in placedTowers) {
+			if (tower != null)
+				Destroy(tower);
+		}
+		placedTowers.Clear();
+	}
+
+	private void HandleTowerPlacement()
     {
         // Cancel placement with ESC or right click
         if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1))

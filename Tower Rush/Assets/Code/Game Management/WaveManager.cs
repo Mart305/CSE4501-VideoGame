@@ -94,12 +94,13 @@ public class WaveManager : MonoBehaviour
 		// If gameplaySceneNames is set, load the first gameplay scene additively
 		if (gameplaySceneNames != null && gameplaySceneNames.Length > 0) {
 			SceneManager.LoadSceneAsync(gameplaySceneNames[0], LoadSceneMode.Additive);
+			Debug.Log($"Loading first gameplay scene: {gameplaySceneNames[0]}");
 		}
 
 		// Wait until the gameplay scene is loaded (sceneCount > 1)
 		while (SceneManager.sceneCount < 2)
 			yield return null;
-
+		Debug.Log("First gameplay scene loaded and active.");
 		// Now the gameplay scene is loaded, so EnemySpawner exists
 		if (enemySpawner == null)
 			enemySpawner = FindObjectOfType<EnemySpawner>();
@@ -118,8 +119,9 @@ public class WaveManager : MonoBehaviour
 			OnWaveCompleted?.Invoke(currentWave);
 			Debug.Log($"Wave {currentWave} completed!");
 
-			// --- Add this line ---
-			CheckAndChangeScene();
+			Debug.Log($"About to check scene change for wave {currentWave}");
+			yield return StartCoroutine(CheckAndChangeScene());  // Changed to coroutine
+			Debug.Log($"Finished checking scene change for wave {currentWave}");
 
 			if (maxWaves != -1 && currentWave >= maxWaves) {
 				OnAllWavesCompleted?.Invoke();
@@ -361,19 +363,87 @@ public class WaveManager : MonoBehaviour
 	private int currentSceneIndex = 0;
 
 	// Call this after each wave completes (e.g., at the end of WaitForWaveCompletion or after OnWaveCompleted)
-	private void CheckAndChangeScene()
+	private IEnumerator CheckAndChangeScene()
 	{
-		if (currentWave > 1 && (currentWave - 1) % 5 == 0) {
-			// Unload current gameplay scene
-			string currentScene = gameplaySceneNames[currentSceneIndex];
-			SceneManager.UnloadSceneAsync(currentScene);
+		Debug.Log($"CheckAndChangeScene called. Current wave: {currentWave}");
+		bool condition = currentWave > 1 && (currentWave) % 5 == 0;
+		Debug.Log($"Scene change condition: {condition} (Wave {currentWave}, (Wave)%5 = {(currentWave) % 5})");
 
-			// Advance to next scene (loop back if needed)
+		if (condition) {
+			// Clear all towers first
+			if (TowerPlacementManager.Instance != null)
+				TowerPlacementManager.Instance.ClearPlacedTowers();
+
+			string currentScene = gameplaySceneNames[currentSceneIndex];
+			Debug.Log("Unloading scene: " + currentScene);
+
+			// Wait for current scene to fully unload
+			var unloadOperation = SceneManager.UnloadSceneAsync(currentScene);
+			while (!unloadOperation.isDone)
+				yield return null;
+
+			// Force a garbage collection to clean up resources
+			System.GC.Collect();
+			yield return new WaitForSeconds(0.1f); // Small delay to ensure cleanup
+
 			currentSceneIndex = (currentSceneIndex + 1) % gameplaySceneNames.Length;
 			string nextScene = gameplaySceneNames[currentSceneIndex];
+			Debug.Log("Loading scene: " + nextScene);
 
-			// Load next scene additively
-			SceneManager.LoadSceneAsync(nextScene, LoadSceneMode.Additive);
+			// Load the new scene with explicit settings
+			var loadOperation = SceneManager.LoadSceneAsync(nextScene, LoadSceneMode.Additive);
+			loadOperation.allowSceneActivation = false; // Prevent immediate activation
+
+			// Wait until the scene is almost ready
+			while (loadOperation.progress < 0.9f)
+				yield return null;
+
+			// Force terrain to update before activation
+			Terrain[] terrains = FindObjectsOfType<Terrain>();
+			foreach (var terrain in terrains) {
+				if (terrain != null) {
+					// Force terrain update
+					terrain.enabled = false;
+					yield return new WaitForEndOfFrame();
+					terrain.enabled = true;
+				}
+			}
+
+			// Now allow the scene to activate
+			loadOperation.allowSceneActivation = true;
+			while (!loadOperation.isDone)
+				yield return null;
+
+			// Additional terrain refresh after scene is loaded
+			yield return StartCoroutine(RefreshTerrains());
+
+			// Re-find the EnemySpawner in the new scene
+			enemySpawner = FindObjectOfType<EnemySpawner>();
+			Debug.Log($"Found new EnemySpawner: {(enemySpawner != null)}");
+		}
+	}
+
+	// Add this new coroutine to help refresh terrains
+	private IEnumerator RefreshTerrains()
+	{
+		yield return new WaitForSeconds(0.1f); // Give Unity a moment to initialize
+
+		Terrain[] terrains = FindObjectsOfType<Terrain>();
+		foreach (var terrain in terrains) {
+			if (terrain != null) {
+				// Force terrain data to refresh
+				terrain.Flush();
+
+				// Toggle terrain to force refresh
+				terrain.enabled = false;
+				yield return new WaitForEndOfFrame();
+				terrain.enabled = true;
+
+				// Ensure terrain settings are properly applied
+				terrain.gameObject.SetActive(false);
+				yield return new WaitForEndOfFrame();
+				terrain.gameObject.SetActive(true);
+			}
 		}
 	}
 }
