@@ -132,7 +132,7 @@ GameObject:
   m_Component:
   - component: {fileID: 435784812}
   m_Layer: 0
-  m_Name: GhostSpawn1
+  m_Name: GhostSpawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -147,7 +147,7 @@ Transform:
   m_GameObject: {fileID: 435784811}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.471, y: 16, z: 6.71}
+  m_LocalPosition: {x: 10.13, y: 15.3, z: 3.64}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -307,7 +307,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1039903095}
   m_Layer: 0
-  m_Name: ZombieSpawn1
+  m_Name: ZombieSpawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -322,7 +322,7 @@ Transform:
   m_GameObject: {fileID: 1039903094}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.838, y: 16, z: 8.641}
+  m_LocalPosition: {x: 4.838, y: 15.3, z: 7.79}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
