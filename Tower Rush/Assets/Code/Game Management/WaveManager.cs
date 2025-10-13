@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;
 
 public class WaveManager : MonoBehaviour
 {
@@ -25,9 +26,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float batchSpawnDelay = 0.2f; // Small delay between enemies in same batch
     
     [Header("Wave Composition")]
-    [SerializeField] private float zombieChance = 0.4f; // 40% zombies
-    [SerializeField] private float ghostChance = 0.3f; // 30% ghosts  
-    [SerializeField] private float skeletonChance = 0.3f; // 30% skeletons
+    [SerializeField] private float zombieChance = 0.6f; // 60% zombies, 40% ghosts
     [SerializeField] private float bossWaveInterval = 5f; // Every 5 waves
     [SerializeField] private bool enableBossWaves = true;
     
@@ -93,19 +92,97 @@ public class WaveManager : MonoBehaviour
 
 	private IEnumerator InitializeAfterSceneLoad()
 	{
-		// If gameplaySceneNames is set, load the first gameplay scene additively
+		// Don't load gameplay scene automatically - wait for Start button
+		// Don't start wave system yet - wait for StartGameplay() call
+		yield break; // End the coroutine
+	}
+	
+	public void StartGameplay()
+	{
+		// Load the first gameplay scene and make it active
 		if (gameplaySceneNames != null && gameplaySceneNames.Length > 0) {
-			SceneManager.LoadSceneAsync(gameplaySceneNames[0], LoadSceneMode.Additive);
-			Debug.Log($"Loading first gameplay scene: {gameplaySceneNames[0]}");
+			StartCoroutine(LoadFirstGameplayScene());
 		}
-
-		// Wait until the gameplay scene is loaded (sceneCount > 1)
-		while (SceneManager.sceneCount < 2)
-			yield return null;
-		Debug.Log("First gameplay scene loaded and active.");
-		// Now the gameplay scene is loaded, so EnemySpawner exists
+	}
+	
+	private IEnumerator LoadFirstGameplayScene()
+	{
+		string targetSceneName = gameplaySceneNames[0];
+		
+		// Check if the scene is already loaded
+		Scene existingScene = SceneManager.GetSceneByName(targetSceneName);
+		if (existingScene.IsValid() && existingScene.isLoaded)
+		{
+			// Disable AudioListeners in current scene before switching
+			Scene currentScene = SceneManager.GetActiveScene();
+			if (currentScene.IsValid())
+			{
+				GameObject[] currentSceneObjects = currentScene.GetRootGameObjects();
+				foreach (GameObject obj in currentSceneObjects)
+				{
+					AudioListener[] listeners = obj.GetComponentsInChildren<AudioListener>();
+					foreach (AudioListener listener in listeners)
+					{
+						listener.enabled = false;
+					}
+				}
+			}
+			
+			SceneManager.SetActiveScene(existingScene);
+		}
+		else
+		{
+			// Load the scene additively only if it's not already loaded
+			AsyncOperation loadOp = SceneManager.LoadSceneAsync(targetSceneName, LoadSceneMode.Additive);
+			yield return loadOp;
+			
+			// Disable AudioListeners in current scene before switching
+			Scene currentScene = SceneManager.GetActiveScene();
+			if (currentScene.IsValid())
+			{
+				GameObject[] currentSceneObjects = currentScene.GetRootGameObjects();
+				foreach (GameObject obj in currentSceneObjects)
+				{
+					AudioListener[] listeners = obj.GetComponentsInChildren<AudioListener>();
+					foreach (AudioListener listener in listeners)
+					{
+						listener.enabled = false;
+					}
+				}
+			}
+			
+			// Set the loaded scene as the active scene IMMEDIATELY after loading
+			Scene loadedScene = SceneManager.GetSceneByName(targetSceneName);
+			if (loadedScene.IsValid())
+			{
+				SceneManager.SetActiveScene(loadedScene);
+				
+				// Force lighting settings update
+				DynamicGI.UpdateEnvironment();
+				
+				// Small delay to ensure lighting is properly applied
+				yield return new WaitForSeconds(0.1f);
+			}
+		}
+		
+		// Unload the ManagerScene (but keep DontDestroyOnLoad objects)
+		Scene managerScene = SceneManager.GetSceneByName("ManagerScene");
+		if (managerScene.IsValid() && managerScene.isLoaded)
+		{
+			// Only unload if there are other scenes loaded
+			if (SceneManager.sceneCount > 1)
+			{
+				AsyncOperation unloadOp = SceneManager.UnloadSceneAsync(managerScene);
+				yield return unloadOp;
+				
+				// Force another lighting update after manager scene is unloaded
+				DynamicGI.UpdateEnvironment();
+			}
+		}
+		
+		// Find components in the active gameplay scene
 		if (enemySpawner == null)
-			enemySpawner = FindObjectOfType<EnemySpawner>();
+			enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
 		if (gameHUD == null)
 			gameHUD = GameHUD.Instance;
 
@@ -115,19 +192,24 @@ public class WaveManager : MonoBehaviour
 	IEnumerator WaveSystemLoop()
 	{
 		while (maxWaves == -1 || currentWave <= maxWaves) {
+			// Check if game is still active
+			if (GameStateManager.Instance != null && !GameStateManager.Instance.IsGameActive())
+			{
+				yield return new WaitForSeconds(0.5f);
+				continue;
+			}
+			
+			// Wait for at least one tower to be placed before starting waves
+			yield return StartCoroutine(WaitForFirstTower());
+			
 			yield return StartCoroutine(StartWave());
 			yield return StartCoroutine(WaitForWaveCompletion());
 
 			OnWaveCompleted?.Invoke(currentWave);
-			Debug.Log($"Wave {currentWave} completed!");
-
-			Debug.Log($"About to check scene change for wave {currentWave}");
-			yield return StartCoroutine(CheckAndChangeScene());  // Changed to coroutine
-			Debug.Log($"Finished checking scene change for wave {currentWave}");
+			yield return StartCoroutine(CheckAndChangeScene());
 
 			if (maxWaves != -1 && currentWave >= maxWaves) {
 				OnAllWavesCompleted?.Invoke();
-				Debug.Log("All waves completed! Victory!");
 				yield break;
 			}
 
@@ -136,6 +218,30 @@ public class WaveManager : MonoBehaviour
 				gameHUD.UpdateWaveDisplay(currentWave, maxWaves);
 			}
 			yield return new WaitForSeconds(timeBetweenWaves);
+		}
+	}
+
+	IEnumerator WaitForFirstTower()
+	{
+		
+		// Wait until at least one tower is placed
+		while (true)
+		{
+			BaseTower[] towers = FindObjectsOfType<BaseTower>();
+			if (towers != null && towers.Length > 0)
+			{
+				// Check if any tower exists and has health > 0
+				foreach (BaseTower tower in towers)
+				{
+					if (tower != null && tower.GetCurrentHealth() > 0)
+					{
+						yield break; // Exit the loop, tower found
+					}
+				}
+			}
+			
+			// Wait a bit before checking again
+			yield return new WaitForSeconds(0.5f);
 		}
 	}
 
@@ -156,7 +262,6 @@ public class WaveManager : MonoBehaviour
         
         // Notify wave started
         OnWaveStarted?.Invoke(currentWave);
-        Debug.Log($"Starting Wave {currentWave} - {totalEnemiesThisWave} enemies");
         
         // Brief delay before spawning
         yield return new WaitForSeconds(waveStartDelay);
@@ -188,7 +293,6 @@ public class WaveManager : MonoBehaviour
             // Calculate how many enemies to spawn in this batch
             int enemiesInThisBatch = Mathf.Min(batchSize, totalEnemiesThisWave - enemiesSpawned);
             
-            Debug.Log($"Spawning Batch {batchNumber} - {enemiesInThisBatch} enemies");
             
             // Spawn all enemies in this batch
             for (int i = 0; i < enemiesInThisBatch; i++)
@@ -270,20 +374,12 @@ public class WaveManager : MonoBehaviour
         if (deadEnemies > enemiesKilledThisWave)
         {
             enemiesKilledThisWave = deadEnemies;
-            Debug.Log($"Enemy killed! ({enemiesKilledThisWave}/{totalEnemiesThisWave})");
         }
     }
     
     private int CalculateEnemiesForWave(int wave)
     {
-        // Boss wave logic - fewer enemies but much stronger
-        if (enableBossWaves && wave % bossWaveInterval == 0)
-        {
-            // Boss waves have fewer enemies but they're much stronger
-            return Mathf.Max(1, Mathf.RoundToInt(baseEnemiesPerWave * 0.5f));
-        }
-        
-        // Normal wave logic - exponential growth with some randomness
+        // Exponential growth with some randomness
         float baseCount = baseEnemiesPerWave;
         float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, wave - 1);
         
@@ -322,33 +418,15 @@ public class WaveManager : MonoBehaviour
             }
         }
         
-        // Boss wave logic - spawn MutantZombie bosses
+        // Boss wave logic
         if (enableBossWaves && currentWave % bossWaveInterval == 0)
         {
-            // Every 5th wave is a boss wave - spawn MutantZombie
-            return enemySpawner.mutantZombiePrefab;
+            // Boss waves have more ghosts (faster, more challenging)
+            return Random.value < 0.3f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
         }
         
-        // Normal wave logic - mix of all enemy types using chance variables
-        float randomValue = Random.value;
-        
-        if (randomValue < zombieChance)
-        {
-            return enemySpawner.zombiePrefab;
-        }
-        else if (randomValue < zombieChance + ghostChance)
-        {
-            return enemySpawner.ghostPrefab;
-        }
-        else if (randomValue < zombieChance + ghostChance + skeletonChance)
-        {
-            return enemySpawner.skeletonPrefab;
-        }
-        else
-        {
-            // Fallback to zombie if random value is outside expected range
-            return enemySpawner.zombiePrefab;
-        }
+        // Normal wave logic
+        return Random.value < zombieChance ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
     }
     
     private void SpawnEnemy(GameObject enemyPrefab)
@@ -381,7 +459,6 @@ public class WaveManager : MonoBehaviour
     public void ToggleBatchSpawning()
     {
         useBatchSpawning = !useBatchSpawning;
-        Debug.Log($"Batch spawning: {(useBatchSpawning ? "ON" : "OFF")}");
     }
 
 
@@ -392,32 +469,19 @@ public class WaveManager : MonoBehaviour
 	// Call this after each wave completes (e.g., at the end of WaitForWaveCompletion or after OnWaveCompleted)
 	private IEnumerator CheckAndChangeScene()
 	{
-		Debug.Log($"CheckAndChangeScene called. Current wave: {currentWave}");
 		bool condition = currentWave > 1 && (currentWave) % 5 == 0;
-		Debug.Log($"Scene change condition: {condition} (Wave {currentWave}, (Wave)%5 = {(currentWave) % 5})");
 
-		if (condition) {
-			// Clear all towers first
+		// Only change scenes if the condition is met
+		if (condition && gameplaySceneNames != null && gameplaySceneNames.Length > 1 && currentSceneIndex < gameplaySceneNames.Length) {
+			// Clear any placed towers before scene change
 			if (TowerPlacementManager.Instance != null)
 				TowerPlacementManager.Instance.ClearPlacedTowers();
 
 			string currentScene = gameplaySceneNames[currentSceneIndex];
-			Debug.Log("Unloading scene: " + currentScene);
-
-			// Wait for current scene to fully unload
-			var unloadOperation = SceneManager.UnloadSceneAsync(currentScene);
-			while (!unloadOperation.isDone)
-				yield return null;
-
-			// Force a garbage collection to clean up resources
-			System.GC.Collect();
-			yield return new WaitForSeconds(0.1f); // Small delay to ensure cleanup
-
 			currentSceneIndex = (currentSceneIndex + 1) % gameplaySceneNames.Length;
 			string nextScene = gameplaySceneNames[currentSceneIndex];
-			Debug.Log("Loading scene: " + nextScene);
 
-			// Load the new scene with explicit settings
+			// Load the new scene FIRST, then unload the old one
 			var loadOperation = SceneManager.LoadSceneAsync(nextScene, LoadSceneMode.Additive);
 			loadOperation.allowSceneActivation = false; // Prevent immediate activation
 
@@ -425,32 +489,55 @@ public class WaveManager : MonoBehaviour
 			while (loadOperation.progress < 0.9f)
 				yield return null;
 
-			// Force terrain to update before activation
-			Terrain[] terrains = FindObjectsOfType<Terrain>();
-			foreach (var terrain in terrains) {
-				if (terrain != null) {
-					// Force terrain update
-					terrain.enabled = false;
-					yield return new WaitForEndOfFrame();
-					terrain.enabled = true;
-				}
-			}
-
 			// Now allow the scene to activate
 			loadOperation.allowSceneActivation = true;
 			while (!loadOperation.isDone)
 				yield return null;
 
-			// Additional terrain refresh after scene is loaded
-			yield return StartCoroutine(RefreshTerrains());
+			// Disable AudioListeners in the old scene before setting new scene as active
+			Scene currentActiveScene = SceneManager.GetActiveScene();
+			if (currentActiveScene.IsValid())
+			{
+				GameObject[] oldSceneObjects = currentActiveScene.GetRootGameObjects();
+				foreach (GameObject obj in oldSceneObjects)
+				{
+					AudioListener[] listeners = obj.GetComponentsInChildren<AudioListener>();
+					foreach (AudioListener listener in listeners)
+					{
+						listener.enabled = false;
+					}
+				}
+			}
+
+			// Set the new scene as active
+			Scene newActiveScene = SceneManager.GetSceneByName(nextScene);
+			if (newActiveScene.IsValid())
+			{
+				SceneManager.SetActiveScene(newActiveScene);
+				
+				// Force lighting settings update
+				DynamicGI.UpdateEnvironment();
+				
+				// Small delay to ensure lighting is properly applied
+				yield return new WaitForSeconds(0.1f);
+			}
+
+			// NOW unload the old scene (after new one is loaded and active)
+			Scene sceneToUnload = SceneManager.GetSceneByName(currentScene);
+			if (sceneToUnload.IsValid() && sceneToUnload.isLoaded)
+			{
+				var unloadOperation = SceneManager.UnloadSceneAsync(currentScene);
+				while (!unloadOperation.isDone)
+					yield return null;
+				
+				// Force another lighting update after old scene is unloaded
+				DynamicGI.UpdateEnvironment();
+			}
 
 			// Re-find the EnemySpawner in the new scene
-			enemySpawner = FindObjectOfType<EnemySpawner>();
-			Debug.Log($"Found new EnemySpawner: {(enemySpawner != null)}");
+			enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
 		}
 	}
-
-	// Add this new coroutine to help refresh terrains
 	private IEnumerator RefreshTerrains()
 	{
 		yield return new WaitForSeconds(0.1f); // Give Unity a moment to initialize

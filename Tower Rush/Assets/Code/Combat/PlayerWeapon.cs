@@ -102,7 +102,7 @@ public class PlayerWeapon : MonoBehaviour
         }
     }
     
-    public void Fire()
+    public virtual void Fire()
     {
         if (Time.time < nextFireTime || isReloading)
             return;
@@ -176,7 +176,6 @@ public class PlayerWeapon : MonoBehaviour
         
         defaultProjectile.layer = LayerMask.NameToLayer("Default");
         
-        string prefabPath = "Assets/Code/Combat/Prefabs";
         if (!System.IO.Directory.Exists(Application.dataPath + "/Code/Combat/Prefabs"))
         {
             System.IO.Directory.CreateDirectory(Application.dataPath + "/Code/Combat/Prefabs");

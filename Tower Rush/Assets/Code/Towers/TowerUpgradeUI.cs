@@ -4,6 +4,9 @@ using TMPro;
 
 public class TowerUpgradeUI : MonoBehaviour
 {
+    [Header("Tower Association")]
+    [SerializeField] private BaseTower associatedTower; // The specific tower this UI belongs to
+    
     [Header("UI References")]
     [SerializeField] private GameObject upgradePanel;
     [SerializeField] private Button repairButton;
@@ -23,11 +26,21 @@ public class TowerUpgradeUI : MonoBehaviour
     [SerializeField] private int maxHealthCost = 100;
     [SerializeField] private int resistanceCost = 150;
     
-    private Tower selectedTower;
+    private BaseTower selectedTower;
     private Camera playerCamera;
     
     void Start()
     {
+        // If no tower is assigned, try to find one on the same GameObject or parent
+        if (associatedTower == null)
+        {
+            associatedTower = GetComponent<BaseTower>();
+            if (associatedTower == null)
+            {
+                associatedTower = GetComponentInParent<BaseTower>();
+            }
+        }
+        
         playerCamera = Camera.main;
         if (playerCamera == null)
             playerCamera = FindObjectOfType<Camera>();
@@ -91,6 +104,35 @@ public class TowerUpgradeUI : MonoBehaviour
         }
     }
     
+    public void ShowUpgradePanel(BaseTower tower)
+    {
+        selectedTower = tower;
+        if (upgradePanel != null)
+        {
+            upgradePanel.SetActive(true);
+            UpdateUI();
+        }
+    }
+    
+    public void CloseUpgradeMenu()
+    {
+        if (upgradePanel != null)
+        {
+            upgradePanel.SetActive(false);
+        }
+        selectedTower = null;
+        
+        // Only re-lock cursor if not in web build (web builds handle cursor differently)
+        #if !UNITY_WEBGL
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        #else
+        // For web builds, keep cursor visible but unlocked
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        #endif
+    }
+    
     void CheckTowerSelection()
     {
         // Only check for tower selection on mouse click, not every frame
@@ -111,10 +153,17 @@ public class TowerUpgradeUI : MonoBehaviour
                 // Only check for towers, ignore enemies
                 if (hit.collider.CompareTag("Tower"))
                 {
-                    Tower tower = hit.collider.GetComponent<Tower>();
-                    if (tower != null)
+                    BaseTower clickedTower = hit.collider.GetComponent<BaseTower>();
+                    
+                    // Only respond if the clicked tower is THIS tower's associated tower
+                    if (clickedTower != null && clickedTower == associatedTower)
                     {
-                        SelectTower(tower);
+                        SelectTower(clickedTower);
+                    }
+                    else if (upgradePanel != null && upgradePanel.activeInHierarchy)
+                    {
+                        // Different tower was clicked, close this UI
+                        CloseUpgradeMenu();
                     }
                 }
                 else
@@ -146,7 +195,7 @@ public class TowerUpgradeUI : MonoBehaviour
         }
     }
     
-    void SelectTower(Tower tower)
+    void SelectTower(BaseTower tower)
     {
         selectedTower = tower;
         ShowUpgradeMenu();
@@ -260,24 +309,6 @@ public class TowerUpgradeUI : MonoBehaviour
         }
     }
     
-    public void CloseUpgradeMenu()
-    {
-        if (upgradePanel != null)
-        {
-            upgradePanel.SetActive(false);
-        }
-        selectedTower = null;
-        
-        // Only re-lock cursor if not in web build (web builds handle cursor differently)
-        #if !UNITY_WEBGL
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        #else
-        // For web builds, keep cursor visible but unlocked
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        #endif
-    }
     
     // Alternative close method that can be called from UI buttons
     public void OnCloseButtonPressed()

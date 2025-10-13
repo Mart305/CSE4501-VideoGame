@@ -20,7 +20,6 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     
     [Header("Drag Settings")]
     [SerializeField] private bool enableDragPlacement = true;
-    [SerializeField] private Canvas dragCanvas; // Canvas for drag preview
     
     private TowerData towerData;
     private int towerIndex;
@@ -39,11 +38,13 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             button.onClick.AddListener(OnButtonClick);
         }
         
-        // Find drag canvas if not assigned
-        if (dragCanvas == null)
+        // Make sure tower icon doesn't block raycasts so drag events work
+        if (towerIcon != null)
         {
-            dragCanvas = GetComponentInParent<Canvas>();
+            towerIcon.raycastTarget = false;
         }
+        
+        // Canvas will be found dynamically when needed
         
         // Hide tooltip initially
         if (tooltip != null)
@@ -181,8 +182,11 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         
         isDragging = true;
         
-        // Create drag preview
-        CreateDragPreview();
+        // Start the 3D tower preview system like click-to-place
+        if (TowerPlacementManager.Instance != null)
+        {
+            TowerPlacementManager.Instance.StartDragPlacement(towerIndex);
+        }
         
         // Hide tooltip during drag
         if (tooltip != null)
@@ -193,12 +197,28 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     
     public void OnDrag(PointerEventData eventData)
     {
-        if (!isDragging || dragPreview == null) return;
+        if (!isDragging) return;
         
-        // Update drag preview position
-        if (dragPreviewRect != null)
+        // The 3D preview is automatically handled by TowerPlacementManager
+        // No need to manually update position - it follows the mouse cursor automatically
+    }
+    
+    private void UpdateDragPreviewPosition(PointerEventData eventData)
+    {
+        if (dragPreviewRect == null) return;
+        
+        // Convert screen position to local position in canvas
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas != null)
         {
-            dragPreviewRect.position = eventData.position;
+            Vector2 localPoint;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                canvas.transform as RectTransform,
+                eventData.position,
+                canvas.worldCamera,
+                out localPoint
+            );
+            dragPreviewRect.localPosition = localPoint;
         }
     }
     
@@ -208,43 +228,28 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         
         isDragging = false;
         
-        // Clean up drag preview
-        if (dragPreview != null)
-        {
-            Destroy(dragPreview);
-        }
-        
         // Check if we dropped over a valid area (not UI)
         if (!UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
         {
-            // Start tower placement at mouse position
+            // Try to place the tower at the current mouse position
             if (TowerPlacementManager.Instance != null)
             {
-                TowerPlacementManager.Instance.StartPlacingTower(towerIndex);
+                // The TowerPlacementManager should handle the placement since it's already in drag mode
+                // We just need to trigger the placement attempt
+                TowerPlacementManager.Instance.TryPlaceCurrentTower();
+            }
+        }
+        else
+        {
+            // Cancel placement if dropped over UI
+            if (TowerPlacementManager.Instance != null)
+            {
+                TowerPlacementManager.Instance.CancelPlacement();
             }
         }
     }
     
-    private void CreateDragPreview()
-    {
-        if (dragCanvas == null || towerIcon == null) return;
-        
-        // Create a copy of the tower icon for dragging
-        GameObject previewObj = new GameObject("DragPreview");
-        previewObj.transform.SetParent(dragCanvas.transform, false);
-        
-        Image previewImage = previewObj.AddComponent<Image>();
-        previewImage.sprite = towerIcon.sprite;
-        previewImage.color = new Color(1f, 1f, 1f, 0.7f); // Semi-transparent
-        
-        dragPreviewRect = previewObj.GetComponent<RectTransform>();
-        dragPreviewRect.sizeDelta = towerIcon.rectTransform.sizeDelta;
-        
-        // Make sure it renders on top
-        previewObj.transform.SetAsLastSibling();
-        
-        dragPreview = previewObj;
-    }
+    // No longer needed - using 3D preview from TowerPlacementManager
     
    
     public TowerData GetTowerData() => towerData;
@@ -257,14 +262,12 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Ensure this GameObject is active
         if (!gameObject.activeInHierarchy)
         {
-            Debug.Log($"TowerButton: Reactivating disabled GameObject {gameObject.name}");
             gameObject.SetActive(true);
         }
         
         // Ensure this component is enabled
         if (!enabled)
         {
-            Debug.Log($"TowerButton: Re-enabling TowerButton component on {gameObject.name}");
             enabled = true;
         }
         
@@ -273,13 +276,11 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             if (!button.enabled)
             {
-                Debug.Log($"TowerButton: Re-enabling Button component on {gameObject.name}");
                 button.enabled = true;
             }
             
             if (!button.gameObject.activeInHierarchy)
             {
-                Debug.Log($"TowerButton: Reactivating Button GameObject on {gameObject.name}");
                 button.gameObject.SetActive(true);
             }
         }
@@ -289,13 +290,11 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             if (!towerIcon.enabled)
             {
-                Debug.Log($"TowerButton: Re-enabling TowerIcon Image component on {gameObject.name}");
                 towerIcon.enabled = true;
             }
             
             if (!towerIcon.gameObject.activeInHierarchy)
             {
-                Debug.Log($"TowerButton: Reactivating TowerIcon GameObject on {gameObject.name}");
                 towerIcon.gameObject.SetActive(true);
             }
         }
@@ -305,13 +304,11 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             if (!costText.enabled)
             {
-                Debug.Log($"TowerButton: Re-enabling CostText component on {gameObject.name}");
                 costText.enabled = true;
             }
             
             if (!costText.gameObject.activeInHierarchy)
             {
-                Debug.Log($"TowerButton: Reactivating CostText GameObject on {gameObject.name}");
                 costText.gameObject.SetActive(true);
             }
         }
@@ -321,13 +318,11 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             if (!nameText.enabled)
             {
-                Debug.Log($"TowerButton: Re-enabling NameText component on {gameObject.name}");
                 nameText.enabled = true;
             }
             
             if (!nameText.gameObject.activeInHierarchy)
             {
-                Debug.Log($"TowerButton: Reactivating NameText GameObject on {gameObject.name}");
                 nameText.gameObject.SetActive(true);
             }
         }
@@ -335,7 +330,6 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Ensure tooltip text is enabled (but don't force tooltip GameObject active)
         if (tooltipText != null && !tooltipText.enabled)
         {
-            Debug.Log($"TowerButton: Re-enabling TooltipText component on {gameObject.name}");
             tooltipText.enabled = true;
         }
         

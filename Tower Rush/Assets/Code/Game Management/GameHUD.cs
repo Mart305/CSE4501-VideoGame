@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 using System.Collections;
+using System.Collections.Generic;
 
 public class GameHUD : MonoBehaviour
 {
@@ -45,8 +46,8 @@ public class GameHUD : MonoBehaviour
         
         Instance = this;
         
-        // FORCE the GameObject and its parents to be active
-        gameObject.SetActive(true);
+        // Don't force active state - let GameStateManager control visibility
+        // Keep parent canvas active but let child GameHUD be controlled by state
         if (transform.parent != null)
         {
             transform.parent.gameObject.SetActive(true);
@@ -68,8 +69,17 @@ public class GameHUD : MonoBehaviour
     
     void Start()
     {
-        // Ensure HUD is always visible
-        gameObject.SetActive(true);
+        // Check game state before making HUD visible
+        if (GameStateManager.Instance != null && GameStateManager.Instance.GetCurrentState() == GameState.MainMenu)
+        {
+            // Hide HUD during main menu
+            gameObject.SetActive(false);
+        }
+        else
+        {
+            // Show HUD during gameplay
+            gameObject.SetActive(true);
+        }
         
         // Ensure cursor is properly set for UI interaction
         InitializeCursorState();
@@ -83,18 +93,9 @@ public class GameHUD : MonoBehaviour
             CurrencyManager.Instance.OnCurrencyChanged.AddListener(OnCurrencyChanged);
             CurrencyManager.Instance.OnCurrencyEarned.AddListener(OnCurrencyEarned);
             CurrencyManager.Instance.OnCurrencySpent.AddListener(OnCurrencySpent);
-            
             // Initialize display
             displayedCurrency = CurrencyManager.Instance.GetCurrentCurrency();
             UpdateCurrencyDisplay();
-        }
-        
-        // Subscribe to tower placement events
-        if (TowerPlacementManager.Instance != null)
-        {
-            TowerPlacementManager.Instance.OnTowerSelected.AddListener(OnTowerSelected);
-            TowerPlacementManager.Instance.OnTowerPlaced.AddListener(OnTowerPlaced);
-            TowerPlacementManager.Instance.OnPlacementCancelled.AddListener(OnPlacementCancelled);
         }
         
         // Subscribe to wave events
@@ -113,11 +114,8 @@ public class GameHUD : MonoBehaviour
         // Initialize tower buttons
         InitializeTowerButtons();
         
-        // Hide placement instructions initially
-        if (placementInstructions != null)
-        {
-            placementInstructions.SetActive(false);
-        }
+        // Show initial placement instructions to guide new players
+        ShowInitialPlacementInstructions();
     }
     
     void OnDestroy()
@@ -256,7 +254,7 @@ public class GameHUD : MonoBehaviour
     {
         if (currencyText == null) yield break;
         
-        Color originalColor = currencyText.color;
+        Color originalColor = Color.white; // Always return to white, not the current color
         float flashDuration = 0.3f;
         float elapsedTime = 0f;
         
@@ -269,7 +267,7 @@ public class GameHUD : MonoBehaviour
             yield return null;
         }
         
-        // Flash back to original
+        // Flash back to white
         elapsedTime = 0f;
         while (elapsedTime < flashDuration / 2f)
         {
@@ -279,7 +277,7 @@ public class GameHUD : MonoBehaviour
             yield return null;
         }
         
-        currencyText.color = originalColor;
+        currencyText.color = originalColor; // Ensure it's white
     }
     
     private void UpdateCurrencyDisplay()
@@ -436,6 +434,20 @@ public class GameHUD : MonoBehaviour
         }
     }
     
+    private void ShowInitialPlacementInstructions()
+    {
+        // Show placement instructions immediately when game starts
+        if (placementInstructions != null)
+        {
+            placementInstructions.SetActive(true);
+        }
+        
+        if (placementText != null)
+        {
+            placementText.text = "Click a tower icon above, then click to place OR drag and drop to place";
+        }
+    }
+    
     private System.Collections.IEnumerator ShowTemporaryMessage(string message, float duration)
     {
         if (placementText != null)
@@ -588,5 +600,21 @@ public class GameHUD : MonoBehaviour
                 Cursor.lockState = CursorLockMode.None;
             }
         }
+    }
+    
+    // Public method to get available towers (for TowerButton initialization)
+    public List<TowerData> GetAvailableTowers()
+    {
+        if (TowerPlacementManager.Instance != null)
+        {
+            return TowerPlacementManager.Instance.GetAvailableTowers();
+        }
+        return new List<TowerData>();
+    }
+    
+    // Public method to get tower button container (for TowerButton drag functionality)
+    public Transform GetTowerButtonContainer()
+    {
+        return towerButtonContainer;
     }
 }

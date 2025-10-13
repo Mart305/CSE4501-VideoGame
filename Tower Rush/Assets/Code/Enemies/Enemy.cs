@@ -9,7 +9,7 @@ public abstract class Enemy : MonoBehaviour
     public float damage = 5f;
     public float health = 20f;
 
-    protected Tower targetTower;
+    protected BaseTower targetTower;
     private float lastAttackTime;
     private SlowEffect slowEffect;
 
@@ -27,7 +27,7 @@ public abstract class Enemy : MonoBehaviour
 
     protected virtual void Update()
     {
-        if (targetTower == null || targetTower.IsDestroyed())
+        if (targetTower == null || targetTower.GetCurrentHealth() <= 0)
         {
             FindTargetTower();
             return;
@@ -71,13 +71,13 @@ public abstract class Enemy : MonoBehaviour
 
     protected virtual void FindTargetTower()
     {
-        Tower[] towers = FindObjectsOfType<Tower>();
+        BaseTower[] towers = FindObjectsOfType<BaseTower>();
         float closestDist = Mathf.Infinity;
-        Tower nearest = null;
+        BaseTower nearest = null;
 
-        foreach (Tower t in towers)
+        foreach (BaseTower t in towers)
         {
-            if (t.IsDestroyed()) continue;
+            if (t.GetCurrentHealth() <= 0) continue;
             float dist = Vector3.Distance(transform.position, t.transform.position);
             if (dist < closestDist)
             {
