@@ -6,6 +6,8 @@ public class EnemySpawner : MonoBehaviour
     public Transform[] spawnPoints;
     public GameObject zombiePrefab;
     public GameObject ghostPrefab;
+    public GameObject skeletonPrefab;
+    public GameObject mutantZombiePrefab;
     
     [Header("Debug")]
     [SerializeField] private bool showSpawnPoints = true;
@@ -27,6 +29,16 @@ public class EnemySpawner : MonoBehaviour
         if (ghostPrefab == null)
         {
             Debug.LogError("EnemySpawner: Ghost prefab not assigned!");
+        }
+        
+        if (skeletonPrefab == null)
+        {
+            Debug.LogError("EnemySpawner: Skeleton prefab not assigned!");
+        }
+        
+        if (mutantZombiePrefab == null)
+        {
+            Debug.LogError("EnemySpawner: MutantZombie prefab not assigned!");
         }
     }
     
