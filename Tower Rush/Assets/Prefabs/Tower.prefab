@@ -668,9 +668,9 @@ Transform:
   - {fileID: 8269910811623010867}
   - {fileID: 5645641655963371610}
   - {fileID: 4520759120014127620}
+  - {fileID: 8001053529603366730}
   - {fileID: 4769194491429045476}
   - {fileID: 3366806228390752119}
-  - {fileID: 8001053529603366730}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &8575737768753404003
@@ -1582,6 +1582,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2aed85eb5d88a418eac43bf4c7e3dfd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  associatedTower: {fileID: 0}
   upgradePanel: {fileID: 6953417335272513374}
   repairButton: {fileID: 1313645279753848598}
   maxHealthButton: {fileID: 4048822377348911745}

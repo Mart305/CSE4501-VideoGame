@@ -43,6 +43,11 @@ public class TowerPlacementManager : MonoBehaviour
     private bool isPlacingTower = false;
     private List<GameObject> placedTowers = new List<GameObject>();
     
+    // Drag-based placement variables
+    private bool isDragging = false;
+    private Vector3 dragStartPosition;
+    private TowerData dragTowerData;
+    
     void Awake()
     {
         // Singleton pattern
@@ -78,6 +83,10 @@ public class TowerPlacementManager : MonoBehaviour
 		if (playerCamera == null)
 			playerCamera = Camera.main;
 
+		// Handle drag-based placement
+		HandleDragPlacement();
+
+		// Handle click-based placement
 		if (isPlacingTower)
         {
             HandleTowerPlacement();
@@ -88,7 +97,6 @@ public class TowerPlacementManager : MonoBehaviour
     {
         if (towerIndex < 0 || towerIndex >= availableTowers.Count)
         {
-            Debug.LogError($"Invalid tower index: {towerIndex}");
             return;
         }
         
@@ -103,7 +111,6 @@ public class TowerPlacementManager : MonoBehaviour
         // Check if player has enough currency
         if (CurrencyManager.Instance != null && !CurrencyManager.Instance.HasEnoughCurrency(towerData.cost))
         {
-            Debug.Log($"Not enough currency to place {towerData.towerName}. Need {towerData.cost}, have {CurrencyManager.Instance.GetCurrentCurrency()}");
             return;
         }
         
@@ -120,7 +127,37 @@ public class TowerPlacementManager : MonoBehaviour
         
         // Notify listeners
         OnTowerSelected?.Invoke(towerData);
+    }
+    
+    // New method for drag-based placement from UI buttons
+    public void StartDragPlacement(TowerData towerData)
+    {
+        // Check if player has enough currency
+        if (CurrencyManager.Instance != null && !CurrencyManager.Instance.HasEnoughCurrency(towerData.cost))
+        {
+            return;
+        }
         
+        dragTowerData = towerData;
+        isDragging = true;
+        dragStartPosition = Input.mousePosition;
+        
+        // Create preview tower for dragging
+        CreatePreviewTower(towerData);
+        
+        // Notify listeners
+        OnTowerSelected?.Invoke(towerData);
+    }
+    
+    // Public method for UI buttons to call with tower index
+    public void StartDragPlacement(int towerIndex)
+    {
+        if (towerIndex < 0 || towerIndex >= availableTowers.Count)
+        {
+            return;
+        }
+        
+        StartDragPlacement(availableTowers[towerIndex]);
     }
     
     public void CancelPlacement()
@@ -131,21 +168,56 @@ public class TowerPlacementManager : MonoBehaviour
         }
         
         isPlacingTower = false;
+        isDragging = false;
         selectedTowerData = null;
+        dragTowerData = null;
         
         OnPlacementCancelled?.Invoke();
-        
-        Debug.Log("Tower placement cancelled");
     }
-
-	public void ClearPlacedTowers()
-	{
-		foreach (var tower in placedTowers) {
-			if (tower != null)
-				Destroy(tower);
-		}
-		placedTowers.Clear();
-	}
+    
+    public void ClearPlacedTowers()
+    {
+        foreach (var tower in placedTowers) {
+            if (tower != null)
+                Destroy(tower);
+        }
+        placedTowers.Clear();
+    }
+    
+    private void HandleDragPlacement()
+    {
+        if (!isDragging) return;
+        
+        // Check for mouse button release to place tower
+        if (Input.GetMouseButtonUp(0))
+        {
+            // Try to place the tower at current position
+            if (TryPlaceTowerAtMousePosition(dragTowerData))
+            {
+                isDragging = false;
+                dragTowerData = null;
+            }
+            else
+            {
+                // Invalid placement - cancel drag
+                CancelPlacement();
+            }
+            return;
+        }
+        
+        // Check for right click or escape to cancel
+        if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
+        {
+            CancelPlacement();
+            return;
+        }
+        
+        // Update preview position while dragging
+        if (previewTower != null)
+        {
+            UpdatePreviewPosition();
+        }
+    }
 
 	private void HandleTowerPlacement()
     {
@@ -176,8 +248,16 @@ public class TowerPlacementManager : MonoBehaviour
     {
         if (selectedTowerData?.towerPrefab != null)
         {
+            CreatePreviewTower(selectedTowerData);
+        }
+    }
+    
+    private void CreatePreviewTower(TowerData towerData)
+    {
+        if (towerData?.towerPrefab != null)
+        {
             // Instantiate and immediately deactivate to prevent any detection
-            previewTower = Instantiate(selectedTowerData.towerPrefab);
+            previewTower = Instantiate(towerData.towerPrefab);
             previewTower.SetActive(false);
             
             // IMMEDIATELY disable components before any enemy can detect it
@@ -191,7 +271,86 @@ public class TowerPlacementManager : MonoBehaviour
             
             // Reactivate only after all modifications are complete
             previewTower.SetActive(true);
+        }
+    }
+    
+    private bool TryPlaceTowerAtMousePosition(TowerData towerData)
+    {
+        if (playerCamera == null || towerData == null) return false;
+        
+        Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
+        
+        if (Physics.Raycast(ray, out RaycastHit hit, placementRange, groundLayer))
+        {
+            Vector3 targetPosition = hit.point;
             
+            // Check if placement is valid
+            if (IsValidPlacement(targetPosition))
+            {
+                // Place the tower
+                return PlaceTowerAtPosition(towerData, targetPosition);
+            }
+        }
+        
+        return false;
+    }
+    
+    private bool PlaceTowerAtPosition(TowerData towerData, Vector3 position)
+    {
+        // Double-check currency before spending
+        if (CurrencyManager.Instance == null || !CurrencyManager.Instance.HasEnoughCurrency(towerData.cost))
+        {
+            return false;
+        }
+        
+        // Spend currency
+        if (!CurrencyManager.Instance.SpendCurrency(towerData.cost))
+        {
+            return false;
+        }
+        
+        // Create actual tower
+        GameObject newTower = Instantiate(towerData.towerPrefab, position, Quaternion.identity);
+        
+        // Ensure the new tower has proper tag and components enabled
+        newTower.tag = "Tower";
+        
+        // Add to placed towers list
+        placedTowers.Add(newTower);
+        
+        // Clean up preview
+        if (previewTower != null)
+        {
+            Destroy(previewTower);
+        }
+        
+        // Reset placement state
+        isPlacingTower = false;
+        isDragging = false;
+        selectedTowerData = null;
+        dragTowerData = null;
+        
+        // Notify listeners
+        OnTowerPlaced?.Invoke(newTower);
+        
+        return true;
+    }
+    
+    public void TryPlaceCurrentTower()
+    {
+        if (isDragging && dragTowerData != null)
+        {
+            // Try to place the tower at current mouse position
+            if (TryPlaceTowerAtMousePosition(dragTowerData))
+            {
+                isDragging = false;
+                dragTowerData = null;
+            }
+        }
+        else if (isPlacingTower && selectedTowerData != null)
+        {
+            // Handle click-based placement
+            TryPlaceTower();
         }
     }
     
@@ -318,8 +477,7 @@ public class TowerPlacementManager : MonoBehaviour
                 continue;
                 
             // Skip components we want to keep for visual purposes
-            if (behaviour is Renderer || behaviour is MeshFilter || behaviour is Transform)
-                continue;
+            // (Transform is not a MonoBehaviour, so no need to check)
                 
             behaviour.enabled = false;
         }

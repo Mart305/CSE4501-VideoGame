@@ -9,7 +9,7 @@ public class ShotgunWeapon : PlayerWeapon
     [SerializeField] private float shotgunDamagePerPellet = 12f;
     [SerializeField] private float shotgunRange = 15f;
 
-    public new void Fire()
+    public override void Fire()
     {
         if (Time.time < nextFireTime || isReloading)
             return;
@@ -192,7 +192,7 @@ public class ShotgunWeapon : PlayerWeapon
             .GetValue(this) as Transform;
     }
 
-    protected void PlayFireEffects()
+    protected override void PlayFireEffects()
     {
         GetType().BaseType.GetMethod("PlayFireEffects",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)

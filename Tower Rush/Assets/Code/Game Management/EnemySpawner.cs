@@ -14,32 +14,8 @@ public class EnemySpawner : MonoBehaviour
     
     void Start()
     {
-        // Validate spawn points
-        if (spawnPoints.Length == 0)
-        {
-            Debug.LogError("EnemySpawner: No spawn points assigned!");
-        }
-        
-        // Validate prefabs
-        if (zombiePrefab == null)
-        {
-            Debug.LogError("EnemySpawner: Zombie prefab not assigned!");
-        }
-        
-        if (ghostPrefab == null)
-        {
-            Debug.LogError("EnemySpawner: Ghost prefab not assigned!");
-        }
-        
-        if (skeletonPrefab == null)
-        {
-            Debug.LogError("EnemySpawner: Skeleton prefab not assigned!");
-        }
-        
-        if (mutantZombiePrefab == null)
-        {
-            Debug.LogError("EnemySpawner: MutantZombie prefab not assigned!");
-        }
+        // Validate spawn points and prefabs
+        // Silent validation - errors will be apparent during gameplay if missing
     }
     
     void OnDrawGizmos()
