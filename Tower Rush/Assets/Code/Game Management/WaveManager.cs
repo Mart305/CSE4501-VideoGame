@@ -26,9 +26,13 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float batchSpawnDelay = 0.2f; // Small delay between enemies in same batch
     
     [Header("Wave Composition")]
-    [SerializeField] private float zombieChance = 0.6f; // 60% zombies, 40% ghosts
+    [SerializeField] private float zombieChance = 0.4f; // 40% zombies
+    [SerializeField] private float ghostChance = 0.3f; // 30% ghosts
+    [SerializeField] private float skeletonChance = 0.3f; // 30% skeletons
     [SerializeField] private float bossWaveInterval = 5f; // Every 5 waves
     [SerializeField] private bool enableBossWaves = true;
+    [SerializeField] private bool enableSkeletons = true; // Skeletons appear every wave
+    [SerializeField] private int mutantZombieUnlockWave = 7; // Mutant zombies start appearing from wave 7
     
     [Header("Future Enemy Types")]
     [SerializeField] private GameObject[] futureEnemyTypes; // For later enemy variety
@@ -404,29 +408,48 @@ public class WaveManager : MonoBehaviour
     {
         if (enemySpawner == null) return null;
         
-        // Check for future enemy types that should be unlocked
-        if (futureEnemyTypes != null && futureEnemyTypes.Length > 0 && enemyUnlockWaves != null)
+        // Boss wave logic - spawn mutant zombies if unlocked
+        if (enableBossWaves && currentWave % bossWaveInterval == 0)
         {
-            for (int i = 0; i < futureEnemyTypes.Length && i < enemyUnlockWaves.Length; i++)
+            // Boss waves: 50% mutant zombies (if unlocked), 30% ghosts, 20% zombies
+            if (currentWave >= mutantZombieUnlockWave && enemySpawner.mutantZombiePrefab != null)
             {
-                if (currentWave >= enemyUnlockWaves[i] && futureEnemyTypes[i] != null)
-                {
-                    // This enemy type is unlocked for this wave
-                    // For now, still use basic enemies, but this is ready for future types
-                    // TODO: Implement enemy type selection logic
-                }
+                float bossRoll = Random.value;
+                if (bossRoll < 0.5f)
+                    return enemySpawner.mutantZombiePrefab;
+                else if (bossRoll < 0.8f)
+                    return enemySpawner.ghostPrefab;
+                else
+                    return enemySpawner.zombiePrefab;
+            }
+            else
+            {
+                // Before mutant zombies unlock, boss waves have more ghosts
+                return Random.value < 0.3f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
             }
         }
         
-        // Boss wave logic
-        if (enableBossWaves && currentWave % bossWaveInterval == 0)
-        {
-            // Boss waves have more ghosts (faster, more challenging)
-            return Random.value < 0.3f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
-        }
+        // Normal wave logic - all basic enemy types available every wave
+        float roll = Random.value;
         
-        // Normal wave logic
-        return Random.value < zombieChance ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
+        // All enemy types available: zombies, ghosts, skeletons (if enabled)
+        if (enableSkeletons && enemySpawner.skeletonPrefab != null)
+        {
+            if (roll < zombieChance)
+                return enemySpawner.zombiePrefab;
+            else if (roll < zombieChance + ghostChance)
+                return enemySpawner.ghostPrefab;
+            else if (roll < zombieChance + ghostChance + skeletonChance)
+                return enemySpawner.skeletonPrefab;
+            else
+                return enemySpawner.zombiePrefab; // Fallback to zombie if probabilities don't add to 1
+        }
+        else
+        {
+            // Only zombies and ghosts available (if skeletons disabled)
+            float adjustedZombieChance = zombieChance / (zombieChance + ghostChance);
+            return roll < adjustedZombieChance ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
+        }
     }
     
     private void SpawnEnemy(GameObject enemyPrefab)

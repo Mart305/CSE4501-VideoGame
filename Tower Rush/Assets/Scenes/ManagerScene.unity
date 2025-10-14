@@ -1795,8 +1795,6 @@ MonoBehaviour:
   timeBetweenBatches: 3
   batchSpawnDelay: 0.2
   zombieChance: 0.6
-  ghostChance: 0.3
-  skeletonChance: 0.3
   bossWaveInterval: 5
   enableBossWaves: 1
   futureEnemyTypes: []
@@ -1903,8 +1901,8 @@ SceneRoots:
   - {fileID: 2127783559}
   - {fileID: 1946827578}
   - {fileID: 435784812}
-  - {fileID: 535418547}
   - {fileID: 1039903095}
+  - {fileID: 535418547}
   - {fileID: 1733781166}
   - {fileID: 1477658687}
   - {fileID: 203058550}
