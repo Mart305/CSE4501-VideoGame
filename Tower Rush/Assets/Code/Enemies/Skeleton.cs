@@ -31,9 +31,6 @@ public class Skeleton : Enemy
         }
 
         base.Start();
-        
-        // Debug: Verify this enemy can be targeted by towers
-        Debug.Log($"Skeleton spawned with tag: {gameObject.tag}, Health component: {healthComponent != null}");
     }
 
     public override void TakeDamage(float amount)

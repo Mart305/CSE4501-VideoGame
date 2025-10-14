@@ -31,9 +31,6 @@ public class MutantZombie : Enemy
         }
 
         base.Start();
-        
-        // Debug: Verify this enemy can be targeted by towers
-        Debug.Log($"MutantZombie spawned with tag: {gameObject.tag}, Health component: {healthComponent != null}");
     }
 
     public override void TakeDamage(float amount)
@@ -59,13 +56,13 @@ public class MutantZombie : Enemy
     // Override to make MutantZombie target the strongest tower instead of closest
     protected override void FindTargetTower()
     {
-        Tower[] towers = FindObjectsOfType<Tower>();
-        Tower strongest = null;
+        BaseTower[] towers = FindObjectsOfType<BaseTower>();
+        BaseTower strongest = null;
         float highestHealth = 0;
 
-        foreach (Tower t in towers)
+        foreach (BaseTower t in towers)
         {
-            if (t.IsDestroyed()) continue;
+            if (t.GetCurrentHealth() <= 0) continue;
             if (t.GetCurrentHealth() > highestHealth)
             {
                 highestHealth = t.GetCurrentHealth();
