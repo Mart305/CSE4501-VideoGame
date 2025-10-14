@@ -40,13 +40,13 @@ public class Ghost : Enemy
 
     protected override void FindTargetTower()
     {
-        Tower[] towers = FindObjectsOfType<Tower>();
-        Tower weakest = null;
+        BaseTower[] towers = FindObjectsOfType<BaseTower>();
+        BaseTower weakest = null;
         float lowestHealth = Mathf.Infinity;
 
-        foreach (Tower t in towers)
+        foreach (BaseTower t in towers)
         {
-            if (t.IsDestroyed()) continue;
+            if (t.GetCurrentHealth() <= 0) continue;
             if (t.GetCurrentHealth() < lowestHealth)
             {
                 lowestHealth = t.GetCurrentHealth();

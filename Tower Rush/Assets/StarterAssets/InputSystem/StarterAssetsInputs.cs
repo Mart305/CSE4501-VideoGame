@@ -90,6 +90,61 @@ namespace StarterAssets
 			secondaryAttack = newSecondaryAttackState;
 		}
 
+		private void Start()
+		{
+			SetCursorState(cursorLocked);
+			
+#if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
+			// Ensure PlayerInput is enabled after scene transitions
+			ValidateInputSystem();
+#endif
+		}
+
+		private void Update()
+		{
+			// Toggle cursor lock with ESC key
+			if (Input.GetKeyDown(KeyCode.Escape))
+			{
+				cursorLocked = !cursorLocked;
+				SetCursorState(cursorLocked);
+			}
+			
+#if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
+			// Check if input system needs re-initialization (happens after scene transitions)
+			if (Time.frameCount % 60 == 0) // Check every 60 frames to avoid performance issues
+			{
+				ValidateInputSystem();
+			}
+#endif
+		}
+
+#if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
+		private void ValidateInputSystem()
+		{
+			PlayerInput playerInput = GetComponent<PlayerInput>();
+			if (playerInput != null)
+			{
+				// Re-enable if disabled
+				if (!playerInput.enabled)
+				{
+					playerInput.enabled = true;
+				}
+				
+				// Force keyboard and mouse control scheme
+				if (playerInput.currentControlScheme != "KeyboardMouse")
+				{
+					playerInput.SwitchCurrentControlScheme("KeyboardMouse", Keyboard.current, Mouse.current);
+				}
+				
+				// Ensure actions are enabled
+				if (playerInput.actions != null && !playerInput.actions.enabled)
+				{
+					playerInput.actions.Enable();
+				}
+			}
+		}
+#endif
+
 		private void OnApplicationFocus(bool hasFocus)
 		{
 			SetCursorState(cursorLocked);
@@ -101,5 +156,4 @@ namespace StarterAssets
 			Cursor.visible = !newState;
 		}
 	}
-	
 }
