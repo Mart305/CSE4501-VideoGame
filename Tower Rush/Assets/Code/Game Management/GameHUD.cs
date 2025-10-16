@@ -28,8 +28,12 @@ public class GameHUD : MonoBehaviour
     [SerializeField] private Color earnColor = Color.green;
     [SerializeField] private Color spendColor = Color.red;
     [SerializeField] private float animationDuration = 1f;
-    
-    private int displayedCurrency = 0;
+
+	[Header("Menu UI")]
+	[SerializeField] private GameObject menuUI; // Assign this in the Inspector to your GameHUDCanvas
+	private bool isMenuVisible = true;
+
+	private int displayedCurrency = 0;
     private Coroutine currencyAnimationCoroutine;
     
     [Header("Visibility Settings")]
@@ -81,11 +85,6 @@ public class GameHUD : MonoBehaviour
             gameObject.SetActive(true);
         }
         
-        // Ensure cursor is properly set for UI interaction
-        InitializeCursorState();
-        
-        // Ensure all UI components are enabled
-        EnsureUIComponentsEnabled();
         
         // Subscribe to currency events
         if (CurrencyManager.Instance != null)
@@ -148,11 +147,34 @@ public class GameHUD : MonoBehaviour
             StartCoroutine(ShowTemporaryMessage($"Wave {waveNumber} Complete!", 2f));
         }
     }
+
+    private void ToggleMenu()
+{
+    isMenuVisible = !isMenuVisible;
+    if (menuUI != null)
+        menuUI.SetActive(isMenuVisible);
+
+    // Update cursor state
+    if (isMenuVisible)
+    {
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+    }
+    else
+    {
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+}
     
     void Update()
     {
-        // Ensure HUD stays visible if alwaysVisible is enabled
-        if (alwaysVisible)
+		if (Input.GetKeyDown(KeyCode.E)) {
+			ToggleMenu();
+		}
+
+		// Ensure HUD stays visible if alwaysVisible is enabled
+		if (alwaysVisible)
         {
             // Check every frame for critical components
             if (!gameObject.activeInHierarchy)
@@ -178,8 +200,6 @@ public class GameHUD : MonoBehaviour
                 }
             }
             
-            // Ensure cursor stays available for UI interaction
-            EnsureCursorAvailable();
         }
         
         // Update wave display with real-time progress
@@ -550,60 +570,9 @@ public class GameHUD : MonoBehaviour
         }
         
     }
-    
-    // Initialize cursor state for proper UI interaction
-    private void InitializeCursorState()
-    {
-        // Ensure cursor is visible and unlocked for UI interaction
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
-        
-        // Ensure EventSystem is active
-        if (UnityEngine.EventSystems.EventSystem.current != null)
-        {
-            UnityEngine.EventSystems.EventSystem.current.enabled = true;
-        }
-    }
-    
-    // Ensure cursor stays available for UI interaction
-    private void EnsureCursorAvailable()
-    {
-        // Only ensure cursor is available if no tower upgrade UI is open
-        bool upgradeUIOpen = false;
-        
-        // Check if any tower upgrade UI is currently open
-        TowerUpgradeUI[] upgradeUIs = FindObjectsOfType<TowerUpgradeUI>();
-        foreach (TowerUpgradeUI ui in upgradeUIs)
-        {
-            if (ui != null && ui.gameObject.activeInHierarchy)
-            {
-                // Check if the upgrade panel is actually visible
-                Transform upgradePanel = ui.transform.Find("UpgradePanel");
-                if (upgradePanel != null && upgradePanel.gameObject.activeInHierarchy)
-                {
-                    upgradeUIOpen = true;
-                    break;
-                }
-            }
-        }
-        
-        // If no upgrade UI is open, ensure cursor is available for HUD interaction
-        if (!upgradeUIOpen)
-        {
-            if (!Cursor.visible)
-            {
-                Cursor.visible = true;
-            }
-            
-            if (Cursor.lockState != CursorLockMode.None)
-            {
-                Cursor.lockState = CursorLockMode.None;
-            }
-        }
-    }
-    
-    // Public method to get available towers (for TowerButton initialization)
-    public List<TowerData> GetAvailableTowers()
+
+	// Public method to get available towers (for TowerButton initialization)
+	public List<TowerData> GetAvailableTowers()
     {
         if (TowerPlacementManager.Instance != null)
         {

@@ -2328,15 +2328,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 501361598407640522, guid: 8f45cc4a1e2e2ed42a7d686054a0437e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 297.5514
+      value: 301.1
       objectReference: {fileID: 0}
     - target: {fileID: 501361598407640522, guid: 8f45cc4a1e2e2ed42a7d686054a0437e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 44.126728
+      value: 18.1
       objectReference: {fileID: 0}
     - target: {fileID: 501361598407640522, guid: 8f45cc4a1e2e2ed42a7d686054a0437e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 799.89996
+      value: 777.5
       objectReference: {fileID: 0}
     - target: {fileID: 501361598407640522, guid: 8f45cc4a1e2e2ed42a7d686054a0437e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3886,6 +3886,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8861988077592065997, guid: 339d320f78d69425a9f853cf3e7aa07a, type: 3}
+      propertyPath: menuUI
+      value: 
+      objectReference: {fileID: 1671898747}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -3902,6 +3906,11 @@ RectTransform:
 --- !u!223 &1671898746 stripped
 Canvas:
   m_CorrespondingSourceObject: {fileID: 6333968027972813057, guid: 339d320f78d69425a9f853cf3e7aa07a, type: 3}
+  m_PrefabInstance: {fileID: 1671898744}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1671898747 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 684124460813492955, guid: 339d320f78d69425a9f853cf3e7aa07a, type: 3}
   m_PrefabInstance: {fileID: 1671898744}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1692640185
