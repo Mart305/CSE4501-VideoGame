@@ -6,9 +6,9 @@ public class Skeleton : Enemy
     
     protected override void Start()
     {
-        // Skeleton stats (Fast, low-health enemy)
-        moveSpeed = 5f; // Very fast - faster than Ghost (3.5f)
-        health = 15f; // Low health - less than Ghost (20f)
+        // Skeleton stats (1.5x faster, 2x health) - Fast, low-health enemy
+        moveSpeed = 7.5f; // 5f * 1.5 - Very fast
+        health = 30f; // 15f * 2 - Low health but doubled
         damage = 8f; // Moderate damage
         attackCooldown = 0.8f; // Fast attacks
         attackRange = 1.2f; // Slightly smaller attack range
@@ -21,13 +21,13 @@ public class Skeleton : Enemy
         }
         
         // Set health through the Health component
-        healthComponent.SetMaxHealth(15f);
+        healthComponent.SetMaxHealth(30f);
         
         // Initialize health bar if present
         EnemyHealthBar healthBar = GetComponentInChildren<EnemyHealthBar>();
         if (healthBar != null)
         {
-            healthBar.Initialize(15f);
+            healthBar.Initialize(30f);
         }
 
         base.Start();

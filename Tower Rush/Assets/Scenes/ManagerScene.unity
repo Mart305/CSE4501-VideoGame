@@ -707,7 +707,7 @@ Transform:
   m_GameObject: {fileID: 435784811}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.13, y: 15.3, z: 3.64}
+  m_LocalPosition: {x: 41.9, y: 15.3, z: 27}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -738,7 +738,7 @@ Transform:
   m_GameObject: {fileID: 535418546}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 7.46, y: 15.3, z: 3.64}
+  m_LocalPosition: {x: 52.2, y: 15.3, z: 7.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -912,7 +912,7 @@ Transform:
   m_GameObject: {fileID: 731426783}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.4912558, y: 16.86899, z: 10.350597}
+  m_LocalPosition: {x: 10.08, y: 15.3, z: 32.69}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1157,7 +1157,7 @@ Transform:
   m_GameObject: {fileID: 1039903094}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.838, y: 15.3, z: 7.79}
+  m_LocalPosition: {x: 54.3, y: 15.3, z: 27}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1637,7 +1637,7 @@ Transform:
   m_GameObject: {fileID: 1733781165}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.55, y: 15.3, z: 7.79}
+  m_LocalPosition: {x: 44.1, y: 15.3, z: 17.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1794,11 +1794,8 @@ MonoBehaviour:
   batchSizeMultiplier: 1.2
   timeBetweenBatches: 3
   batchSpawnDelay: 0.2
-  zombieChance: 0.6
-  ghostChance: 0.3
-  skeletonChance: 0.3
-  bossWaveInterval: 5
-  enableBossWaves: 1
+  bossWaveChance: 0.2
+  enableRandomBossWaves: 1
   enableSkeletons: 1
   mutantZombieUnlockWave: 7
   futureEnemyTypes: []
@@ -1818,7 +1815,7 @@ MonoBehaviour:
   OnBatchSpawned:
     m_PersistentCalls:
       m_Calls: []
-  enemySpawner: {fileID: 0}
+  enemySpawner: {fileID: 731426784}
   gameHUD: {fileID: 0}
   gameplaySceneNames:
   - Tower Rush Functionality
