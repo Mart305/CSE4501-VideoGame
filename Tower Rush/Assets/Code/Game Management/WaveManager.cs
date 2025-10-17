@@ -16,7 +16,7 @@ public class WaveManager : MonoBehaviour
     
     [Header("Enemy Count Scaling")]
     [SerializeField] private int baseEnemiesPerWave = 5;
-    [SerializeField] private float enemyCountMultiplier = 1.3f;
+    [SerializeField] private float enemyCountMultiplier = 1.15f; // Reduced from 1.3f to slow down scaling
     
     [Header("Batch Spawning")]
     [SerializeField] private bool useBatchSpawning = true;
@@ -26,13 +26,11 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float batchSpawnDelay = 0.2f; // Small delay between enemies in same batch
     
     [Header("Wave Composition")]
-    [SerializeField] private float zombieChance = 0.4f; // 40% zombies
-    [SerializeField] private float ghostChance = 0.3f; // 30% ghosts
-    [SerializeField] private float skeletonChance = 0.3f; // 30% skeletons
-    [SerializeField] private float bossWaveInterval = 5f; // Every 5 waves
-    [SerializeField] private bool enableBossWaves = true;
+    // Note: Spawn chances are now hardcoded in DetermineEnemyType() method for better control
+    [SerializeField] private float bossWaveChance = 0.2f; // 20% chance for random boss waves
+    [SerializeField] private bool enableRandomBossWaves = true;
     [SerializeField] private bool enableSkeletons = true; // Skeletons appear every wave
-    [SerializeField] private int mutantZombieUnlockWave = 7; // Mutant zombies start appearing from wave 7
+    [SerializeField] private int mutantZombieUnlockWave = 5; // Mutant zombies start appearing from wave 5
     
     [Header("Future Enemy Types")]
     [SerializeField] private GameObject[] futureEnemyTypes; // For later enemy variety
@@ -408,47 +406,86 @@ public class WaveManager : MonoBehaviour
     {
         if (enemySpawner == null) return null;
         
-        // Boss wave logic - spawn mutant zombies if unlocked
-        if (enableBossWaves && currentWave % bossWaveInterval == 0)
+        // Check if this is a random boss wave (only after wave 7)
+        bool isRandomBossWave = enableRandomBossWaves && currentWave >= 8 && Random.value < bossWaveChance;
+        
+        // Boss wave logic - higher mutant zombie spawn rate
+        if (isRandomBossWave && currentWave >= mutantZombieUnlockWave && enemySpawner.mutantZombiePrefab != null)
         {
-            // Boss waves: 50% mutant zombies (if unlocked), 30% ghosts, 20% zombies
-            if (currentWave >= mutantZombieUnlockWave && enemySpawner.mutantZombiePrefab != null)
-            {
-                float bossRoll = Random.value;
-                if (bossRoll < 0.5f)
-                    return enemySpawner.mutantZombiePrefab;
-                else if (bossRoll < 0.8f)
-                    return enemySpawner.ghostPrefab;
-                else
-                    return enemySpawner.zombiePrefab;
-            }
+            float bossRoll = Random.value;
+            // Boss waves: 40% mutant zombies, 30% skeletons, 20% ghosts, 10% zombies
+            if (bossRoll < 0.4f)
+                return enemySpawner.mutantZombiePrefab;
+            else if (bossRoll < 0.7f)
+                return enemySpawner.skeletonPrefab;
+            else if (bossRoll < 0.9f)
+                return enemySpawner.ghostPrefab;
             else
-            {
-                // Before mutant zombies unlock, boss waves have more ghosts
-                return Random.value < 0.3f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
-            }
+                return enemySpawner.zombiePrefab;
         }
         
-        // Normal wave logic - all basic enemy types available every wave
+        // Normal wave logic
         float roll = Random.value;
         
-        // All enemy types available: zombies, ghosts, skeletons (if enabled)
-        if (enableSkeletons && enemySpawner.skeletonPrefab != null)
+        // Before mutant zombies unlock (waves 1-4): 33% each
+        if (currentWave < mutantZombieUnlockWave)
         {
-            if (roll < zombieChance)
-                return enemySpawner.zombiePrefab;
-            else if (roll < zombieChance + ghostChance)
-                return enemySpawner.ghostPrefab;
-            else if (roll < zombieChance + ghostChance + skeletonChance)
-                return enemySpawner.skeletonPrefab;
+            if (enableSkeletons && enemySpawner.skeletonPrefab != null)
+            {
+                if (roll < 0.33f)
+                    return enemySpawner.zombiePrefab;
+                else if (roll < 0.66f)
+                    return enemySpawner.ghostPrefab;
+                else
+                    return enemySpawner.skeletonPrefab;
+            }
             else
-                return enemySpawner.zombiePrefab; // Fallback to zombie if probabilities don't add to 1
+            {
+                // If skeletons disabled, 50/50 zombies and ghosts
+                return roll < 0.5f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
+            }
         }
         else
         {
-            // Only zombies and ghosts available (if skeletons disabled)
-            float adjustedZombieChance = zombieChance / (zombieChance + ghostChance);
-            return roll < adjustedZombieChance ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
+            // After mutant zombies unlock (wave 5+): 30% each + 10% mutant zombies
+            if (enableSkeletons && enemySpawner.skeletonPrefab != null && enemySpawner.mutantZombiePrefab != null)
+            {
+                if (roll < 0.3f)
+                    return enemySpawner.zombiePrefab;
+                else if (roll < 0.6f)
+                    return enemySpawner.ghostPrefab;
+                else if (roll < 0.9f)
+                    return enemySpawner.skeletonPrefab;
+                else
+                    return enemySpawner.mutantZombiePrefab;
+            }
+            else if (enemySpawner.mutantZombiePrefab != null)
+            {
+                // If skeletons disabled but mutant zombies available
+                if (roll < 0.45f)
+                    return enemySpawner.zombiePrefab;
+                else if (roll < 0.9f)
+                    return enemySpawner.ghostPrefab;
+                else
+                    return enemySpawner.mutantZombiePrefab;
+            }
+            else
+            {
+                // Fallback to basic enemies if mutant zombies not available
+                if (enableSkeletons && enemySpawner.skeletonPrefab != null)
+                {
+                    if (roll < 0.33f)
+                        return enemySpawner.zombiePrefab;
+                    else if (roll < 0.66f)
+                        return enemySpawner.ghostPrefab;
+                    else
+                        return enemySpawner.skeletonPrefab;
+                }
+                else
+                {
+                    return roll < 0.5f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
+                }
+            }
         }
     }
     

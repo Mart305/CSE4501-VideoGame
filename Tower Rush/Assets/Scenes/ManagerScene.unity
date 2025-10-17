@@ -1818,7 +1818,7 @@ MonoBehaviour:
   OnBatchSpawned:
     m_PersistentCalls:
       m_Calls: []
-  enemySpawner: {fileID: 0}
+  enemySpawner: {fileID: 731426784}
   gameHUD: {fileID: 0}
   gameplaySceneNames:
   - Tower Rush Functionality
