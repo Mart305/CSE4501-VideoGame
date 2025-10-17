@@ -20,7 +20,14 @@ public class Ghost : Enemy
         }
         
         // Set health through the Health component instead of the base Enemy health
-        healthComponent.SetMaxHealth(40f);
+        healthComponent.SetMaxHealth(20f); // Fixed: was 40f, should be 20f to match health stat
+        
+        // Initialize health bar if present
+        EnemyHealthBar healthBar = GetComponentInChildren<EnemyHealthBar>();
+        if (healthBar != null)
+        {
+            healthBar.Initialize(20f);
+        }
 
         base.Start();
     }

@@ -21,6 +21,13 @@ public class Zombie : Enemy
         
         // Set health through the Health component instead of the base Enemy health
         healthComponent.SetMaxHealth(50f);
+        
+        // Initialize health bar if present
+        EnemyHealthBar healthBar = GetComponentInChildren<EnemyHealthBar>();
+        if (healthBar != null)
+        {
+            healthBar.Initialize(50f);
+        }
 
         base.Start();
     }

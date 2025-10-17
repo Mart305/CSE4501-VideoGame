@@ -496,8 +496,12 @@ public class WaveManager : MonoBehaviour
         // Get spawn point
         Transform spawnPoint = enemySpawner.spawnPoints[Random.Range(0, enemySpawner.spawnPoints.Length)];
         
+        // Ensure spawn position is on the ground (set Y to ground level)
+        Vector3 spawnPosition = spawnPoint.position;
+        spawnPosition.y = 15.3f; // Set to ground level
+        
         // Spawn enemy (no stat scaling - enemies keep their base stats)
-        Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
+        Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
     }
     
     private float CalculateSpawnDelay()
