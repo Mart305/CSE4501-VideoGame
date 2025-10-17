@@ -6,9 +6,9 @@ public class Ghost : Enemy
     
     protected override void Start()
     {
-        // Ghost stats
-        moveSpeed = 3.5f;
-        health = 20f;
+        // Ghost stats (1.5x faster, 2x health)
+        moveSpeed = 5.25f; // 3.5f * 1.5
+        health = 40f; // 20f * 2
         damage = 5f;
         attackCooldown = 1f;
 
@@ -20,13 +20,13 @@ public class Ghost : Enemy
         }
         
         // Set health through the Health component instead of the base Enemy health
-        healthComponent.SetMaxHealth(20f); // Fixed: was 40f, should be 20f to match health stat
+        healthComponent.SetMaxHealth(40f);
         
         // Initialize health bar if present
         EnemyHealthBar healthBar = GetComponentInChildren<EnemyHealthBar>();
         if (healthBar != null)
         {
-            healthBar.Initialize(20f);
+            healthBar.Initialize(40f);
         }
 
         base.Start();

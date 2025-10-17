@@ -6,9 +6,9 @@ public class Zombie : Enemy
     
     protected override void Start()
     {
-        // Zombie stats
-        moveSpeed = 1.5f;
-        health = 50f;
+        // Zombie stats (1.5x faster, 2x health)
+        moveSpeed = 2.25f; // 1.5f * 1.5
+        health = 100f; // 50f * 2
         damage = 15f;
         attackCooldown = 2f;
 
@@ -20,13 +20,13 @@ public class Zombie : Enemy
         }
         
         // Set health through the Health component instead of the base Enemy health
-        healthComponent.SetMaxHealth(50f);
+        healthComponent.SetMaxHealth(100f);
         
         // Initialize health bar if present
         EnemyHealthBar healthBar = GetComponentInChildren<EnemyHealthBar>();
         if (healthBar != null)
         {
-            healthBar.Initialize(50f);
+            healthBar.Initialize(100f);
         }
 
         base.Start();
