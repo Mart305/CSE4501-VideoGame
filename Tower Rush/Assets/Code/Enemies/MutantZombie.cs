@@ -6,9 +6,9 @@ public class MutantZombie : Enemy
     
     protected override void Start()
     {
-        // Mutant Zombie stats (Boss enemy)
-        moveSpeed = 3f; // Faster than normal zombie (1.5f)
-        health = 150f; // Much higher health than normal zombie (50f)
+        // Mutant Zombie stats (1.5x faster, 2x health) - Boss enemy
+        moveSpeed = 4.5f; // 3f * 1.5 - Faster than normal zombie
+        health = 300f; // 150f * 2 - Much higher health
         damage = 30f; // Higher damage than normal zombie (15f)
         attackCooldown = 1.5f; // Slightly faster attacks than normal zombie (2f)
         attackRange = 2f; // Slightly larger attack range
@@ -21,13 +21,13 @@ public class MutantZombie : Enemy
         }
         
         // Set health through the Health component
-        healthComponent.SetMaxHealth(150f);
+        healthComponent.SetMaxHealth(300f);
         
         // Initialize health bar if present
         EnemyHealthBar healthBar = GetComponentInChildren<EnemyHealthBar>();
         if (healthBar != null)
         {
-            healthBar.Initialize(150f);
+            healthBar.Initialize(300f);
         }
 
         base.Start();

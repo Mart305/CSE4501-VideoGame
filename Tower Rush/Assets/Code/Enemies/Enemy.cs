@@ -12,9 +12,18 @@ public abstract class Enemy : MonoBehaviour
     protected BaseTower targetTower;
     private float lastAttackTime;
     private SlowEffect slowEffect;
+    
+    [Header("Effects")]
+    [SerializeField] private GameObject spawnEffectPrefab;
+    [SerializeField] private GameObject deathEffectPrefab;
+    [SerializeField] private float spawnEffectDuration = 1f;
+    [SerializeField] private float deathEffectDuration = 2f;
 
     protected virtual void Start()
     {
+        // Play spawn effect
+        PlaySpawnEffect();
+        
         FindTargetTower();
         
         // Get or add SlowEffect component
@@ -96,6 +105,15 @@ public abstract class Enemy : MonoBehaviour
 
     protected virtual void Die()
     {
+        // Play death effect before destroying
+        PlayDeathEffect();
+        
+        // Destroy after effect duration
+        Invoke(nameof(DestroyAfterDeathEffect), deathEffectDuration);
+    }
+    
+    private void DestroyAfterDeathEffect()
+    {
         Destroy(gameObject);
     }
     
@@ -118,5 +136,88 @@ public abstract class Enemy : MonoBehaviour
     public void SetHealth(float newHealth)
     {
         health = newHealth;
+    }
+    
+    // Effect Methods
+    protected virtual void PlaySpawnEffect()
+    {
+        if (spawnEffectPrefab != null)
+        {
+            GameObject effect = Instantiate(spawnEffectPrefab, transform.position, Quaternion.identity);
+            
+            // Destroy effect after duration
+            if (effect != null)
+            {
+                Destroy(effect, spawnEffectDuration);
+            }
+        }
+        else
+        {
+            // Fallback: Simple particle effect using built-in components
+            CreateSimpleSpawnEffect();
+        }
+    }
+    
+    protected virtual void PlayDeathEffect()
+    {
+        if (deathEffectPrefab != null)
+        {
+            GameObject effect = Instantiate(deathEffectPrefab, transform.position, Quaternion.identity);
+            
+            // Destroy effect after duration
+            if (effect != null)
+            {
+                Destroy(effect, deathEffectDuration);
+            }
+        }
+        else
+        {
+            // Fallback: Simple particle effect using built-in components
+            CreateSimpleDeathEffect();
+        }
+    }
+    
+    private void CreateSimpleSpawnEffect()
+    {
+        // Create a simple spawn effect using a particle system
+        GameObject effectObject = new GameObject("SpawnEffect");
+        effectObject.transform.position = transform.position;
+        
+        // Add particle system
+        ParticleSystem particles = effectObject.AddComponent<ParticleSystem>();
+        var main = particles.main;
+        main.startLifetime = spawnEffectDuration;
+        main.startSpeed = 2f;
+        main.startSize = 0.5f;
+        main.startColor = Color.green;
+        main.maxParticles = 20;
+        
+        var emission = particles.emission;
+        emission.rateOverTime = 50f;
+        
+        // Destroy after duration
+        Destroy(effectObject, spawnEffectDuration);
+    }
+    
+    private void CreateSimpleDeathEffect()
+    {
+        // Create a simple death effect using a particle system
+        GameObject effectObject = new GameObject("DeathEffect");
+        effectObject.transform.position = transform.position;
+        
+        // Add particle system
+        ParticleSystem particles = effectObject.AddComponent<ParticleSystem>();
+        var main = particles.main;
+        main.startLifetime = deathEffectDuration;
+        main.startSpeed = 3f;
+        main.startSize = 0.3f;
+        main.startColor = Color.red;
+        main.maxParticles = 30;
+        
+        var emission = particles.emission;
+        emission.rateOverTime = 100f;
+        
+        // Destroy after duration
+        Destroy(effectObject, deathEffectDuration);
     }
 }
