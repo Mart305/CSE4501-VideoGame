@@ -537,13 +537,17 @@ public class WaveManager : MonoBehaviour
 			if (newActiveScene.IsValid())
 			{
 				SceneManager.SetActiveScene(newActiveScene);
-				
+
 				// Force lighting settings update
 				DynamicGI.UpdateEnvironment();
-				
-				// Small delay to ensure lighting is properly applied
-				yield return new WaitForSeconds(0.1f);
+
+				// Wait for rendering to stabilize
+				yield return new WaitForEndOfFrame();
+				yield return new WaitForEndOfFrame();
 			}
+
+			// Refresh terrain rendering to fix glitches
+			yield return StartCoroutine(RefreshTerrains());
 
 			// NOW unload the old scene (after new one is loaded and active)
 			Scene sceneToUnload = SceneManager.GetSceneByName(currentScene);
@@ -552,9 +556,13 @@ public class WaveManager : MonoBehaviour
 				var unloadOperation = SceneManager.UnloadSceneAsync(currentScene);
 				while (!unloadOperation.isDone)
 					yield return null;
-				
-				// Force another lighting update after old scene is unloaded
+
+				// Force garbage collection to clear old scene resources
+				System.GC.Collect();
+
+				// Force another lighting and terrain update after old scene is unloaded
 				DynamicGI.UpdateEnvironment();
+				yield return StartCoroutine(RefreshTerrains());
 			}
 
 			// Re-find the EnemySpawner in the new scene
@@ -565,22 +573,44 @@ public class WaveManager : MonoBehaviour
 	{
 		yield return new WaitForSeconds(0.1f); // Give Unity a moment to initialize
 
+		// Find all terrain objects in the active scene only
+		Scene activeScene = SceneManager.GetActiveScene();
+		if (!activeScene.IsValid()) yield break;
+
 		Terrain[] terrains = FindObjectsOfType<Terrain>();
+
 		foreach (var terrain in terrains) {
-			if (terrain != null) {
+			if (terrain != null && terrain.gameObject.scene == activeScene) {
+				// Store original settings
+				bool wasEnabled = terrain.enabled;
+
 				// Force terrain data to refresh
 				terrain.Flush();
 
-				// Toggle terrain to force refresh
+				// Force redraw with double-buffering technique
 				terrain.enabled = false;
-				yield return new WaitForEndOfFrame();
+				yield return null; // Wait one frame
 				terrain.enabled = true;
+				yield return null; // Wait another frame
 
-				// Ensure terrain settings are properly applied
-				terrain.gameObject.SetActive(false);
-				yield return new WaitForEndOfFrame();
-				terrain.gameObject.SetActive(true);
+				// Ensure terrain collision and rendering is updated
+				if (terrain.terrainData != null)
+				{
+					terrain.terrainData.SyncHeightmap();
+				}
+
+				// Force physics update for terrain collider
+				TerrainCollider collider = terrain.GetComponent<TerrainCollider>();
+				if (collider != null)
+				{
+					collider.enabled = false;
+					yield return null;
+					collider.enabled = true;
+				}
 			}
 		}
+
+		// Final frame wait to ensure all updates are applied
+		yield return new WaitForEndOfFrame();
 	}
 }
