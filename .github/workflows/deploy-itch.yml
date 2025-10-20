@@ -161,9 +161,14 @@ jobs:
             exit 1
           fi
           
+          VERSION="${{ github.ref_name }}-${{ github.run_number }}"
+          
           echo "➡️ Pushing WebGL build to itch.io channel: html5"
-          butler push deployment-artifacts/WebGL ${{ secrets.ITCH_USER }}/${{ secrets.ITCH_GAME }}:html5 --userversion ${{ github.sha }}
+          butler push deployment-artifacts/WebGL ${{ secrets.ITCH_USER }}/${{ secrets.ITCH_GAME }}:html5 \
+            --userversion "$VERSION" \
+            --if-changed
           
           echo "✅ Successfully deployed to itch.io!"
+          echo "🎮 Play at: https://${{ secrets.ITCH_USER }}.itch.io/${{ secrets.ITCH_GAME }}"
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
