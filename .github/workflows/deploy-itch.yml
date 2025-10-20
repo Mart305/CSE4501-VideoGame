@@ -7,9 +7,6 @@ on:
       - master
   workflow_dispatch:
 
-env:
-  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-
 jobs:
   build-and-deploy:
     name: Build WebGL and Deploy to itch.io
@@ -41,6 +38,8 @@ jobs:
 
       - name: Build Unity WebGL
         uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
           projectPath: Tower Rush
           targetPlatform: WebGL
