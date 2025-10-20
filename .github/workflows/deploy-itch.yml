@@ -1,4 +1,4 @@
-name: Build and Deploy to itch.io
+name: 🚀 Build and Deploy to itch.io
 
 on:
   push:
@@ -7,15 +7,18 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  buildWebGL:
-    name: Build for WebGL 🖥️
+  build:
+    name: 🛠️ Build WebGL
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     
     steps:
-      - name: Free Disk Space
+      - name: 🧹 Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
@@ -23,67 +26,73 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
 
-      - name: Checkout code
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Create LFS file list
-        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
-
-      - name: Restore LFS cache
-        uses: actions/cache@v4
-        id: lfs-cache
-        with:
-          path: .git/lfs
-          key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
-
-      - name: Git LFS Pull
-        run: |
-          git lfs pull
-          git add .
-          git reset --hard
-
-      - name: Restore Library cache
+      - name: 💾 Restore Unity Library Cache
         uses: actions/cache@v4
         with:
-          path: Tower Rush/Library
-          key: Library-build-WebGL
+          path: |
+            Tower Rush/Library
+            Tower Rush/Library/BuildCache
+            Tower Rush/Library/Il2cppBuildCache
+          key: Library-WebGL-${{ hashFiles('Tower Rush/Assets/**', 'Tower Rush/Packages/**', 'Tower Rush/ProjectSettings/**') }}
           restore-keys: |
-            Library-build-
+            Library-WebGL-
             Library-
 
-      - name: Build Unity WebGL
+      - name: 🎮 Build Unity WebGL
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           projectPath: Tower Rush
           targetPlatform: WebGL
           unityVersion: 2022.3.62f1
 
-      - name: Upload Build Artifact
+      - name: 🔧 Fix Permissions
+        run: sudo chown -R $USER:$USER build/
+
+      - name: 🗑️ Remove Burst Debug Files
+        run: find build/WebGL -name '*BurstDebugInformation_DoNotShip*' -exec rm -rf {} + || true
+
+      - name: 📤 Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-WebGL
+          name: TowerRush-WebGL
           path: build/WebGL
           retention-days: 14
 
-  deployToItch:
-    needs: buildWebGL
-    name: Deploy to itch.io 🚀
+  deploy:
+    needs: build
+    name: 🕹️ Deploy to itch.io
     runs-on: ubuntu-latest
     
     steps:
-      - name: Download Build Artifact
+      - name: 📥 Download Build Artifact
         uses: actions/download-artifact@v4
         with:
-          name: build-WebGL
-          path: build
+          name: TowerRush-WebGL
+          path: deployment-artifacts/WebGL
 
-      - name: Deploy to itch.io
-        uses: manleydev/butler-publish-itchio-action@master
+      - name: 🧾 List Artifacts
+        run: ls -R deployment-artifacts/
+
+      - name: 🤵 Install Butler
+        uses: remarkablegames/setup-butler@v1
+
+      - name: 🚀 Deploy to itch.io
+        run: |
+          if [ -z "${{ secrets.ITCH_USER }}" ] || [ -z "${{ secrets.ITCH_GAME }}" ]; then
+            echo "❌ Missing itch.io credentials"
+            exit 1
+          fi
+          
+          echo "➡️ Pushing WebGL build to itch.io channel: html5"
+          butler push deployment-artifacts/WebGL ${{ secrets.ITCH_USER }}/${{ secrets.ITCH_GAME }}:html5 --userversion ${{ github.sha }}
+          
+          echo "✅ Successfully deployed to itch.io!"
         env:
-          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_API_KEY }}
-          CHANNEL: html5
-          ITCH_GAME: ${{ secrets.ITCH_GAME }}
-          ITCH_USER: ${{ secrets.ITCH_USER }}
-          PACKAGE: build
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
