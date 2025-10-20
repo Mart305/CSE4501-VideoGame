@@ -215,26 +215,34 @@ public class BaseTower : MonoBehaviour
     {
         if (currentTarget == null) return;
 
+        // Play tower shooting sound
+        if (AudioManager.Instance != null)
+        {
+            string towerType = this.GetType().Name;
+            Vector3 soundPosition = firePoint != null ? firePoint.position : transform.position;
+            AudioManager.Instance.PlayTowerShootSound(towerType, soundPosition);
+        }
+
         // Create attackFX only when attacking
         if (attackFXPrefab != null)
         {
             Vector3 attackPos = firePoint != null ? firePoint.position : transform.position;
             GameObject attackFXObj = Instantiate(attackFXPrefab);
             attackFX = attackFXObj.GetComponent<ParticleSystem>();
-            
+
             // Scale and position attack effect
             float scaleFactor = transform.localScale.x;
             attackFXObj.transform.localScale = Vector3.one * scaleFactor;
             attackFXObj.transform.position = attackPos;
-            
+
             // Aim at enemy center (add height offset to target their center instead of feet)
             Vector3 enemyCenter = currentTarget.transform.position + Vector3.up * 1f;
             attackFXObj.transform.LookAt(enemyCenter);
-            
+
             if (attackFX != null)
             {
                 attackFX.Play();
-                
+
                 // Destroy attack effect after duration
                 StartCoroutine(DestroyAttackFXAfterDelay(attackFXObj));
             }
@@ -243,7 +251,7 @@ public class BaseTower : MonoBehaviour
         // Deal damage immediately
         Health enemyHealth = currentTarget.GetComponent<Health>();
         Enemy enemyComponent = currentTarget.GetComponent<Enemy>();
-        
+
         if (enemyHealth != null)
         {
             enemyHealth.TakeDamage(damage);
