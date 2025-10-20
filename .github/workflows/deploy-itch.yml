@@ -25,7 +25,7 @@ jobs:
           lfs: true
 
       - name: Cache Unity Library
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: Tower Rush/Library
           key: Library-WebGL-${{ hashFiles('Tower Rush/Assets/**', 'Tower Rush/Packages/**', 'Tower Rush/ProjectSettings/**') }}
@@ -43,7 +43,7 @@ jobs:
           unityVersion: auto
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Build-WebGL
           path: build/WebGL
