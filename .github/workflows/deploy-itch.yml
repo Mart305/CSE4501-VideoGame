@@ -7,10 +7,15 @@ on:
       - master
   workflow_dispatch:
 
+env:
+  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
 jobs:
-  build-and-deploy:
-    name: Build WebGL and Deploy to itch.io
+  buildWebGL:
+    name: Build for WebGL 🖥️
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
     
     steps:
       - name: Free Disk Space
@@ -21,45 +26,69 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
 
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          lfs: true
 
-      - name: Cache Unity Library
+      - name: Create LFS file list
+        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+
+      - name: Restore LFS cache
+        uses: actions/cache@v4
+        id: lfs-cache
+        with:
+          path: .git/lfs
+          key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
+
+      - name: Git LFS Pull
+        run: |
+          git lfs pull
+          git add .
+          git reset --hard
+
+      - name: Restore Library cache
         uses: actions/cache@v4
         with:
           path: Tower Rush/Library
-          key: Library-WebGL-${{ hashFiles('Tower Rush/Assets/**', 'Tower Rush/Packages/**', 'Tower Rush/ProjectSettings/**') }}
+          key: Library-build-WebGL
           restore-keys: |
-            Library-WebGL-
+            Library-build-
             Library-
 
       - name: Build Unity WebGL
         uses: game-ci/unity-builder@v4
         env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ""
         with:
           projectPath: Tower Rush
           targetPlatform: WebGL
-          buildName: TowerRush
-          buildsPath: build
-          unityVersion: auto
+          unityVersion: 2022.3.62f1
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Build-WebGL
+          name: build-WebGL
           path: build/WebGL
-          retention-days: 7
+          retention-days: 14
+
+  deployToItch:
+    needs: buildWebGL
+    name: Deploy to itch.io 🚀
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-WebGL
+          path: build
 
       - name: Deploy to itch.io
-        uses: manleydev/butler-publish-itchio-action@v1.0.3
+        uses: manleydev/butler-publish-itchio-action@master
         env:
           BUTLER_CREDENTIALS: ${{ secrets.BUTLER_API_KEY }}
           CHANNEL: html5
           ITCH_GAME: ${{ secrets.ITCH_GAME }}
           ITCH_USER: ${{ secrets.ITCH_USER }}
-          PACKAGE: build/WebGL
-          VERSION: ${{ github.sha }}
+          PACKAGE: build
