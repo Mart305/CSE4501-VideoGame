@@ -149,14 +149,6 @@ jobs:
           targetPlatform: WebGL
           unityVersion: 2022.3.62f1
 
-      - name: 🔓 Return License
-        uses: game-ci/unity-return-license@v2
-        if: always()
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-
       - name: 🔧 Fix Permissions
         run: sudo chown -R $USER:$USER build/
 
