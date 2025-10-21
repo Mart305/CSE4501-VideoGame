@@ -81,13 +81,47 @@ jobs:
       fail-fast: false
     
     steps:
-      - name: 🧹 Free Disk Space
+      - name: 🧹 Free Disk Space (Part 1)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: 🧹 Free Disk Space (Part 2 - Extra Aggressive)
         run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "=== Disk space before extra cleanup ==="
           df -h
+          
+          # Remove additional large directories
+          sudo rm -rf /usr/local/lib/node_modules || true
+          sudo rm -rf /usr/local/.ghcup || true
+          sudo rm -rf /opt/az || true
+          sudo rm -rf /usr/share/miniconda || true
+          sudo rm -rf /usr/local/share/chromium || true
+          sudo rm -rf /usr/local/share/powershell || true
+          sudo rm -rf /usr/share/kotlinc || true
+          sudo rm -rf /usr/local/julia* || true
+          
+          # Clean package manager caches
+          sudo apt-get clean
+          sudo apt-get autoremove -y --purge
+          sudo apt-get autoclean -y
+          
+          # Remove man pages and docs
+          sudo rm -rf /usr/share/man/* || true
+          sudo rm -rf /usr/share/doc/* || true
+          
+          echo ""
+          echo "=== Disk space after extra cleanup ==="
+          df -h
+          echo ""
+          echo "=== Available space on root ==="
+          df -h / | awk 'NR==2 {print "Available: " $4}'
 
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
@@ -108,14 +142,12 @@ jobs:
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           projectPath: Tower Rush
           targetPlatform: WebGL
           unityVersion: 2022.3.62f1
-
-      - name: 🔓 Return License
-        uses: game-ci/unity-return-license@v2
-        if: always()
 
       - name: 🔧 Fix Permissions
         run: sudo chown -R $USER:$USER build/
