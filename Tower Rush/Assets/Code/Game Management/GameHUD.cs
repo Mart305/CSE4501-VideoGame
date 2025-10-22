@@ -17,17 +17,29 @@ public class GameHUD : MonoBehaviour
     [SerializeField] private Transform towerButtonContainer;
     [SerializeField] private GameObject placementInstructions;
     [SerializeField] private TextMeshProUGUI placementText;
+    [SerializeField] private Vector2 towerButtonSize = new Vector2(150f, 60f); // Configurable button size
+    [SerializeField] private float towerButtonSpacing = 10f; // Spacing between buttons
+    [SerializeField] private float buttonRowOffsetX = -200f; // Horizontal offset to avoid overlap with other UI
     
-    [Header("Optional HUD Elements")]
+    [Header("Wave Display")]
     [SerializeField] private TextMeshProUGUI waveText;
-    [SerializeField] private TextMeshProUGUI healthText;
-    [SerializeField] private Slider healthSlider;
+    [SerializeField] private Slider waveProgressSlider;
+    [SerializeField] private TextMeshProUGUI waveProgressText;
+    
+    [Header("Tower Health Display")]
+    [SerializeField] private GameObject towerHealthPanel;
+    [SerializeField] private TextMeshProUGUI towerHealthText;
+    [SerializeField] private Slider towerHealthSlider;
+    [SerializeField] private Image towerHealthFill;
+    [SerializeField] private Gradient healthGradient;
     
     [Header("Currency Animation")]
     [SerializeField] private bool animateCurrencyChanges = true;
     [SerializeField] private Color earnColor = Color.green;
     [SerializeField] private Color spendColor = Color.red;
     [SerializeField] private float animationDuration = 1f;
+    [SerializeField] private GameObject currencyChangePopup;
+    [SerializeField] private float popupDuration = 1.5f;
 
 	[Header("Menu UI")]
 	[SerializeField] private GameObject menuUI; // Assign this in the Inspector to your GameHUDCanvas
@@ -129,6 +141,10 @@ public class GameHUD : MonoBehaviour
     
     private void OnWaveStarted(int waveNumber)
     {
+        // Check if GameObject is active before starting coroutines
+        if (!gameObject.activeInHierarchy)
+            return;
+            
         // Show wave start notification
         if (placementText != null)
         {
@@ -141,6 +157,10 @@ public class GameHUD : MonoBehaviour
     
     private void OnWaveCompleted(int waveNumber)
     {
+        // Check if GameObject is active before starting coroutines
+        if (!gameObject.activeInHierarchy)
+            return;
+            
         // Show wave completion notification
         if (placementText != null)
         {
@@ -148,6 +168,28 @@ public class GameHUD : MonoBehaviour
         }
     }
 
+    private bool IsAnyPanelOpen()
+    {
+        // Check if pause menu is open
+        if (Time.timeScale == 0f)
+            return true;
+        
+        // Check for any active UI panels
+        VictoryPanel victoryPanel = FindObjectOfType<VictoryPanel>();
+        if (victoryPanel != null && victoryPanel.gameObject.activeInHierarchy)
+            return true;
+        
+        DefeatPanel defeatPanel = FindObjectOfType<DefeatPanel>();
+        if (defeatPanel != null && defeatPanel.gameObject.activeInHierarchy)
+            return true;
+        
+        OptionsPanel optionsPanel = FindObjectOfType<OptionsPanel>();
+        if (optionsPanel != null && optionsPanel.gameObject.activeInHierarchy)
+            return true;
+        
+        return false;
+    }
+    
     private void ToggleMenu()
 {
     isMenuVisible = !isMenuVisible;
@@ -169,7 +211,8 @@ public class GameHUD : MonoBehaviour
     
     void Update()
     {
-		if (Input.GetKeyDown(KeyCode.E)) {
+		// Don't allow E key when any UI panels are open
+		if (Input.GetKeyDown(KeyCode.E) && !IsAnyPanelOpen()) {
 			ToggleMenu();
 		}
 
@@ -211,6 +254,13 @@ public class GameHUD : MonoBehaviour
     
     private void OnCurrencyChanged(int newAmount)
     {
+        // Safety check: Don't start coroutines if GameObject is inactive
+        if (!gameObject.activeInHierarchy)
+        {
+            displayedCurrency = newAmount;
+            return;
+        }
+        
         if (animateCurrencyChanges && currencyText != null)
         {
             // Stop any existing animation
@@ -311,56 +361,33 @@ public class GameHUD : MonoBehaviour
     // Enhanced wave display with progress
     public void UpdateWaveDisplay(int currentWave, int totalWaves = -1)
     {
+        // Scenes change every 5 waves, so show progress within current scene
+        int wavesPerScene = 5;
+        int waveInCurrentScene = ((currentWave - 1) % wavesPerScene) + 1; // 1-5 for each scene
+        
         if (waveText != null)
         {
-            string waveTextContent;
+            waveText.text = $"Wave: {waveInCurrentScene}/{wavesPerScene}";
+        }
+        
+        // Update wave progress slider based on scene progress (0-5 waves)
+        if (waveProgressSlider != null)
+        {
+            // Ensure slider is configured correctly
+            waveProgressSlider.minValue = 0f;
+            waveProgressSlider.maxValue = 1f;
             
-            if (WaveManager.Instance != null && WaveManager.Instance.IsWaveActive())
-            {
-                int enemiesRemaining = WaveManager.Instance.GetEnemiesRemaining();
-                int totalEnemies = WaveManager.Instance.GetTotalEnemiesThisWave();
-                int enemiesKilled = totalEnemies - enemiesRemaining;
-                
-                // Calculate percentage of enemies killed
-                float killedPercentage = totalEnemies > 0 ? (float)enemiesKilled / totalEnemies * 100f : 0f;
-                
-                if (totalWaves > 0)
-                {
-                    waveTextContent = $"Wave: {currentWave}/{totalWaves}\n{enemiesRemaining} remaining, {killedPercentage:F0}% killed";
-                }
-                else
-                {
-                    waveTextContent = $"Wave: {currentWave}\n{enemiesRemaining} remaining, {killedPercentage:F0}% killed";
-                }
-            }
-            else
-            {
-                if (totalWaves > 0)
-                {
-                    waveTextContent = $"Wave: {currentWave}/{totalWaves}";
-                }
-                else
-                {
-                    waveTextContent = $"Wave: {currentWave}";
-                }
-            }
-            
-            waveText.text = waveTextContent;
+            float progress = (float)waveInCurrentScene / wavesPerScene;
+            waveProgressSlider.value = progress;
+        }
+        
+        // Update wave progress text to show scene progress
+        if (waveProgressText != null)
+        {
+            waveProgressText.text = $"Wave: {waveInCurrentScene}/{wavesPerScene}";
         }
     }
     
-    public void UpdateHealthDisplay(float currentHealth, float maxHealth)
-    {
-        if (healthText != null)
-        {
-            healthText.text = $"Health: {currentHealth:F0}/{maxHealth:F0}";
-        }
-        
-        if (healthSlider != null)
-        {
-            healthSlider.value = currentHealth / maxHealth;
-        }
-    }
     
     // Tower Placement Methods
     private void InitializeTowerButtons()
@@ -389,20 +416,16 @@ public class GameHUD : MonoBehaviour
             RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
             if (buttonRect != null && towerButtonContainer.GetComponent<UnityEngine.UI.LayoutGroup>() == null)
             {
-                // Position buttons to the right side with spacing
-                float buttonWidth = 100f;
-                float spacing = 10f;
-                
                 // Get container width
                 RectTransform containerRect = towerButtonContainer.GetComponent<RectTransform>();
                 float containerWidth = containerRect != null ? containerRect.rect.width : 800f;
                 
-                // Calculate starting position from the right edge
-                float totalButtonsWidth = availableTowers.Count * buttonWidth + (availableTowers.Count - 1) * spacing;
-                float startX = (containerWidth / 2f) - totalButtonsWidth + (i * (buttonWidth + spacing));
+                // Calculate starting position with offset to avoid overlap
+                float totalButtonsWidth = availableTowers.Count * towerButtonSize.x + (availableTowers.Count - 1) * towerButtonSpacing;
+                float startX = (containerWidth / 2f) - totalButtonsWidth + (i * (towerButtonSize.x + towerButtonSpacing)) + buttonRowOffsetX;
                 
                 buttonRect.anchoredPosition = new Vector2(startX, 0);
-                buttonRect.sizeDelta = new Vector2(buttonWidth, 100f);
+                buttonRect.sizeDelta = towerButtonSize; // Use configurable size
             }
             
             TowerButton towerButton = buttonObj.GetComponent<TowerButton>();
@@ -527,14 +550,14 @@ public class GameHUD : MonoBehaviour
             waveText.enabled = true;
         }
         
-        if (healthText != null && !healthText.enabled)
+        if (towerHealthText != null && !towerHealthText.enabled)
         {
-            healthText.enabled = true;
+            towerHealthText.enabled = true;
         }
         
-        if (healthSlider != null && !healthSlider.enabled)
+        if (towerHealthSlider != null && !towerHealthSlider.enabled)
         {
-            healthSlider.enabled = true;
+            towerHealthSlider.enabled = true;
         }
     }
     
@@ -579,6 +602,90 @@ public class GameHUD : MonoBehaviour
             return TowerPlacementManager.Instance.GetAvailableTowers();
         }
         return new List<TowerData>();
+    }
+    
+    // Update wave progress display
+    public void UpdateWaveProgress(int currentEnemies, int totalEnemies)
+    {
+        if (waveProgressSlider != null)
+        {
+            float progress = totalEnemies > 0 ? (float)(totalEnemies - currentEnemies) / totalEnemies : 0f;
+            waveProgressSlider.value = progress;
+        }
+        
+        if (waveProgressText != null)
+        {
+            waveProgressText.text = $"{totalEnemies - currentEnemies}/{totalEnemies}";
+        }
+    }
+    
+    // Update tower health display
+    public void UpdateTowerHealth(float currentHealth, float maxHealth, string towerName = "Tower")
+    {
+        if (towerHealthPanel != null && !towerHealthPanel.activeSelf)
+        {
+            towerHealthPanel.SetActive(true);
+        }
+        
+        if (towerHealthSlider != null)
+        {
+            towerHealthSlider.value = currentHealth / maxHealth;
+        }
+        
+        if (towerHealthFill != null && healthGradient != null)
+        {
+            towerHealthFill.color = healthGradient.Evaluate(currentHealth / maxHealth);
+        }
+        
+        if (towerHealthText != null)
+        {
+            towerHealthText.text = $"{towerName}: {currentHealth:F0}/{maxHealth:F0}";
+        }
+    }
+    
+    // Show currency change popup
+    public void ShowCurrencyChange(int amount)
+    {
+        if (currencyChangePopup != null)
+        {
+            GameObject popup = Instantiate(currencyChangePopup, transform);
+            TextMeshProUGUI popupText = popup.GetComponentInChildren<TextMeshProUGUI>();
+            
+            if (popupText != null)
+            {
+                string prefix = amount > 0 ? "+" : "";
+                popupText.text = $"{prefix}{amount}";
+                popupText.color = amount > 0 ? earnColor : spendColor;
+            }
+            
+            StartCoroutine(AnimatePopup(popup));
+        }
+    }
+    
+    private IEnumerator AnimatePopup(GameObject popup)
+    {
+        float elapsed = 0f;
+        Vector3 startPos = popup.transform.localPosition;
+        Vector3 endPos = startPos + Vector3.up * 50f;
+        
+        CanvasGroup canvasGroup = popup.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+        {
+            canvasGroup = popup.AddComponent<CanvasGroup>();
+        }
+        
+        while (elapsed < popupDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / popupDuration;
+            
+            popup.transform.localPosition = Vector3.Lerp(startPos, endPos, t);
+            canvasGroup.alpha = 1f - t;
+            
+            yield return null;
+        }
+        
+        Destroy(popup);
     }
     
     // Public method to get tower button container (for TowerButton drag functionality)
