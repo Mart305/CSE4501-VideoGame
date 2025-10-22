@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2481681470523407414}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -47,7 +47,7 @@ GameObject:
   - component: {fileID: 9221823453890695077}
   - component: {fileID: 4859692401809094069}
   - component: {fileID: 8346303874439091871}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerUIPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -128,7 +128,7 @@ GameObject:
   - component: {fileID: 6349017147249785899}
   - component: {fileID: 5437017890445873893}
   - component: {fileID: 4915159627809801642}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface13
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -211,7 +211,7 @@ GameObject:
   - component: {fileID: 5448391407365407275}
   - component: {fileID: 1995635930065732349}
   - component: {fileID: 4015071845133067604}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -294,7 +294,7 @@ GameObject:
   - component: {fileID: 4627397592808501324}
   - component: {fileID: 4417120605702791212}
   - component: {fileID: 5097201548901475846}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Grill_low (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -377,7 +377,7 @@ GameObject:
   - component: {fileID: 998455784589929170}
   - component: {fileID: 2934764128553987536}
   - component: {fileID: 5934105920514498887}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -452,7 +452,7 @@ GameObject:
   - component: {fileID: 7190209614793244636}
   - component: {fileID: 8088296165823253834}
   - component: {fileID: 9218273765352264856}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerRepairText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -586,7 +586,7 @@ GameObject:
   - component: {fileID: 5444790424034480408}
   - component: {fileID: 4103163752411763465}
   - component: {fileID: 5204273460338630125}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface11 (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -669,7 +669,7 @@ GameObject:
   - component: {fileID: 7237124552469518643}
   - component: {fileID: 5403414119564159131}
   - component: {fileID: 9074945372105530800}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface2 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -752,7 +752,7 @@ GameObject:
   - component: {fileID: 1729810087942762875}
   - component: {fileID: 2683507532436478374}
   - component: {fileID: 1354269578009674442}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -835,7 +835,7 @@ GameObject:
   - component: {fileID: 4761937523836833245}
   - component: {fileID: 8520100084343412582}
   - component: {fileID: 5624623794294168243}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface9 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -918,7 +918,7 @@ GameObject:
   - component: {fileID: 510149971644803771}
   - component: {fileID: 3912172531436088735}
   - component: {fileID: 3471224585220302162}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1001,7 +1001,7 @@ GameObject:
   - component: {fileID: 2494850629351405256}
   - component: {fileID: 1638188881198103644}
   - component: {fileID: 8891171630518788335}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1085,7 +1085,7 @@ GameObject:
   - component: {fileID: 535409919291177153}
   - component: {fileID: 3934778636345231382}
   - component: {fileID: 9186424624959309720}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerMaxHealthButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1217,7 +1217,7 @@ GameObject:
   - component: {fileID: 619629999170583999}
   - component: {fileID: 6318996329404129210}
   - component: {fileID: 6740730492208135584}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerMaxHealthText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1351,7 +1351,7 @@ GameObject:
   - component: {fileID: 7896713956231317260}
   - component: {fileID: 5403954586210373947}
   - component: {fileID: 5636469184547986928}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface13 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1435,7 +1435,7 @@ GameObject:
   - component: {fileID: 6761683444896481901}
   - component: {fileID: 7784411479298319708}
   - component: {fileID: 6822843806294708056}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerCloseButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1567,7 +1567,7 @@ GameObject:
   - component: {fileID: 6675469910569721088}
   - component: {fileID: 2092291360803936115}
   - component: {fileID: 4884892711502679150}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerCloseText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1699,7 +1699,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2918998273110963938}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: icicles_low (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1737,7 +1737,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9035514441697507071}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: ICeRock (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1774,7 +1774,7 @@ GameObject:
   - component: {fileID: 8341313032331969150}
   - component: {fileID: 3464373302876204553}
   - component: {fileID: 1588520244375311923}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface9
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1857,7 +1857,7 @@ GameObject:
   - component: {fileID: 3985023346767458202}
   - component: {fileID: 4037612874762835768}
   - component: {fileID: 3347139253603077505}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface2 (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1939,7 +1939,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3454940124769433310}
   - component: {fileID: 6870816779556942102}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerHealthSlider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2027,7 +2027,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5767136002590638394}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Snow_low (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2064,7 +2064,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1023188277469115332}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Firepoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2099,7 +2099,7 @@ GameObject:
   - component: {fileID: 9140653356465979660}
   - component: {fileID: 6411941993131052422}
   - component: {fileID: 8860511939695122841}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: UpgradeUICanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2226,7 +2226,7 @@ GameObject:
   - component: {fileID: 6207680596614863977}
   - component: {fileID: 3972807965194197573}
   - component: {fileID: 4655086914918125452}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface11 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2309,7 +2309,7 @@ GameObject:
   - component: {fileID: 9137309876870130632}
   - component: {fileID: 5747827310579765498}
   - component: {fileID: 6508552327429011506}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2384,7 +2384,7 @@ GameObject:
   - component: {fileID: 3598061011154325832}
   - component: {fileID: 3139965266226654518}
   - component: {fileID: 4225043039368366927}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2469,7 +2469,7 @@ GameObject:
   - component: {fileID: 6142553789645343049}
   - component: {fileID: -2327826177525750387}
   - component: {fileID: 4508496835306669396}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: IceTowerlvl03
   m_TagString: Tower
   m_Icon: {fileID: 0}
@@ -2496,6 +2496,7 @@ Transform:
   - {fileID: 9035514441697507071}
   - {fileID: 2918998273110963938}
   - {fileID: 5767136002590638394}
+  - {fileID: 5449765147677493876}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6142553789646441353
@@ -2566,8 +2567,7 @@ MonoBehaviour:
   healthyColor: {r: 1, g: 1, b: 1, a: 1}
   damagedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   criticalColor: {r: 1, g: 0, b: 0, a: 1}
-  towerFXPrefab: {fileID: 0}
-  attackFXPrefab: {fileID: 2985503615148924502, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+  attackFXPrefab: {fileID: 5379855743779794913, guid: 37eb6194db8314231a6351af8a94c4b1, type: 3}
   explosionFXPrefab: {fileID: 7517170642317603038, guid: 87bd3803c1389ba46831cbfab3a9446d, type: 3}
   firePoint: {fileID: 1023188277469115332}
   range: 10
@@ -2593,7 +2593,7 @@ MeshCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
@@ -2611,7 +2611,7 @@ GameObject:
   - component: {fileID: 2696564713393120641}
   - component: {fileID: 2643749548540059931}
   - component: {fileID: 5622570032407089035}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface11
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2694,7 +2694,7 @@ GameObject:
   - component: {fileID: 4548992458707362706}
   - component: {fileID: 6928064789606488161}
   - component: {fileID: 599768557818252984}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2777,7 +2777,7 @@ GameObject:
   - component: {fileID: 6252775054629293799}
   - component: {fileID: 8258710105471140293}
   - component: {fileID: 9161741580716842776}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2860,7 +2860,7 @@ GameObject:
   - component: {fileID: 9159892846836541938}
   - component: {fileID: 2566882097071954013}
   - component: {fileID: 6055704556517443263}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: CurrencyText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2994,7 +2994,7 @@ GameObject:
   - component: {fileID: 5866201013135099681}
   - component: {fileID: 8782273801708284882}
   - component: {fileID: 7602550646698287318}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: polySurface1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3078,7 +3078,7 @@ GameObject:
   - component: {fileID: 1908431962696477975}
   - component: {fileID: 8745800607102097031}
   - component: {fileID: 7230480410540831959}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerDamageResistanceButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3210,7 +3210,7 @@ GameObject:
   - component: {fileID: 1460422726217378472}
   - component: {fileID: 2876893504043601785}
   - component: {fileID: 8278628528710594902}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerDamageResistanceText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3346,7 +3346,7 @@ GameObject:
   - component: {fileID: 283422155291440361}
   - component: {fileID: 177624492135067559}
   - component: {fileID: 2401393370242299443}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerHealthBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3467,7 +3467,7 @@ GameObject:
   - component: {fileID: 3403235057925486555}
   - component: {fileID: 7852090107355950514}
   - component: {fileID: 4849587805239338743}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerRepairButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3599,7 +3599,7 @@ GameObject:
   - component: {fileID: 564228756118124827}
   - component: {fileID: 472767191536600814}
   - component: {fileID: 2580582285599197034}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerHealthText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3722,3 +3722,81 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!1001 &7120146202553193509
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 6142553789647768489}
+    m_Modifications:
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924502, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_Name
+      value: IceTower
+      objectReference: {fileID: 0}
+    - target: {fileID: 2985503615148924502, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+--- !u!4 &5449765147677493876 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2985503615148924497, guid: 387a2c647d434f94780f4664503ec2e5, type: 3}
+  m_PrefabInstance: {fileID: 7120146202553193509}
+  m_PrefabAsset: {fileID: 0}

@@ -73,6 +73,7 @@ public class AudioManager : MonoBehaviour
         {
             GameObject musicObj = new GameObject("MusicSource");
             musicObj.transform.parent = transform;
+            musicObj.layer = LayerMask.NameToLayer("Tower");
             musicSource = musicObj.AddComponent<AudioSource>();
         }
 
@@ -80,6 +81,7 @@ public class AudioManager : MonoBehaviour
         {
             GameObject sfxObj = new GameObject("SFXSource");
             sfxObj.transform.parent = transform;
+            sfxObj.layer = LayerMask.NameToLayer("Tower");
             sfxSource = sfxObj.AddComponent<AudioSource>();
         }
 
@@ -88,6 +90,7 @@ public class AudioManager : MonoBehaviour
         {
             GameObject poolObj = new GameObject($"PooledAudioSource_{i}");
             poolObj.transform.parent = transform;
+            poolObj.layer = LayerMask.NameToLayer("Tower");
             AudioSource source = poolObj.AddComponent<AudioSource>();
             audioSourcePool.Add(source);
         }
@@ -221,6 +224,16 @@ public class AudioManager : MonoBehaviour
         PlaySFX(waveCompleteSound, 0.8f);
     }
 
+    public void PlayVictorySound()
+    {
+        PlaySFX(waveCompleteSound, 1f); // Reuse wave complete sound for victory
+    }
+
+    public void PlayDefeatSound()
+    {
+        PlaySFX(towerDestroyedSound, 1f); // Reuse tower destroyed sound for defeat
+    }
+
     // Volume control
     public void SetMusicVolume(float volume)
     {
@@ -260,5 +273,12 @@ public class AudioManager : MonoBehaviour
             if (source != null && source.isPlaying)
                 source.Stop();
         }
+    }
+    
+    // Master volume control for options panel
+    public void SetMasterVolume(float volume)
+    {
+        // Master volume is handled by AudioListener.volume in OptionsPanel
+        // This method exists for consistency with the options panel interface
     }
 }

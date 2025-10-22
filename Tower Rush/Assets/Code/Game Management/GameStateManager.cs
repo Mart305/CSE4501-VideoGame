@@ -19,6 +19,8 @@ public class GameStateManager : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private GameObject pauseUI;
     [SerializeField] private MainMenuManager mainMenuManager;
+    [SerializeField] private VictoryPanel victoryPanel;
+    [SerializeField] private DefeatPanel defeatPanel;
     
     void Awake()
     {
@@ -41,6 +43,8 @@ public class GameStateManager : MonoBehaviour
     
     void Start()
     {
+        // This should only run once since we use DontDestroyOnLoad
+        
         // Find UI components in the scene
         if (mainMenuManager == null)
             mainMenuManager = FindObjectOfType<MainMenuManager>();
@@ -51,19 +55,22 @@ public class GameStateManager : MonoBehaviour
             pauseUI = gameOverUI.GetPausePanel();
         }
         
-        // Hide GameHUD in manager scene
-        GameObject gameHUDCanvas = GameObject.Find("GameHUDCanvas");
-        if (gameHUDCanvas != null)
+        // Hide GameHUD ONLY if we're in main menu (not during gameplay)
+        if (currentState == GameState.MainMenu)
         {
-            gameHUDCanvas.SetActive(false);
-        }
-        else
-        {
-            // Fallback to finding by component
-            GameHUD gameHUD = FindObjectOfType<GameHUD>();
-            if (gameHUD != null)
+            GameObject gameHUDCanvas = GameObject.Find("GameHUDCanvas");
+            if (gameHUDCanvas != null)
             {
-                gameHUD.gameObject.SetActive(false);
+                gameHUDCanvas.SetActive(false);
+            }
+            else
+            {
+                // Fallback to finding by component
+                GameHUD gameHUD = FindObjectOfType<GameHUD>();
+                if (gameHUD != null)
+                {
+                    gameHUD.gameObject.SetActive(false);
+                }
             }
         }
         
@@ -132,6 +139,13 @@ public class GameStateManager : MonoBehaviour
     
     public void StartGameFromMenu()
     {
+        // Prevent double execution
+        if (currentState == GameState.Playing)
+        {
+            return;
+        }
+        
+        // CRITICAL: Reset all game state for fresh start
         currentState = GameState.Playing;
         Time.timeScale = 1f;
         
@@ -141,18 +155,99 @@ public class GameStateManager : MonoBehaviour
             mainMenuManager.HideMainMenu();
         }
         
+        // Clear any existing enemies from previous game
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (GameObject enemy in enemies)
+        {
+            Destroy(enemy);
+        }
+        
+        // Re-enable GameHUD if it was hidden
+        GameObject gameHUDCanvas = GameObject.Find("GameHUDCanvas");
+        if (gameHUDCanvas != null)
+        {
+            gameHUDCanvas.SetActive(true);
+        }
+        
         // Move manager objects to DontDestroyOnLoad before scene transition
         MoveManagersToDontDestroyOnLoad();
         
-        // Start the gameplay through WaveManager
+        // Start the gameplay through WaveManager (this loads the gameplay scene)
         if (WaveManager.Instance != null)
         {
             WaveManager.Instance.StartGameplay();
         }
         
+        // IMMEDIATELY ensure there's an active AudioListener (before scene fully loads)
+        AudioListener[] listeners = FindObjectsOfType<AudioListener>(true);
+        bool hasActiveListener = false;
+        foreach (AudioListener listener in listeners)
+        {
+            if (listener.enabled && listener.gameObject.activeInHierarchy)
+            {
+                hasActiveListener = true;
+                break;
+            }
+        }
+        
+        if (!hasActiveListener && listeners.Length > 0)
+        {
+            // Enable the first AudioListener we find
+            listeners[0].enabled = true;
+            if (!listeners[0].gameObject.activeInHierarchy)
+            {
+                listeners[0].gameObject.SetActive(true);
+            }
+        }
+        
+        // Start coroutine to setup game after scene loads
+        StartCoroutine(SetupGameAfterSceneLoad());
+        
         // Lock cursor for gameplay
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+    
+    private IEnumerator SetupGameAfterSceneLoad()
+    {
+        // Wait for scene to load (WaveManager loads it asynchronously)
+        // If scene is already loaded (returning from menu), this still gives time for setup
+        yield return new WaitForSeconds(0.5f);
+        
+        // Find GameHUD (including inactive objects since it might be hidden)
+        GameObject gameHUDCanvas = null;
+        GameHUD gameHUD = FindObjectOfType<GameHUD>(true); // true = include inactive
+        
+        if (gameHUD != null)
+        {
+            gameHUDCanvas = gameHUD.gameObject;
+        }
+        else
+        {
+            // Fallback to GameObject.Find (only finds active objects)
+            gameHUDCanvas = GameObject.Find("GameHUDCanvas");
+        }
+        
+        if (gameHUDCanvas != null)
+        {
+            if (!gameHUDCanvas.activeSelf)
+            {
+                gameHUDCanvas.SetActive(true);
+            }
+            
+            // Wait one frame for GameHUD to initialize
+            yield return null;
+            
+            // Reset currency AFTER GameHUD is active
+            if (CurrencyManager.Instance != null)
+            {
+                CurrencyManager.Instance.ResetCurrency();
+            }
+        }
+        else
+        {
+            Debug.LogError("GameHUDCanvas not found after scene load!");
+        }
     }
     
     private void MoveManagersToDontDestroyOnLoad()
@@ -204,31 +299,39 @@ public class GameStateManager : MonoBehaviour
     
     public void ReturnToMainMenu()
     {
-        
         currentState = GameState.MainMenu;
-        Time.timeScale = 0f;
+        Time.timeScale = 1f; // Unfreeze time temporarily
         
-        // Clear game state
+        // Stop wave system
+        if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.StopAllCoroutines();
+        }
+        
+        // Clear all enemies
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
         foreach (GameObject enemy in enemies)
         {
             Destroy(enemy);
         }
         
+        // Clear all placed towers
+        if (TowerPlacementManager.Instance != null)
+        {
+            TowerPlacementManager.Instance.ClearPlacedTowers();
+        }
+        
         // Hide GameHUD when returning to main menu
         GameObject gameHUDCanvas = GameObject.Find("GameHUDCanvas");
         if (gameHUDCanvas != null)
         {
-            gameHUDCanvas.SetActive(false);
-        }
-        else
-        {
-            // Fallback to finding by component
-            GameHUD gameHUD = FindObjectOfType<GameHUD>();
+            // Stop all coroutines in GameHUD before hiding
+            GameHUD gameHUD = gameHUDCanvas.GetComponent<GameHUD>();
             if (gameHUD != null)
             {
-                gameHUD.gameObject.SetActive(false);
+                gameHUD.StopAllCoroutines();
             }
+            gameHUDCanvas.SetActive(false);
         }
         
         // Show main menu
@@ -239,6 +342,11 @@ public class GameStateManager : MonoBehaviour
         
         // Hide pause UI
         if (pauseUI != null) pauseUI.SetActive(false);
+        
+        // Freeze time for main menu
+        Time.timeScale = 0f;
+        
+        Debug.Log("Returned to main menu - game state cleared");
     }
     
     public void QuitGame()
@@ -249,6 +357,31 @@ public class GameStateManager : MonoBehaviour
         #else
         Application.Quit();
         #endif
+    }
+    
+    // Victory and Defeat handling
+    public void ShowVictory(int enemiesDefeated)
+    {
+        if (victoryPanel != null)
+        {
+            victoryPanel.ShowVictory(enemiesDefeated);
+        }
+        else
+        {
+            Debug.LogError("VictoryPanel not assigned in GameStateManager!");
+        }
+    }
+    
+    public void ShowDefeat()
+    {
+        if (defeatPanel != null)
+        {
+            defeatPanel.ShowDefeat();
+        }
+        else
+        {
+            Debug.LogError("DefeatPanel not assigned in GameStateManager!");
+        }
     }
     
     // Public getters

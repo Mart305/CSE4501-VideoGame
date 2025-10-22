@@ -264,6 +264,19 @@ public class TowerUpgradeUI : MonoBehaviour
             bool canRepair = selectedTower.GetCurrentHealth() < selectedTower.GetMaxHealth();
             bool hasEnoughCurrency = HasEnoughCurrency(repairCost);
             repairButton.interactable = canRepair && hasEnoughCurrency;
+            
+            // Visual feedback for insufficient funds
+            if (repairButtonText != null)
+            {
+                if (!hasEnoughCurrency && canRepair)
+                {
+                    repairButtonText.color = Color.red;
+                }
+                else
+                {
+                    repairButtonText.color = Color.white;
+                }
+            }
         }
         
         // Max health button - disable if not enough currency
@@ -271,6 +284,12 @@ public class TowerUpgradeUI : MonoBehaviour
         {
             bool hasEnoughCurrency = HasEnoughCurrency(maxHealthCost);
             maxHealthButton.interactable = hasEnoughCurrency;
+            
+            // Visual feedback for insufficient funds
+            if (maxHealthButtonText != null)
+            {
+                maxHealthButtonText.color = hasEnoughCurrency ? Color.white : Color.red;
+            }
         }
         
         // Resistance button - disable if at max resistance or not enough currency
@@ -279,6 +298,23 @@ public class TowerUpgradeUI : MonoBehaviour
             bool canUpgrade = selectedTower.GetDamageResistance() < 0.8f;
             bool hasEnoughCurrency = HasEnoughCurrency(resistanceCost);
             damageResistanceButton.interactable = canUpgrade && hasEnoughCurrency;
+            
+            // Visual feedback for insufficient funds
+            if (resistanceButtonText != null)
+            {
+                if (!hasEnoughCurrency && canUpgrade)
+                {
+                    resistanceButtonText.color = Color.red;
+                }
+                else if (!canUpgrade)
+                {
+                    resistanceButtonText.color = Color.gray;
+                }
+                else
+                {
+                    resistanceButtonText.color = Color.white;
+                }
+            }
         }
     }
     
