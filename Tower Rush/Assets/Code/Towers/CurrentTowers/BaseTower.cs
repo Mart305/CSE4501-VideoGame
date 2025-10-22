@@ -361,6 +361,9 @@ public class BaseTower : MonoBehaviour
         // Clear target
         currentTarget = null;
         
+        // Check if all towers are destroyed (defeat condition)
+        CheckForDefeat();
+        
         // Actually destroy the GameObject after a short delay
         Destroy(gameObject, 0.5f);
     }
@@ -412,6 +415,30 @@ public class BaseTower : MonoBehaviour
         {
             Gizmos.color = Color.red;
             Gizmos.DrawLine(transform.position, currentTarget.transform.position);
+        }
+    }
+    
+    private void CheckForDefeat()
+    {
+        // Count remaining towers after this one is destroyed
+        BaseTower[] remainingTowers = FindObjectsOfType<BaseTower>();
+        int aliveTowers = 0;
+        
+        foreach (BaseTower tower in remainingTowers)
+        {
+            if (tower != this && tower.currentHealth > 0)
+            {
+                aliveTowers++;
+            }
+        }
+        
+        // If no towers left, trigger defeat
+        if (aliveTowers == 0)
+        {
+            if (GameStateManager.Instance != null)
+            {
+                GameStateManager.Instance.ShowDefeat();
+            }
         }
     }
 }

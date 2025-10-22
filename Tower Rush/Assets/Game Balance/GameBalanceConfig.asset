@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d873222ad760941808c1814124f5040f, type: 3}
+  m_Name: GameBalanceConfig
+  m_EditorClassIdentifier: 
+  zombieBaseHealth: 120
+  zombieHealthScaling: 1.08
+  zombieSpeed: 3.5
+  zombieDamage: 15
+  ghostBaseHealth: 90
+  ghostHealthScaling: 1.1
+  ghostSpeed: 5.5
+  ghostDamage: 12
+  mutantBaseHealth: 250
+  mutantHealthScaling: 1.12
+  mutantSpeed: 2.8
+  mutantDamage: 25
+  skeletonBaseHealth: 100
+  skeletonHealthScaling: 1.09
+  skeletonSpeed: 4.2
+  skeletonDamage: 18
+  fireTowerDamage: 30
+  fireTowerRange: 12
+  fireTowerFireRate: 1.2
+  iceTowerDamage: 20
+  iceTowerRange: 14
+  iceTowerFireRate: 1
+  iceTowerSlowAmount: 0.6
+  lightningTowerDamage: 50
+  lightningTowerRange: 10
+  lightningTowerFireRate: 0.7
+  lightningChainTargets: 3
+  ballistaTowerDamage: 75
+  ballistaTowerRange: 18
+  ballistaTowerFireRate: 0.4
+  threeBallistaDamage: 55
+  threeBalistaRange: 15
+  threeBalistaFireRate: 0.5
+  voidTowerDamage: 35
+  voidTowerRange: 12
+  voidTowerFireRate: 0.8
+  voidTowerDOTDamage: 8
+  startingGold: 300
+  zombieReward: 15
+  ghostReward: 18
+  mutantReward: 35
+  skeletonReward: 20
+  waveCompletionBonus: 75
+  bonusPerWaveNumber: 15
+  repairCost: 60
+  maxHealthUpgradeCost: 120
+  damageResistanceUpgradeCost: 180
+  upgradeCostScaling: 1.4
+  baseEnemiesPerWave: 12
+  enemiesIncreasePerWave: 4
+  spawnDelay: 1.5
+  timeBetweenWaves: 20
+  eliteEnemyStartWave: 3
+  bossEnemyStartWave: 7
+  baseTowerHealth: 600
+  baseTowerMaxHealth: 600
+  baseDamageResistance: 0
+  maxHealthIncreasePerUpgrade: 150
+  damageResistanceIncreasePerUpgrade: 0.12
+  maxDamageResistance: 0.75

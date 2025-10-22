@@ -52,6 +52,7 @@ public class WaveManager : MonoBehaviour
     private int enemiesSpawnedThisWave = 0;
     private int enemiesKilledThisWave = 0;
     private int totalEnemiesThisWave = 0;
+    private int totalEnemiesDefeated = 0; // Track across all waves
     private Coroutine currentWaveCoroutine;
     
     public int GetCurrentWave() => currentWave;
@@ -101,10 +102,103 @@ public class WaveManager : MonoBehaviour
 	
 	public void StartGameplay()
 	{
+		// Stop all existing coroutines BEFORE starting new game
+		StopAllCoroutines();
+		
 		// Load the first gameplay scene and make it active
 		if (gameplaySceneNames != null && gameplaySceneNames.Length > 0) {
-			StartCoroutine(LoadFirstGameplayScene());
+			StartCoroutine(RestartGameFromBeginning());
 		}
+	}
+	
+	private IEnumerator RestartGameFromBeginning()
+	{
+		// Reset wave state FIRST (before loading scenes)
+		ResetWaveStateImmediate();
+		
+		// Then load the first scene (so we always have at least one scene)
+		yield return StartCoroutine(LoadFirstGameplayScene());
+		
+		// Then unload all other gameplay scenes
+		yield return StartCoroutine(UnloadAllGameplayScenes());
+	}
+	
+	private void ResetWaveStateImmediate()
+	{
+		// Reset to wave 1
+		currentWave = 1;
+		currentSceneIndex = 0;
+		
+		// Reset wave tracking
+		isWaveActive = false;
+		enemiesSpawnedThisWave = 0;
+		enemiesKilledThisWave = 0;
+		totalEnemiesThisWave = 0;
+		totalEnemiesDefeated = 0; // Reset total count
+		currentWaveCoroutine = null;
+		
+		// Force refresh of references
+		enemySpawner = null;
+		gameHUD = null;
+		
+		// Update HUD to show wave 1 (will be null, will refresh later)
+		if (gameHUD != null)
+		{
+			gameHUD.UpdateWaveDisplay(currentWave, maxWaves);
+		}
+		
+	}
+	
+	private IEnumerator UnloadAllGameplayScenes()
+	{
+		// Don't unload the first gameplay scene (it should already be loaded)
+		string firstSceneName = gameplaySceneNames != null && gameplaySceneNames.Length > 0 ? gameplaySceneNames[0] : "";
+		
+		// Collect scenes to unload first (don't modify during iteration)
+		System.Collections.Generic.List<Scene> scenesToUnload = new System.Collections.Generic.List<Scene>();
+		
+		int sceneCount = SceneManager.sceneCount;
+		for (int i = 0; i < sceneCount; i++)
+		{
+			Scene scene = SceneManager.GetSceneAt(i);
+			
+			// Don't unload ManagerScene, first gameplay scene, or DontDestroyOnLoad objects
+			if (scene.name != "ManagerScene" && scene.name != firstSceneName && scene.isLoaded)
+			{
+				// Check if it's a gameplay scene
+				bool isGameplayScene = false;
+				if (gameplaySceneNames != null)
+				{
+					foreach (string sceneName in gameplaySceneNames)
+					{
+						if (scene.name == sceneName)
+						{
+							isGameplayScene = true;
+							break;
+						}
+					}
+				}
+				
+				// Add to unload list (except the first one)
+				if (isGameplayScene)
+				{
+					scenesToUnload.Add(scene);
+				}
+			}
+		}
+		
+		// Now unload all collected scenes
+		foreach (Scene scene in scenesToUnload)
+		{
+			if (scene.isLoaded)
+			{
+				yield return SceneManager.UnloadSceneAsync(scene);
+			}
+		}
+		
+		// Force garbage collection to clean up old scene resources
+		System.GC.Collect();
+		Resources.UnloadUnusedAssets();
 	}
 	
 	private IEnumerator LoadFirstGameplayScene()
@@ -182,11 +276,16 @@ public class WaveManager : MonoBehaviour
 			}
 		}
 		
-		// Find components in the active gameplay scene
-		if (enemySpawner == null)
-			enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
-		if (gameHUD == null)
-			gameHUD = GameHUD.Instance;
+		// Always refresh components from the active gameplay scene
+		enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
+		gameHUD = GameHUD.Instance;
+		
+		
+		// Update HUD with current wave
+		if (gameHUD != null)
+		{
+			gameHUD.UpdateWaveDisplay(currentWave, maxWaves);
+		}
 
 		StartCoroutine(WaveSystemLoop());
 	}
@@ -212,6 +311,13 @@ public class WaveManager : MonoBehaviour
 
 			if (maxWaves != -1 && currentWave >= maxWaves) {
 				OnAllWavesCompleted?.Invoke();
+				
+				// Show victory screen
+				if (GameStateManager.Instance != null)
+				{
+					GameStateManager.Instance.ShowVictory(totalEnemiesDefeated);
+				}
+				
 				yield break;
 			}
 
@@ -286,6 +392,17 @@ public class WaveManager : MonoBehaviour
     
     IEnumerator SpawnEnemiesInBatches()
     {
+        // Ensure we have a valid spawner reference
+        if (enemySpawner == null)
+        {
+            enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
+            if (enemySpawner == null)
+            {
+                Debug.LogError("Cannot spawn batch - EnemySpawner not found in scene!");
+                yield break;
+            }
+        }
+        
         int batchSize = CalculateBatchSize();
         int enemiesSpawned = 0;
         int batchNumber = 1;
@@ -326,6 +443,17 @@ public class WaveManager : MonoBehaviour
     
     IEnumerator SpawnEnemiesOneByOne()
     {
+        // Ensure we have a valid spawner reference
+        if (enemySpawner == null)
+        {
+            enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
+            if (enemySpawner == null)
+            {
+                Debug.LogError("Cannot spawn enemies - EnemySpawner not found in scene!");
+                yield break;
+            }
+        }
+        
         while (enemiesSpawnedThisWave < totalEnemiesThisWave)
         {
             // Determine enemy type
@@ -375,7 +503,9 @@ public class WaveManager : MonoBehaviour
         // Update killed count if it's higher than before
         if (deadEnemies > enemiesKilledThisWave)
         {
+            int newKills = deadEnemies - enemiesKilledThisWave;
             enemiesKilledThisWave = deadEnemies;
+            totalEnemiesDefeated += newKills; // Add to total count
         }
     }
     
@@ -404,7 +534,19 @@ public class WaveManager : MonoBehaviour
     
     private GameObject DetermineEnemyType()
     {
-        if (enemySpawner == null) return null;
+        if (enemySpawner == null)
+        {
+            Debug.LogError("DetermineEnemyType: enemySpawner is null!");
+            return null;
+        }
+        
+        // Check if any prefabs are assigned
+        if (enemySpawner.zombiePrefab == null && enemySpawner.ghostPrefab == null && 
+            enemySpawner.skeletonPrefab == null && enemySpawner.mutantZombiePrefab == null)
+        {
+            Debug.LogError("DetermineEnemyType: No enemy prefabs are assigned in EnemySpawner!");
+            return null;
+        }
         
         // Check if this is a random boss wave (only after wave 7)
         bool isRandomBossWave = enableRandomBossWaves && currentWave >= 8 && Random.value < bossWaveChance;
@@ -491,7 +633,28 @@ public class WaveManager : MonoBehaviour
     
     private void SpawnEnemy(GameObject enemyPrefab)
     {
-        if (enemyPrefab == null || enemySpawner == null) return;
+        if (enemyPrefab == null)
+        {
+            Debug.LogError("Cannot spawn enemy - enemyPrefab is null!");
+            return;
+        }
+        
+        if (enemySpawner == null)
+        {
+            Debug.LogError("Cannot spawn enemy - enemySpawner is null! Attempting to find it...");
+            enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
+            if (enemySpawner == null)
+            {
+                Debug.LogError("Still cannot find EnemySpawner in scene!");
+                return;
+            }
+        }
+        
+        if (enemySpawner.spawnPoints == null || enemySpawner.spawnPoints.Length == 0)
+        {
+            Debug.LogError("EnemySpawner has no spawn points configured!");
+            return;
+        }
         
         // Get spawn point
         Transform spawnPoint = enemySpawner.spawnPoints[Random.Range(0, enemySpawner.spawnPoints.Length)];

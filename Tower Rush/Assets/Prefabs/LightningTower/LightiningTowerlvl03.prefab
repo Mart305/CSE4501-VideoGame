@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5047050290427328103}
   - component: {fileID: 562459167636417356}
   - component: {fileID: 1473780464501188513}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -86,7 +86,7 @@ GameObject:
   - component: {fileID: 9143574448232564845}
   - component: {fileID: 1864898690560152151}
   - component: {fileID: 2510648414569568185}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: antenna02 (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -167,7 +167,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2618926132181044313}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Firepoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -200,7 +200,7 @@ GameObject:
   - component: {fileID: 8570513565563051943}
   - component: {fileID: 8517338704855314541}
   - component: {fileID: 3220499168011288760}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: CurrencyText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -334,7 +334,7 @@ GameObject:
   - component: {fileID: 3250826479156639293}
   - component: {fileID: 5519758943630573350}
   - component: {fileID: 8012842335188231971}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerUIPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -416,7 +416,7 @@ GameObject:
   - component: {fileID: 3222068823308712443}
   - component: {fileID: 1863297060821090494}
   - component: {fileID: 7589263246454842502}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerMaxHealthButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -548,7 +548,7 @@ GameObject:
   - component: {fileID: 4270573486798337132}
   - component: {fileID: 8617770559139966716}
   - component: {fileID: 4538333290066380338}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: antenna02 (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -632,7 +632,7 @@ GameObject:
   - component: {fileID: 7540227735131340908}
   - component: {fileID: 6053369786217154312}
   - component: {fileID: 6037634062438619141}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerRepairButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -764,7 +764,7 @@ GameObject:
   - component: {fileID: 5430562040095142393}
   - component: {fileID: 2928433081259455960}
   - component: {fileID: 1647321456931882424}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerRepairText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -898,7 +898,7 @@ GameObject:
   - component: {fileID: 2677753456374764821}
   - component: {fileID: 6528324252232244578}
   - component: {fileID: 5750074209790580886}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: pSphere4 (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -981,7 +981,7 @@ GameObject:
   - component: {fileID: 5217957520600959731}
   - component: {fileID: 1771375580341755152}
   - component: {fileID: 88182217305056132}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerDamageResistanceText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1115,7 +1115,7 @@ GameObject:
   - component: {fileID: 7907956571797194751}
   - component: {fileID: 8763049403302745254}
   - component: {fileID: 7569834615747877208}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerMaxHealthText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1249,7 +1249,7 @@ GameObject:
   - component: {fileID: 7428303235977389707}
   - component: {fileID: 2365210533005486842}
   - component: {fileID: 1448520353180955872}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerCloseText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1383,7 +1383,7 @@ GameObject:
   - component: {fileID: 4679806643893708833}
   - component: {fileID: 1466537161692707973}
   - component: {fileID: 2027277909082568705}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: pSphere4 (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1468,7 +1468,7 @@ GameObject:
   - component: {fileID: 5603278615824517394}
   - component: {fileID: 7264446706174234106}
   - component: {fileID: 4079674999692963604}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerHealthBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1590,7 +1590,7 @@ GameObject:
   - component: {fileID: 4059710441104636017}
   - component: {fileID: 800557640277942916}
   - component: {fileID: 2687994893927544373}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: UpgradeUICanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1718,7 +1718,7 @@ GameObject:
   - component: {fileID: 4213937492742914142}
   - component: {fileID: 3518465656050527968}
   - component: {fileID: 3644793782287788062}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerCloseButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1850,7 +1850,7 @@ GameObject:
   - component: {fileID: 3875349327934065305}
   - component: {fileID: 2484694187990617891}
   - component: {fileID: 7428750985361861649}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Antenna (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1934,7 +1934,7 @@ GameObject:
   - component: {fileID: 3840168217731348477}
   - component: {fileID: 6338677250392893804}
   - component: {fileID: 8252820020489427303}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerDamageResistanceButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2068,7 +2068,7 @@ GameObject:
   - component: {fileID: 8076920662266754699}
   - component: {fileID: 7281564814512899671}
   - component: {fileID: 1941910795335084856}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: LightiningTowerlvl03
   m_TagString: Tower
   m_Icon: {fileID: 0}
@@ -2165,7 +2165,6 @@ MonoBehaviour:
   healthyColor: {r: 1, g: 1, b: 1, a: 1}
   damagedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   criticalColor: {r: 1, g: 0, b: 0, a: 1}
-  towerFXPrefab: {fileID: 1460049221194134264, guid: 3891fd74b2294e341a33b0e2f757646d, type: 3}
   attackFXPrefab: {fileID: 346346791297495699, guid: 6d648b595360d224cadc9478d6e05444, type: 3}
   explosionFXPrefab: {fileID: 8161942417590462683, guid: 440b7e95900715e4ebe95c20946fd774, type: 3}
   firePoint: {fileID: 2618926132181044313}
@@ -2192,7 +2191,7 @@ MeshCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
@@ -2209,7 +2208,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7786041558456226833}
   - component: {fileID: 4861436021486539697}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerHealthSlider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2299,7 +2298,7 @@ GameObject:
   - component: {fileID: 3388218310912041744}
   - component: {fileID: 2682552416316338319}
   - component: {fileID: 4328760405780649558}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2372,7 +2371,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5887108560779983885}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2410,7 +2409,7 @@ GameObject:
   - component: {fileID: 3651349174704744947}
   - component: {fileID: 9039674821100826029}
   - component: {fileID: 6317202745502856154}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerHealthText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
