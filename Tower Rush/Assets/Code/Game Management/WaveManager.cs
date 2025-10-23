@@ -609,8 +609,8 @@ public class WaveManager : MonoBehaviour
 		// Get spawn point
 		Transform spawnPoint = enemySpawner.spawnPoints[Random.Range(0, enemySpawner.spawnPoints.Length)];
 
-		// Use the spawn point's actual Y position (don't force a specific height)
-		Vector3 spawnPosition = spawnPoint.position;
+		// Force Y position to 15.3 to prevent enemies from spawning in the air
+		Vector3 spawnPosition = new Vector3(spawnPoint.position.x, 15.3f, spawnPoint.position.z);
 
 		// Spawn enemy (no stat scaling - enemies keep their base stats)
 		Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
