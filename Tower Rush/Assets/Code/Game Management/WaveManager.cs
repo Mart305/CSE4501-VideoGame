@@ -28,10 +28,10 @@ public class WaveManager : MonoBehaviour
 
 	[Header("Wave Composition")]
 	// Note: Spawn chances are now hardcoded in DetermineEnemyType() method for better control
-	[SerializeField] private float bossWaveChance = 0.2f; // 20% chance for random boss waves
+	[SerializeField] private float bossWaveChance = 0.12f; // Reduced from 20% to 12% chance for random boss waves
 	[SerializeField] private bool enableRandomBossWaves = true;
 	[SerializeField] private bool enableSkeletons = true; // Skeletons appear every wave
-	[SerializeField] private int mutantZombieUnlockWave = 5; // Mutant zombies start appearing from wave 5
+	[SerializeField] private int mutantZombieUnlockWave = 8; // Mutant zombies start appearing from wave 8 (delayed from 5)
 
 	[Header("Future Enemy Types")]
 	[SerializeField] private GameObject[] futureEnemyTypes; // For later enemy variety
@@ -515,15 +515,15 @@ public class WaveManager : MonoBehaviour
 		// Check if this is a random boss wave (only after wave 7)
 		bool isRandomBossWave = enableRandomBossWaves && currentWave >= 8 && Random.value < bossWaveChance;
 
-		// Boss wave logic - higher mutant zombie spawn rate
+		// Boss wave logic - reduced mutant zombie spawn rate
 		if (isRandomBossWave && currentWave >= mutantZombieUnlockWave && enemySpawner.mutantZombiePrefab != null) {
 			float bossRoll = Random.value;
-			// Boss waves: 40% mutant zombies, 30% skeletons, 20% ghosts, 10% zombies
-			if (bossRoll < 0.4f)
+			// Boss waves: 25% mutant zombies (reduced from 40%), 35% skeletons, 25% ghosts, 15% zombies
+			if (bossRoll < 0.25f)
 				return enemySpawner.mutantZombiePrefab;
-			else if (bossRoll < 0.7f)
+			else if (bossRoll < 0.6f)
 				return enemySpawner.skeletonPrefab;
-			else if (bossRoll < 0.9f)
+			else if (bossRoll < 0.85f)
 				return enemySpawner.ghostPrefab;
 			else
 				return enemySpawner.zombiePrefab;
@@ -548,22 +548,22 @@ public class WaveManager : MonoBehaviour
 			}
 		}
 		else {
-			// After mutant zombies unlock (wave 5+): 30% each + 10% mutant zombies
+			// After mutant zombies unlock (wave 8+): 35% each + 5% mutant zombies (reduced from 10%)
 			if (enableSkeletons && enemySpawner.skeletonPrefab != null && enemySpawner.mutantZombiePrefab != null) {
-				if (roll < 0.3f)
+				if (roll < 0.35f)
 					return enemySpawner.zombiePrefab;
-				else if (roll < 0.6f)
+				else if (roll < 0.7f)
 					return enemySpawner.ghostPrefab;
-				else if (roll < 0.9f)
+				else if (roll < 0.95f)
 					return enemySpawner.skeletonPrefab;
 				else
 					return enemySpawner.mutantZombiePrefab;
 			}
 			else if (enemySpawner.mutantZombiePrefab != null) {
 				// If skeletons disabled but mutant zombies available
-				if (roll < 0.45f)
+				if (roll < 0.475f)
 					return enemySpawner.zombiePrefab;
-				else if (roll < 0.9f)
+				else if (roll < 0.95f)
 					return enemySpawner.ghostPrefab;
 				else
 					return enemySpawner.mutantZombiePrefab;
