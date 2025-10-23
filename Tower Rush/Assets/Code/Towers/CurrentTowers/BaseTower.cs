@@ -353,7 +353,7 @@ public class BaseTower : MonoBehaviour
 		// Calculate deduction amount based on current wave
 		if (CurrencyManager.Instance != null) {
 			// Get base deduction amount
-			int baseDeductAmount = 250;
+			int baseDeductAmount = 150;
 
 			// Calculate multiplier based on wave number
 			int currentWave = 1;
@@ -364,10 +364,10 @@ public class BaseTower : MonoBehaviour
 			// Calculate which set of 5 waves we're in (0-based)
 			int waveTier = (currentWave - 1) / 5;
 
-			// Calculate multiplier: 1, 3, 9, 27, 81, etc. (3^tier)
+			// Calculate multiplier: 1, 2, 4, 16, 32, etc. (2^tier)
 			int multiplier = 1;
 			for (int i = 0; i < waveTier; i++) {
-				multiplier *= 3;
+				multiplier *= 1;
 			}
 
 			// Calculate final deduction amount

@@ -362,4 +362,25 @@ public class TowerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             }
         }
     }
+
+	public void UpdateCost(int newCost)
+	{
+		// Update the stored tower data cost
+		if (towerData != null) {
+			towerData.cost = newCost;
+		}
+
+		// Update the cost text display
+		if (costText != null) {
+			costText.text = newCost.ToString();
+		}
+
+		// Update tooltip if needed
+		if (tooltipText != null && towerData != null) {
+			tooltipText.text = $"{towerData.towerName}\nCost: {newCost}\n{towerData.description}";
+		}
+
+		// Update button state based on current currency
+		UpdateButtonState(CurrencyManager.Instance?.GetCurrentCurrency() ?? 0);
+	}
 }

@@ -36,8 +36,13 @@ public class TowerPlacementManager : MonoBehaviour
     public UnityEvent<GameObject> OnTowerPlaced;
     public UnityEvent<TowerData> OnTowerSelected;
     public UnityEvent OnPlacementCancelled;
-    
-    private Camera playerCamera;
+
+	[Header("Tower Cost Scaling")]
+	[SerializeField] private List<int> baseTowerCosts = new List<int>();
+	[SerializeField] private bool costScalingEnabled = true;
+	private int currentSceneTier = 0;
+
+	private Camera playerCamera;
     private TowerData selectedTowerData;
     private GameObject previewTower;
     private bool isPlacingTower = false;
@@ -61,23 +66,78 @@ public class TowerPlacementManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
-    
-    void Start()
-    {
-        playerCamera = Camera.main;
-        if (playerCamera == null)
-            playerCamera = FindObjectOfType<Camera>();
-            
-        // Initialize events
-        if (OnTowerPlaced == null)
-            OnTowerPlaced = new UnityEvent<GameObject>();
-        if (OnTowerSelected == null)
-            OnTowerSelected = new UnityEvent<TowerData>();
-        if (OnPlacementCancelled == null)
-            OnPlacementCancelled = new UnityEvent();
-    }
-    
-    void Update()
+
+	void Start()
+	{
+		playerCamera = Camera.main;
+		if (playerCamera == null)
+			playerCamera = FindObjectOfType<Camera>();
+
+		// Initialize events
+		if (OnTowerPlaced == null)
+			OnTowerPlaced = new UnityEvent<GameObject>();
+		if (OnTowerSelected == null)
+			OnTowerSelected = new UnityEvent<TowerData>();
+		if (OnPlacementCancelled == null)
+			OnPlacementCancelled = new UnityEvent();
+
+		// Store the original tower costs
+		InitializeBaseCosts();
+	}
+
+	// Add this method after Start()
+	public void InitializeBaseCosts()
+	{
+		// Store original costs if not already stored
+		if (baseTowerCosts.Count == 0 || baseTowerCosts.Count != availableTowers.Count) {
+			baseTowerCosts.Clear();
+			foreach (var tower in availableTowers) {
+				baseTowerCosts.Add(tower.cost);
+			}
+			Debug.Log($"Base tower costs initialized: {string.Join(", ", baseTowerCosts)}");
+		}
+	}
+
+	// Add this method to apply the multiplier
+	public void UpdateTowerCostsByWave(int currentWave)
+	{
+		if (!costScalingEnabled) return;
+
+		// Calculate which tier we're in (0-based)
+		int tier = (currentWave - 1) / 5;
+
+		// If tier hasn't changed, don't update costs
+		if (tier == currentSceneTier) return;
+
+		// Store the new tier
+		currentSceneTier = tier;
+
+		// Initialize base costs if needed
+		if (baseTowerCosts.Count == 0 || baseTowerCosts.Count != availableTowers.Count) {
+			InitializeBaseCosts();
+		}
+
+		// Calculate multiplier: 3^tier
+		int multiplier = 1;
+		for (int i = 0; i < tier; i++) {
+			multiplier *= 3;
+		}
+
+		// Apply to all towers
+		for (int i = 0; i < availableTowers.Count && i < baseTowerCosts.Count; i++) {
+			int newCost = baseTowerCosts[i] * multiplier;
+			availableTowers[i].cost = newCost;
+		}
+
+		Debug.Log($"Tower costs updated for wave {currentWave} (Tier {tier}): Multiplier = {multiplier}x");
+
+		// Update UI if GameHUD exists
+		if (GameHUD.Instance != null) {
+			GameHUD.Instance.InitializeTowerButtons();
+		}
+	}
+
+	void Update()
     {
 		// Re-acquire camera if it was destroyed (scene changed)
 		if (playerCamera == null)

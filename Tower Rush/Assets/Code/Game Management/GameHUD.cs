@@ -16,7 +16,7 @@ public class GameHUD : MonoBehaviour
     [SerializeField] private GameObject towerButtonPrefab;
     [SerializeField] private Transform towerButtonContainer;
     [SerializeField] private GameObject placementInstructions;
-    [SerializeField] private TextMeshProUGUI placementText;
+    [SerializeField] public TextMeshProUGUI placementText;
     [SerializeField] private Vector2 towerButtonSize = new Vector2(150f, 60f); // Configurable button size
     [SerializeField] private float towerButtonSpacing = 10f; // Spacing between buttons
     [SerializeField] private float buttonRowOffsetX = -200f; // Horizontal offset to avoid overlap with other UI
@@ -390,7 +390,7 @@ public class GameHUD : MonoBehaviour
     
     
     // Tower Placement Methods
-    private void InitializeTowerButtons()
+    public void InitializeTowerButtons()
     {
         if (TowerPlacementManager.Instance == null || towerButtonContainer == null || towerButtonPrefab == null)
             return;
