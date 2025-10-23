@@ -346,30 +346,69 @@ public class BaseTower : MonoBehaviour
             currentHealth = 0;
             OnTowerDestroyed();
         }
-    }
+	}
 
-    protected virtual void OnTowerDestroyed()
-    {
-        // Stop all coroutines to prevent continued shooting
-        StopAllCoroutines();
-        
-        // Stop all particle effects
-        if (towerFX != null) towerFX.Stop();
-        if (attackFX != null) attackFX.Stop();
-        if (explosionFX != null) explosionFX.Stop();
-        
-        // Clear target
-        currentTarget = null;
-        
-        // Check if all towers are destroyed (defeat condition)
-        CheckForDefeat();
-        
-        // Actually destroy the GameObject after a short delay
-        Destroy(gameObject, 0.5f);
-    }
+	protected virtual void OnTowerDestroyed()
+	{
+		// Calculate deduction amount based on current wave
+		if (CurrencyManager.Instance != null) {
+			// Get base deduction amount
+			int baseDeductAmount = 250;
 
-    // Upgrade System Methods
-    public virtual void RepairTower()
+			// Calculate multiplier based on wave number
+			int currentWave = 1;
+			if (WaveManager.Instance != null) {
+				currentWave = WaveManager.Instance.GetCurrentWave();
+			}
+
+			// Calculate which set of 5 waves we're in (0-based)
+			int waveTier = (currentWave - 1) / 5;
+
+			// Calculate multiplier: 1, 3, 9, 27, 81, etc. (3^tier)
+			int multiplier = 1;
+			for (int i = 0; i < waveTier; i++) {
+				multiplier *= 3;
+			}
+
+			// Calculate final deduction amount
+			int deductAmount = baseDeductAmount * multiplier;
+
+			// Cap at player's current currency so it doesn't go negative
+			int currentCurrency = CurrencyManager.Instance.GetCurrentCurrency();
+
+			// Store the previous gold amount before deduction
+			int previousGold = currentCurrency;
+
+			deductAmount = Mathf.Min(currentCurrency, deductAmount);
+
+			if (deductAmount > 0) {
+				CurrencyManager.Instance.SpendCurrency(deductAmount);
+
+				// Show visual feedback
+				if (GameHUD.Instance != null) {
+					GameHUD.Instance.ShowCurrencyChange(-deductAmount);
+				}
+
+				// Get the new gold amount after deduction
+				int remainingGold = CurrencyManager.Instance.GetCurrentCurrency();
+
+				// Enhanced debug message with more gold information
+				Debug.Log($"[TOWER DESTROYED] {this.GetType().Name} | Gold Deducted: {deductAmount} | Previous Gold: {previousGold} | Remaining Gold: {remainingGold} | Wave: {currentWave}");
+			}
+		}
+
+		// Rest of your existing OnTowerDestroyed code...
+		StopAllCoroutines();
+		if (towerFX != null) towerFX.Stop();
+		if (attackFX != null) attackFX.Stop();
+		if (explosionFX != null) explosionFX.Stop();
+		currentTarget = null;
+		CheckForDefeat();
+		Destroy(gameObject, 0.5f);
+	}
+
+	// Upgrade System Methods
+	public virtual void RepairTower()
     {
         currentHealth = Mathf.Min(currentHealth + repairAmount, maxHealth);
         if (healthBar != null)
