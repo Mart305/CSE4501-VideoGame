@@ -3249,7 +3249,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentWave: 1
-  maxWaves: -1
+  maxWaves: 20
   timeBetweenWaves: 5
   waveStartDelay: 2
   baseEnemiesPerWave: 5

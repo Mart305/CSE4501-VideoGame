@@ -44,7 +44,9 @@ public class EnemySpawner : MonoBehaviour
         
         if (enemyPrefab != null)
         {
-            Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
+            // Force Y position to 15.3 to prevent enemies from spawning in the air
+            Vector3 spawnPosition = new Vector3(spawnPoint.position.x, 15.3f, spawnPoint.position.z);
+            Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
         }
     }
     
@@ -56,6 +58,9 @@ public class EnemySpawner : MonoBehaviour
         int pointIndex = spawnPointIndex >= 0 ? spawnPointIndex : Random.Range(0, spawnPoints.Length);
         Transform spawnPoint = spawnPoints[pointIndex];
         
-        return Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
+        // Force Y position to 15.3 to prevent enemies from spawning in the air
+        Vector3 spawnPosition = new Vector3(spawnPoint.position.x, 15.3f, spawnPoint.position.z);
+        
+        return Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
     }
 }
