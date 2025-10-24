@@ -120,7 +120,7 @@ public class TowerPlacementManager : MonoBehaviour
 		// Calculate multiplier: 3^tier
 		int multiplier = 1;
 		for (int i = 0; i < tier; i++) {
-			multiplier *= 3;
+			multiplier *= 2;
 		}
 
 		// Apply to all towers
