@@ -281,7 +281,6 @@ public class WaveManager : MonoBehaviour
 	IEnumerator WaveSystemLoop()
 	{
 		while (maxWaves == -1 || currentWave <= maxWaves) {
-			// Check if game is still active
 			if (GameStateManager.Instance != null && !GameStateManager.Instance.IsGameActive()) {
 				yield return new WaitForSeconds(0.5f);
 				continue;
@@ -294,16 +293,19 @@ public class WaveManager : MonoBehaviour
 			yield return StartCoroutine(WaitForWaveCompletion());
 
 			OnWaveCompleted?.Invoke(currentWave);
+
+			// Handle scene change every 5 waves
 			yield return StartCoroutine(CheckAndChangeScene());
+
+			// Evaluate defeat right after the wave (and after potential scene/cost/UI updates)
+			CheckDefeatPostWave();
 
 			if (maxWaves != -1 && currentWave >= maxWaves) {
 				OnAllWavesCompleted?.Invoke();
 
-				// Show victory screen
 				if (GameStateManager.Instance != null) {
 					GameStateManager.Instance.ShowVictory(totalEnemiesDefeated);
 				}
-
 				yield break;
 			}
 
@@ -443,14 +445,20 @@ public class WaveManager : MonoBehaviour
 	IEnumerator WaitForWaveCompletion()
 	{
 		while (isWaveActive && enemiesKilledThisWave < totalEnemiesThisWave) {
-			// Check for enemy deaths by counting remaining enemies
+			// Immediate defeat if no towers and cannot afford any tower
+			if (ShouldDefeatNow()) {
+				isWaveActive = false;
+				GameStateManager.Instance?.ShowDefeat();
+				yield break;
+			}
+
+			// Existing tracking
 			CheckEnemyDeaths();
 			yield return new WaitForSeconds(0.1f);
 		}
 
 		isWaveActive = false;
 
-		// Stop any ongoing spawn coroutine
 		if (currentWaveCoroutine != null) {
 			StopCoroutine(currentWaveCoroutine);
 			currentWaveCoroutine = null;
@@ -640,9 +648,7 @@ public class WaveManager : MonoBehaviour
 	{
 		bool condition = currentWave > 1 && (currentWave) % 5 == 0;
 
-		// Only change scenes if the condition is met
 		if (condition && gameplaySceneNames != null && gameplaySceneNames.Length > 1 && currentSceneIndex < gameplaySceneNames.Length) {
-			// Clear any placed towers before scene change
 			if (TowerPlacementManager.Instance != null)
 				TowerPlacementManager.Instance.ClearPlacedTowers();
 
@@ -650,23 +656,18 @@ public class WaveManager : MonoBehaviour
 			currentSceneIndex = (currentSceneIndex + 1) % gameplaySceneNames.Length;
 			string nextScene = gameplaySceneNames[currentSceneIndex];
 
-			// Calculate and apply tower cost multiplier based on scene progression
+			// Update costs before load (keeps internal state in sync)
 			ApplyTowerCostMultiplier();
 
-			// Load the new scene FIRST, then unload the old one
 			var loadOperation = SceneManager.LoadSceneAsync(nextScene, LoadSceneMode.Additive);
-			loadOperation.allowSceneActivation = false; // Prevent immediate activation
-
-			// Wait until the scene is almost ready
+			loadOperation.allowSceneActivation = false;
 			while (loadOperation.progress < 0.9f)
 				yield return null;
 
-			// Now allow the scene to activate
 			loadOperation.allowSceneActivation = true;
 			while (!loadOperation.isDone)
 				yield return null;
 
-			// Disable AudioListeners in the old scene before setting new scene as active
 			Scene currentActiveScene = SceneManager.GetActiveScene();
 			if (currentActiveScene.IsValid()) {
 				GameObject[] oldSceneObjects = currentActiveScene.GetRootGameObjects();
@@ -678,49 +679,105 @@ public class WaveManager : MonoBehaviour
 				}
 			}
 
-			// Set the new scene as active
 			Scene newActiveScene = SceneManager.GetSceneByName(nextScene);
 			if (newActiveScene.IsValid()) {
 				SceneManager.SetActiveScene(newActiveScene);
-
-				// Force lighting settings update
 				DynamicGI.UpdateEnvironment();
-
-				// Wait for rendering to stabilize
 				yield return new WaitForEndOfFrame();
 				yield return new WaitForEndOfFrame();
 			}
 
-			// Refresh terrain rendering to fix glitches
 			yield return StartCoroutine(RefreshTerrains());
 
-			// NOW unload the old scene (after new one is loaded and active)
 			Scene sceneToUnload = SceneManager.GetSceneByName(currentScene);
 			if (sceneToUnload.IsValid() && sceneToUnload.isLoaded) {
 				var unloadOperation = SceneManager.UnloadSceneAsync(currentScene);
 				while (!unloadOperation.isDone)
 					yield return null;
 
-				// Force garbage collection to clear old scene resources
 				System.GC.Collect();
-
-				// Force another lighting and terrain update after old scene is unloaded
 				DynamicGI.UpdateEnvironment();
 				yield return StartCoroutine(RefreshTerrains());
 			}
 
-			// Re-find the EnemySpawner in the new scene
 			enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
 
-			// Add a small delay to ensure everything is loaded
+			// Let the scene settle a moment, then re-apply costs and refresh UI
 			yield return new WaitForSeconds(0.2f);
+			ApplyTowerCostMultiplier(true);
 
-			// Re-apply tower costs to force UI refresh AFTER scene is fully loaded
-			ApplyTowerCostMultiplier(true);  // Pass true to indicate this is after a scene change
-
-			// Show notification about tower cost changes
 			if (gameHUD != null) {
 				StartCoroutine(ShowTowerCostNotification());
+			}
+
+			// Also evaluate defeat at scene-change points
+			CheckDefeatPostWave();
+		}
+	}
+
+	private bool ShouldDefeatNow()
+	{
+		// Any towers alive?
+		BaseTower[] towers = FindObjectsOfType<BaseTower>();
+		foreach (var t in towers) {
+			if (t != null && t.GetCurrentHealth() > 0f) {
+				return false;
+			}
+		}
+
+		// None alive: can we afford any tower?
+		var tpm = TowerPlacementManager.Instance;
+		if (tpm == null) return true;
+
+		var available = tpm.GetAvailableTowers();
+		if (available == null || available.Count == 0) return true;
+
+		int minCost = int.MaxValue;
+		foreach (var td in available) {
+			if (td != null && td.cost >= 0 && td.cost < minCost) {
+				minCost = td.cost;
+			}
+		}
+		if (minCost == int.MaxValue) return true;
+
+		int currency = CurrencyManager.Instance != null ? CurrencyManager.Instance.GetCurrentCurrency() : 0;
+		return currency < minCost;
+	}
+
+	private void CheckDefeatPostWave()
+	{
+		// 1) Any towers alive?
+		BaseTower[] towers = FindObjectsOfType<BaseTower>();
+		bool anyAlive = false;
+		foreach (var t in towers) {
+			if (t != null && t.GetCurrentHealth() > 0f) {
+				anyAlive = true;
+				break;
+			}
+		}
+		if (anyAlive) return;
+
+		// 2) If none alive, can the player afford at least one tower?
+		var tpm = TowerPlacementManager.Instance;
+		if (tpm == null) return;
+
+		var available = tpm.GetAvailableTowers();
+		if (available == null || available.Count == 0) return;
+
+		int minCost = int.MaxValue;
+		foreach (var td in available) {
+			if (td != null && td.cost >= 0 && td.cost < minCost) {
+				minCost = td.cost;
+			}
+		}
+		if (minCost == int.MaxValue) return;
+
+		int currency = CurrencyManager.Instance != null ? CurrencyManager.Instance.GetCurrentCurrency() : 0;
+
+		if (currency < minCost) {
+			// Defeat: no towers left and cannot afford any tower
+			if (GameStateManager.Instance != null) {
+				GameStateManager.Instance.ShowDefeat();
 			}
 		}
 	}

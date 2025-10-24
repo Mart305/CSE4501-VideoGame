@@ -456,28 +456,47 @@ public class BaseTower : MonoBehaviour
             Gizmos.DrawLine(transform.position, currentTarget.transform.position);
         }
     }
-    
-    private void CheckForDefeat()
-    {
-        // Count remaining towers after this one is destroyed
-        BaseTower[] remainingTowers = FindObjectsOfType<BaseTower>();
-        int aliveTowers = 0;
-        
-        foreach (BaseTower tower in remainingTowers)
-        {
-            if (tower != this && tower.currentHealth > 0)
-            {
-                aliveTowers++;
-            }
-        }
-        
-        // If no towers left, trigger defeat
-        if (aliveTowers == 0)
-        {
-            if (GameStateManager.Instance != null)
-            {
-                GameStateManager.Instance.ShowDefeat();
-            }
-        }
-    }
+
+	private void CheckForDefeat()
+	{
+		// Count remaining towers after this one is destroyed
+		BaseTower[] remainingTowers = FindObjectsOfType<BaseTower>();
+		int aliveTowers = 0;
+
+		foreach (BaseTower tower in remainingTowers) {
+			if (tower != this && tower.GetCurrentHealth() > 0f) {
+				aliveTowers++;
+			}
+		}
+
+		// If any tower is still alive, do nothing
+		if (aliveTowers > 0) return;
+
+		// No towers left: evaluate affordability immediately (even during wave)
+		int currency = CurrencyManager.Instance != null ? CurrencyManager.Instance.GetCurrentCurrency() : 0;
+
+		var tpm = TowerPlacementManager.Instance;
+		if (tpm == null) {
+			GameStateManager.Instance?.ShowDefeat();
+			return;
+		}
+
+		var available = tpm.GetAvailableTowers();
+		if (available == null || available.Count == 0) {
+			GameStateManager.Instance?.ShowDefeat();
+			return;
+		}
+
+		int minCost = int.MaxValue;
+		foreach (var td in available) {
+			if (td != null && td.cost >= 0 && td.cost < minCost) {
+				minCost = td.cost;
+			}
+		}
+
+		if (minCost == int.MaxValue || currency < minCost) {
+			GameStateManager.Instance?.ShowDefeat();
+		}
+		// else: player can still afford at least one tower; allow them to place it
+	}
 }
