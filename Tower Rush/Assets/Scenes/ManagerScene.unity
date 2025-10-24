@@ -3338,6 +3338,10 @@ MonoBehaviour:
   OnBatchSpawned:
     m_PersistentCalls:
       m_Calls: []
+  enableDebugMode: 0
+  debugSkipToWave: 1
+  skipWaveDelay: 0
+  instantSpawn: 0
   enemySpawner: {fileID: 731426784}
   gameHUD: {fileID: 0}
   gameplaySceneNames:

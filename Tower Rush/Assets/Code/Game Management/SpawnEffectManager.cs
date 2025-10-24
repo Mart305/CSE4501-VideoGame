@@ -62,7 +62,7 @@ public class SpawnEffectManager : MonoBehaviour
         }
     }
     
-    public IEnumerator SpawnWithEffect(GameObject enemyPrefab, Vector3 spawnPosition, string enemyType)
+    public IEnumerator SpawnWithEffect(GameObject enemyPrefab, Vector3 portalPosition, Vector3 enemySpawnPosition, string enemyType)
     {
         // Get appropriate effect for enemy type
         GameObject effectPrefab = GetSpawnEffectForEnemy(enemyType);
@@ -70,7 +70,7 @@ public class SpawnEffectManager : MonoBehaviour
         GameObject effect = null;
         if (effectPrefab != null)
         {
-            effect = Instantiate(effectPrefab, spawnPosition, Quaternion.identity);
+            effect = Instantiate(effectPrefab, portalPosition, Quaternion.identity);
             
             // Play portal open sound
             if (portalOpenSound != null && audioSource != null)
@@ -81,14 +81,14 @@ public class SpawnEffectManager : MonoBehaviour
         else
         {
             // Fallback: Create a simple portal effect
-            effect = CreateSimplePortalEffect(spawnPosition, enemyType);
+            effect = CreateSimplePortalEffect(portalPosition, enemyType);
         }
         
         // Wait for effect to play
         yield return new WaitForSeconds(spawnDelay);
         
-        // Spawn enemy
-        GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+        // Spawn enemy at the elevated position
+        GameObject enemy = Instantiate(enemyPrefab, enemySpawnPosition, Quaternion.identity);
         
         // Clean up effect
         if (effect != null)

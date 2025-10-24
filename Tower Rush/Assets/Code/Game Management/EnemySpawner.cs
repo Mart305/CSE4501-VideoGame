@@ -75,21 +75,19 @@ public class EnemySpawner : MonoBehaviour
         int pointIndex = spawnPointIndex >= 0 ? spawnPointIndex : Random.Range(0, spawnPoints.Length);
         Transform spawnPoint = spawnPoints[pointIndex];
         
-<<<<<<< Updated upstream
-        // Force Y position to 15.3 to prevent enemies from spawning in the air
-        Vector3 spawnPosition = new Vector3(spawnPoint.position.x, 15.3f, spawnPoint.position.z);
-        
-        return Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
-=======
         // Use portal effects if enabled
         if (usePortalEffects && spawnEffectManager != null)
         {
-            StartCoroutine(SpawnWithPortalEffect(enemyPrefab, spawnPoint.position, enemyPrefab.name));
+            Vector3 portalPosition = new Vector3(spawnPoint.position.x, 16.3f, spawnPoint.position.z); 
+            Vector3 enemySpawnPosition = new Vector3(spawnPoint.position.x, 15.3f, spawnPoint.position.z); 
+            StartCoroutine(SpawnWithPortalEffect(enemyPrefab, portalPosition, enemySpawnPosition, enemyPrefab.name));
             return null; // Will be spawned by coroutine
         }
         else
         {
-            return Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
+            // Force Y position to 15.3 to prevent enemies from spawning in the air
+            Vector3 spawnPosition = new Vector3(spawnPoint.position.x, 15.3f, spawnPoint.position.z);
+            return Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
         }
     }
     
@@ -101,25 +99,27 @@ public class EnemySpawner : MonoBehaviour
         int pointIndex = spawnPointIndex >= 0 ? spawnPointIndex : Random.Range(0, spawnPoints.Length);
         Transform spawnPoint = spawnPoints[pointIndex];
         
+        Vector3 portalPosition = new Vector3(spawnPoint.position.x, 16.3f, spawnPoint.position.z); 
+        Vector3 enemySpawnPosition = new Vector3(spawnPoint.position.x, 15.3f, spawnPoint.position.z); // Elevated for enemy
+        
         // Start the portal spawn coroutine
-        StartCoroutine(SpawnWithPortalEffect(enemyPrefab, spawnPoint.position, enemyPrefab.name));
+        StartCoroutine(SpawnWithPortalEffect(enemyPrefab, portalPosition, enemySpawnPosition, enemyPrefab.name));
         
         return null; // Will be returned by coroutine
     }
     
-    private IEnumerator SpawnWithPortalEffect(GameObject enemyPrefab, Vector3 spawnPosition, string enemyType)
+    private IEnumerator SpawnWithPortalEffect(GameObject enemyPrefab, Vector3 portalPosition, Vector3 enemySpawnPosition, string enemyType)
     {
         if (spawnEffectManager != null)
         {
             // Use the SpawnEffectManager for consistent effects
-            yield return StartCoroutine(spawnEffectManager.SpawnWithEffect(enemyPrefab, spawnPosition, enemyType));
+            yield return StartCoroutine(spawnEffectManager.SpawnWithEffect(enemyPrefab, portalPosition, enemySpawnPosition, enemyType));
         }
         else
         {
             // Fallback: Simple spawn without effects
             yield return new WaitForSeconds(0.5f);
-            Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+            Instantiate(enemyPrefab, enemySpawnPosition, Quaternion.identity);
         }
->>>>>>> Stashed changes
     }
 }
