@@ -469,32 +469,21 @@ public class BaseTower : MonoBehaviour
 			}
 		}
 
+		// If any tower is still alive, do nothing
 		if (aliveTowers > 0) return;
 
-		// If no towers left:
-		// Defer defeat to WaveManager after the wave ends when possible.
-		if (WaveManager.Instance != null && WaveManager.Instance.IsWaveActive()) {
-			// Let WaveManager evaluate defeat post-wave (after costs/scene changes)
-			return;
-		}
-
-		// Fallback: if no active wave or no WaveManager, evaluate affordability now
+		// No towers left: evaluate affordability immediately (even during wave)
 		int currency = CurrencyManager.Instance != null ? CurrencyManager.Instance.GetCurrentCurrency() : 0;
 
 		var tpm = TowerPlacementManager.Instance;
 		if (tpm == null) {
-			// No tower data to evaluate – consider this a defeat-safe fallback
-			if (GameStateManager.Instance != null) {
-				GameStateManager.Instance.ShowDefeat();
-			}
+			GameStateManager.Instance?.ShowDefeat();
 			return;
 		}
 
 		var available = tpm.GetAvailableTowers();
 		if (available == null || available.Count == 0) {
-			if (GameStateManager.Instance != null) {
-				GameStateManager.Instance.ShowDefeat();
-			}
+			GameStateManager.Instance?.ShowDefeat();
 			return;
 		}
 
@@ -505,19 +494,9 @@ public class BaseTower : MonoBehaviour
 			}
 		}
 
-		if (minCost == int.MaxValue) {
-			// No purchasable towers configured
-			if (GameStateManager.Instance != null) {
-				GameStateManager.Instance.ShowDefeat();
-			}
-			return;
+		if (minCost == int.MaxValue || currency < minCost) {
+			GameStateManager.Instance?.ShowDefeat();
 		}
-
-		if (currency < minCost) {
-			if (GameStateManager.Instance != null) {
-				GameStateManager.Instance.ShowDefeat();
-			}
-		}
-		// else: player can afford a new tower before the next wave; do not defeat
+		// else: player can still afford at least one tower; allow them to place it
 	}
 }

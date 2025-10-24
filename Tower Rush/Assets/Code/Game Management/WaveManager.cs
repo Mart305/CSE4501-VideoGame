@@ -445,14 +445,20 @@ public class WaveManager : MonoBehaviour
 	IEnumerator WaitForWaveCompletion()
 	{
 		while (isWaveActive && enemiesKilledThisWave < totalEnemiesThisWave) {
-			// Check for enemy deaths by counting remaining enemies
+			// Immediate defeat if no towers and cannot afford any tower
+			if (ShouldDefeatNow()) {
+				isWaveActive = false;
+				GameStateManager.Instance?.ShowDefeat();
+				yield break;
+			}
+
+			// Existing tracking
 			CheckEnemyDeaths();
 			yield return new WaitForSeconds(0.1f);
 		}
 
 		isWaveActive = false;
 
-		// Stop any ongoing spawn coroutine
 		if (currentWaveCoroutine != null) {
 			StopCoroutine(currentWaveCoroutine);
 			currentWaveCoroutine = null;
@@ -707,6 +713,35 @@ public class WaveManager : MonoBehaviour
 			// Also evaluate defeat at scene-change points
 			CheckDefeatPostWave();
 		}
+	}
+
+	private bool ShouldDefeatNow()
+	{
+		// Any towers alive?
+		BaseTower[] towers = FindObjectsOfType<BaseTower>();
+		foreach (var t in towers) {
+			if (t != null && t.GetCurrentHealth() > 0f) {
+				return false;
+			}
+		}
+
+		// None alive: can we afford any tower?
+		var tpm = TowerPlacementManager.Instance;
+		if (tpm == null) return true;
+
+		var available = tpm.GetAvailableTowers();
+		if (available == null || available.Count == 0) return true;
+
+		int minCost = int.MaxValue;
+		foreach (var td in available) {
+			if (td != null && td.cost >= 0 && td.cost < minCost) {
+				minCost = td.cost;
+			}
+		}
+		if (minCost == int.MaxValue) return true;
+
+		int currency = CurrencyManager.Instance != null ? CurrencyManager.Instance.GetCurrentCurrency() : 0;
+		return currency < minCost;
 	}
 
 	private void CheckDefeatPostWave()
