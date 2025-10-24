@@ -606,6 +606,7 @@ public class WaveManager : MonoBehaviour
 			return;
 		}
 
+<<<<<<< Updated upstream
 		// Get spawn point
 		Transform spawnPoint = enemySpawner.spawnPoints[Random.Range(0, enemySpawner.spawnPoints.Length)];
 
@@ -614,6 +615,10 @@ public class WaveManager : MonoBehaviour
 
 		// Spawn enemy (no stat scaling - enemies keep their base stats)
 		Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+=======
+		// Use the new portal spawn method instead of direct instantiation
+		enemySpawner.SpawnEnemyWithPortal(enemyPrefab);
+>>>>>>> Stashed changes
 	}
 
 	private float CalculateSpawnDelay()
