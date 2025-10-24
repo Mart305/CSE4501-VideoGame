@@ -820,7 +820,7 @@ Transform:
   m_GameObject: {fileID: 341611154}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1252, y: -200, z: -1252}
+  m_LocalPosition: {x: -1252, y: 0.3, z: -1252}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1751,6 +1751,8 @@ MonoBehaviour:
   ghostPrefab: {fileID: 5163679325591557877, guid: 6f0b711772e2a8541b7916d6c58069e1, type: 3}
   skeletonPrefab: {fileID: 5664305964004973586, guid: b18e04a4c1fde5142a5eb97c10b4b19f, type: 3}
   mutantZombiePrefab: {fileID: 9063911118954261516, guid: 67a8c5d44c4c6c941816f8bbfd72d02b, type: 3}
+  spawnEffectManager: {fileID: 0}
+  usePortalEffects: 1
   showSpawnPoints: 1
 --- !u!4 &781600205
 Transform:

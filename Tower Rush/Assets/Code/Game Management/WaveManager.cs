@@ -614,14 +614,8 @@ public class WaveManager : MonoBehaviour
 			return;
 		}
 
-		// Get spawn point
-		Transform spawnPoint = enemySpawner.spawnPoints[Random.Range(0, enemySpawner.spawnPoints.Length)];
-
-		// Force Y position to 15.3 to prevent enemies from spawning in the air
-		Vector3 spawnPosition = new Vector3(spawnPoint.position.x, 15.3f, spawnPoint.position.z);
-
-		// Spawn enemy (no stat scaling - enemies keep their base stats)
-		Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+		// Use the new portal spawn method instead of direct instantiation
+		enemySpawner.SpawnEnemyWithPortal(enemyPrefab);
 	}
 
 	private float CalculateSpawnDelay()
@@ -926,4 +920,5 @@ public class WaveManager : MonoBehaviour
 		// Final frame wait to ensure all updates are applied
 		yield return new WaitForEndOfFrame();
 	}
+	
 }
