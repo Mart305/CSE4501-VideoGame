@@ -21,8 +21,8 @@ public abstract class Enemy : MonoBehaviour
 
     protected virtual void Start()
     {
-        // Play spawn effect
-        PlaySpawnEffect();
+        // Spawn effects are now handled by the portal system in SpawnEffectManager
+        // PlaySpawnEffect(); // Disabled - using portal effects instead
         
         FindTargetTower();
         
