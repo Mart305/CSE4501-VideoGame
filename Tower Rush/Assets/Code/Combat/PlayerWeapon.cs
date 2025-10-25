@@ -59,13 +59,13 @@ public class PlayerWeapon : MonoBehaviour
         }
         audioSource.spatialBlend = 0f;
         audioSource.volume = 1f;
-        
+
         playerCamera = Camera.main;
         if (playerCamera == null)
         {
             playerCamera = GetComponentInChildren<Camera>();
         }
-        
+
         if (firePoint == null)
         {
             GameObject firePointObj = new GameObject("FirePoint");
@@ -73,15 +73,30 @@ public class PlayerWeapon : MonoBehaviour
             firePointObj.transform.localPosition = new Vector3(0.2f, -0.1f, 0.5f);
             firePoint = firePointObj.transform;
         }
-        
+
         originalPosition = transform.localPosition;
         originalRotation = transform.localRotation;
-        
+
         SetupMuzzleFlashLight();
-        
+
         if (projectilePrefab == null)
         {
             CreateDefaultProjectile();
+        }
+
+        // Auto-load weapon sounds if not assigned
+        if (fireSound == null)
+        {
+            fireSound = Resources.Load<AudioClip>("Sounds/Weapons/weapon_shoot");
+            if (fireSound != null)
+            {
+                Debug.Log("Auto-loaded weapon shoot sound: " + fireSound.name);
+            }
+        }
+
+        if (reloadSound == null)
+        {
+            reloadSound = Resources.Load<AudioClip>("Sounds/Weapons/weapon_shoot");
         }
     }
     
