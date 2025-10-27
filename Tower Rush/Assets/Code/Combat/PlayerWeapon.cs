@@ -88,10 +88,6 @@ public class PlayerWeapon : MonoBehaviour
         if (fireSound == null)
         {
             fireSound = Resources.Load<AudioClip>("Sounds/Weapons/weapon_shoot");
-            if (fireSound != null)
-            {
-                Debug.Log("Auto-loaded weapon shoot sound: " + fireSound.name);
-            }
         }
 
         if (reloadSound == null)

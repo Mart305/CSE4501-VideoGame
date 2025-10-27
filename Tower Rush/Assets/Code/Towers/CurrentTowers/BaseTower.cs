@@ -390,10 +390,6 @@ public class BaseTower : MonoBehaviour
 				}
 
 				// Get the new gold amount after deduction
-				int remainingGold = CurrencyManager.Instance.GetCurrentCurrency();
-
-				// Enhanced debug message with more gold information
-				Debug.Log($"[TOWER DESTROYED] {this.GetType().Name} | Gold Deducted: {deductAmount} | Previous Gold: {previousGold} | Remaining Gold: {remainingGold} | Wave: {currentWave}");
 			}
 		}
 

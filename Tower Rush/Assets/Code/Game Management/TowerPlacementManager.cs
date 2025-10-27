@@ -38,7 +38,7 @@ public class TowerPlacementManager : MonoBehaviour
     public UnityEvent OnPlacementCancelled;
 
 	[Header("Tower Cost Scaling")]
-	[SerializeField] private List<int> baseTowerCosts = new List<int>();
+	private List<int> baseTowerCosts = new List<int>(); // Not serialized - captured once in Awake
 	[SerializeField] private bool costScalingEnabled = true;
 	private int currentSceneTier = 0;
 
@@ -60,6 +60,13 @@ public class TowerPlacementManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            
+            // CRITICAL: Capture base costs immediately in Awake before anything can modify them
+            // This happens only once when the manager is first created
+            baseTowerCosts.Clear();
+            foreach (var tower in availableTowers) {
+                baseTowerCosts.Add(tower.cost);
+            }
         }
         else
         {
@@ -81,21 +88,6 @@ public class TowerPlacementManager : MonoBehaviour
 		if (OnPlacementCancelled == null)
 			OnPlacementCancelled = new UnityEvent();
 
-		// Store the original tower costs
-		InitializeBaseCosts();
-	}
-
-	// Add this method after Start()
-	public void InitializeBaseCosts()
-	{
-		// Store original costs if not already stored
-		if (baseTowerCosts.Count == 0 || baseTowerCosts.Count != availableTowers.Count) {
-			baseTowerCosts.Clear();
-			foreach (var tower in availableTowers) {
-				baseTowerCosts.Add(tower.cost);
-			}
-			Debug.Log($"Base tower costs initialized: {string.Join(", ", baseTowerCosts)}");
-		}
 	}
 
 	// Add this method to apply the multiplier
@@ -112,12 +104,12 @@ public class TowerPlacementManager : MonoBehaviour
 		// Store the new tier
 		currentSceneTier = tier;
 
-		// Initialize base costs if needed
-		if (baseTowerCosts.Count == 0 || baseTowerCosts.Count != availableTowers.Count) {
-			InitializeBaseCosts();
+		// Ensure base costs were captured (should have been done in Awake)
+		if (baseTowerCosts.Count == 0) {
+			return;
 		}
 
-		// Calculate multiplier: 3^tier
+		// Calculate multiplier: 2^tier
 		int multiplier = 1;
 		for (int i = 0; i < tier; i++) {
 			multiplier *= 2;
@@ -129,7 +121,24 @@ public class TowerPlacementManager : MonoBehaviour
 			availableTowers[i].cost = newCost;
 		}
 
-		Debug.Log($"Tower costs updated for wave {currentWave} (Tier {tier}): Multiplier = {multiplier}x");
+		// Update UI if GameHUD exists
+		if (GameHUD.Instance != null) {
+			GameHUD.Instance.InitializeTowerButtons();
+		}
+	}
+
+	// Reset tower costs to base values (for new game)
+	public void ResetTowerCosts()
+	{
+		// Reset tier to 0
+		currentSceneTier = 0;
+
+		// Restore all tower costs to their base values (captured in Awake)
+		if (baseTowerCosts.Count > 0) {
+			for (int i = 0; i < availableTowers.Count && i < baseTowerCosts.Count; i++) {
+				availableTowers[i].cost = baseTowerCosts[i];
+			}
+		}
 
 		// Update UI if GameHUD exists
 		if (GameHUD.Instance != null) {
@@ -279,7 +288,7 @@ public class TowerPlacementManager : MonoBehaviour
         }
     }
 
-	private void HandleTowerPlacement()
+    private void HandleTowerPlacement()
     {
         // Cancel placement with ESC or right click
         if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1))

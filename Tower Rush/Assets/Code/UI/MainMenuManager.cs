@@ -69,10 +69,6 @@ public class MainMenuManager : MonoBehaviour
         {
             howToPlayPanel.OpenPanel();
         }
-        else
-        {
-            Debug.LogWarning("HowToPlayPanel is not assigned in MainMenuManager!");
-        }
     }
     
     public void ShowMainMenu()

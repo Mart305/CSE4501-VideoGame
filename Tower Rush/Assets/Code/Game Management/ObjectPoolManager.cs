@@ -60,7 +60,6 @@ public class ObjectPoolManager : MonoBehaviour
         {
             if (pool.prefab == null)
             {
-                Debug.LogWarning($"Pool '{pool.tag}' has no prefab assigned!");
                 continue;
             }
 
@@ -88,7 +87,6 @@ public class ObjectPoolManager : MonoBehaviour
     {
         if (!poolDictionary.ContainsKey(tag))
         {
-            Debug.LogWarning($"Pool with tag '{tag}' doesn't exist!");
             return null;
         }
 
@@ -105,7 +103,6 @@ public class ObjectPoolManager : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"Pool '{tag}' is empty and expansion is disabled!");
                 return null;
             }
         }
@@ -133,7 +130,6 @@ public class ObjectPoolManager : MonoBehaviour
     {
         if (!poolDictionary.ContainsKey(tag))
         {
-            Debug.LogWarning($"Pool with tag '{tag}' doesn't exist! Destroying object instead.");
             Destroy(obj);
             return;
         }
@@ -187,7 +183,6 @@ public class ObjectPoolManager : MonoBehaviour
     {
         if (poolDictionary.ContainsKey(tag))
         {
-            Debug.LogWarning($"Pool with tag '{tag}' already exists!");
             return;
         }
 

@@ -548,6 +548,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: be3776e9bd6e31341b3490a035f6ea50, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8452268999676701207}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: be3776e9bd6e31341b3490a035f6ea50, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5428766357644886706}
   m_SourcePrefab: {fileID: 100100000, guid: be3776e9bd6e31341b3490a035f6ea50, type: 3}
 --- !u!4 &1984329170164028970 stripped
 Transform:
@@ -581,3 +584,30 @@ MonoBehaviour:
   attackCooldown: 1
   damage: 5
   health: 20
+  spawnEffectPrefab: {fileID: 0}
+  deathEffectPrefab: {fileID: 0}
+  spawnEffectDuration: 1
+  deathEffectDuration: 2
+--- !u!136 &5428766357644886706
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5664305964004973586}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.6820015
+  m_Height: 2.0496879
+  m_Direction: 1
+  m_Center: {x: -0.009270191, y: 0.8590636, z: -0.04508531}
