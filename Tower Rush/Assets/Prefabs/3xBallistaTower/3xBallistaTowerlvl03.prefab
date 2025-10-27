@@ -590,6 +590,7 @@ MonoBehaviour:
   healthyColor: {r: 1, g: 1, b: 1, a: 1}
   damagedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   criticalColor: {r: 1, g: 0, b: 0, a: 1}
+  towerFXPrefab: {fileID: 0}
   attackFXPrefab: {fileID: 3747040474644400901, guid: 87e964951a199d546a95fce4f2790e32, type: 3}
   explosionFXPrefab: {fileID: 0}
   firePoint: {fileID: 6292344859439302406}
@@ -1925,7 +1926,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 0}
   m_FillRect: {fileID: 9057633982867398392}
   m_HandleRect: {fileID: 0}
@@ -2046,7 +2047,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8365807038476115045}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 0.099999994, y: 0.099999994, z: 0.099999994}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2055,7 +2056,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 26}
+  m_AnchoredPosition: {x: 0, y: 10}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &2350693920137904168
@@ -2147,6 +2148,8 @@ MonoBehaviour:
   repairCost: 50
   maxHealthCost: 100
   resistanceCost: 150
+  uiRadius: 10
+  uiHeightOffset: 12
 --- !u!1 &8749959746326692096
 GameObject:
   m_ObjectHideFlags: 0

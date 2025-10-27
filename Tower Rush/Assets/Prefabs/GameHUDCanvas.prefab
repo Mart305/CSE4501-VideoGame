@@ -120,7 +120,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currencyText: {fileID: 3983650309098618733}
   currencyPrefix: 'Gold: '
-  towerButtonPrefab: {fileID: 4468843996826926844}
+  towerButtonPrefab: {fileID: 6050315089433965393, guid: 1dbb461afea33439ca44d894e878f709, type: 3}
   towerButtonContainer: {fileID: 321670982215839761}
   placementInstructions: {fileID: 4900397298894289877}
   placementText: {fileID: 5918662774194822773}
@@ -1026,10 +1026,5 @@ PrefabInstance:
 --- !u!224 &1756918233447908993 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8471939022509640492, guid: 1dbb461afea33439ca44d894e878f709, type: 3}
-  m_PrefabInstance: {fileID: 7922830602529983917}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &4468843996826926844 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6050315089433965393, guid: 1dbb461afea33439ca44d894e878f709, type: 3}
   m_PrefabInstance: {fileID: 7922830602529983917}
   m_PrefabAsset: {fileID: 0}

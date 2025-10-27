@@ -156,6 +156,15 @@ public class WaveManager : MonoBehaviour
 			gameHUD.UpdateWaveDisplay(currentWave, maxWaves);
 		}
 	}
+	
+	// Public method to force storage of current tower costs as base costs
+	public void ForceStoreBaseTowerCosts()
+	{
+		hasStoredOriginalCosts = false;
+		originalTowerCosts.Clear();
+		StoreOriginalTowerCosts();
+		hasStoredOriginalCosts = true;
+	}
 
 	private IEnumerator UnloadAllGameplayScenes()
 	{
@@ -376,7 +385,6 @@ public class WaveManager : MonoBehaviour
 		if (enemySpawner == null) {
 			enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
 			if (enemySpawner == null) {
-				Debug.LogError("Cannot spawn batch - EnemySpawner not found in scene!");
 				yield break;
 			}
 		}
@@ -421,7 +429,6 @@ public class WaveManager : MonoBehaviour
 		if (enemySpawner == null) {
 			enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
 			if (enemySpawner == null) {
-				Debug.LogError("Cannot spawn enemies - EnemySpawner not found in scene!");
 				yield break;
 			}
 		}
@@ -509,14 +516,12 @@ public class WaveManager : MonoBehaviour
 	private GameObject DetermineEnemyType()
 	{
 		if (enemySpawner == null) {
-			Debug.LogError("DetermineEnemyType: enemySpawner is null!");
 			return null;
 		}
 
 		// Check if any prefabs are assigned
 		if (enemySpawner.zombiePrefab == null && enemySpawner.ghostPrefab == null &&
 			enemySpawner.skeletonPrefab == null && enemySpawner.mutantZombiePrefab == null) {
-			Debug.LogError("DetermineEnemyType: No enemy prefabs are assigned in EnemySpawner!");
 			return null;
 		}
 
@@ -596,21 +601,17 @@ public class WaveManager : MonoBehaviour
 	private void SpawnEnemy(GameObject enemyPrefab)
 	{
 		if (enemyPrefab == null) {
-			Debug.LogError("Cannot spawn enemy - enemyPrefab is null!");
 			return;
 		}
 
 		if (enemySpawner == null) {
-			Debug.LogError("Cannot spawn enemy - enemySpawner is null! Attempting to find it...");
 			enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
 			if (enemySpawner == null) {
-				Debug.LogError("Still cannot find EnemySpawner in scene!");
 				return;
 			}
 		}
 
 		if (enemySpawner.spawnPoints == null || enemySpawner.spawnPoints.Length == 0) {
-			Debug.LogError("EnemySpawner has no spawn points configured!");
 			return;
 		}
 
@@ -798,7 +799,6 @@ public class WaveManager : MonoBehaviour
 		foreach (var tower in towers) {
 			if (originalTowerCosts.TryGetValue(tower.towerName, out int originalCost)) {
 				tower.cost = originalCost * multiplier;
-				Debug.Log($"Updated tower '{tower.towerName}' cost to {tower.cost} (original: {originalCost}, multiplier: {multiplier}x)");
 			}
 		}
 
@@ -835,13 +835,9 @@ public class WaveManager : MonoBehaviour
 				if (button.GetTowerData()?.towerName == tower.towerName) {
 					// Force button to update with new cost
 					button.UpdateCost(tower.cost);
-					Debug.Log($"Force updated UI button for {tower.towerName} to show cost: {tower.cost}");
 				}
 			}
 		}
-
-		// Log completion
-		Debug.Log("Tower button costs force updated after scene transition");
 	}
 
 	private void StoreOriginalTowerCosts()
@@ -853,7 +849,6 @@ public class WaveManager : MonoBehaviour
 
 		foreach (var tower in towers) {
 			originalTowerCosts[tower.towerName] = tower.cost;
-			Debug.Log($"Stored original cost for tower '{tower.towerName}': {tower.cost}");
 		}
 	}
 
