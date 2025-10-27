@@ -6855,6 +6855,7 @@ GameObject:
   - component: {fileID: 7257195879519898327}
   - component: {fileID: 8507336606876215379}
   - component: {fileID: 2595987585013930577}
+  - component: {fileID: 7575516469184022713}
   m_Layer: 0
   m_Name: MutantZombie
   m_TagString: Enemy
@@ -6919,6 +6920,33 @@ MonoBehaviour:
   attackCooldown: 1
   damage: 5
   health: 20
+  spawnEffectPrefab: {fileID: 0}
+  deathEffectPrefab: {fileID: 0}
+  spawnEffectDuration: 1
+  deathEffectDuration: 2
+--- !u!136 &7575516469184022713
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9063911118954261516}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5963937
+  m_Height: 2.671763
+  m_Direction: 1
+  m_Center: {x: -0.013770461, y: 0.8358815, z: 0}
 --- !u!1 &9072413210657599959
 GameObject:
   m_ObjectHideFlags: 0

@@ -82,7 +82,6 @@ public class TerrainDecorator : MonoBehaviour
     {
         if (rockPrefabs.Length == 0 && treePrefabs.Length == 0 && bushPrefabs.Length == 0)
         {
-            Debug.LogWarning("TerrainDecorator: No decoration prefabs assigned!");
             return;
         }
 
@@ -129,8 +128,6 @@ public class TerrainDecorator : MonoBehaviour
             spawnedPositions.Add(randomPosition);
             successfulSpawns++;
         }
-
-        Debug.Log($"TerrainDecorator: Successfully spawned {successfulSpawns} decorations in {attempts} attempts");
     }
 
     private Vector3 GetRandomTerrainPosition()
@@ -235,7 +232,6 @@ public class TerrainDecorator : MonoBehaviour
             }
         }
         spawnedPositions.Clear();
-        Debug.Log("TerrainDecorator: All decorations cleared");
     }
 
     // Visualize spawn area in editor

@@ -28,7 +28,6 @@ public class EnemySpawner : MonoBehaviour
             spawnEffectManager = FindObjectOfType<SpawnEffectManager>();
             if (spawnEffectManager == null)
             {
-                Debug.LogWarning("SpawnEffectManager not found! Creating one...");
                 GameObject effectManagerObj = new GameObject("SpawnEffectManager");
                 spawnEffectManager = effectManagerObj.AddComponent<SpawnEffectManager>();
             }

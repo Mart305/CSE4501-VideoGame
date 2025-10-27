@@ -361,30 +361,42 @@ public class GameHUD : MonoBehaviour
     // Enhanced wave display with progress
     public void UpdateWaveDisplay(int currentWave, int totalWaves = -1)
     {
-        // Scenes change every 5 waves, so show progress within current scene
-        int wavesPerScene = 5;
-        int waveInCurrentScene = ((currentWave - 1) % wavesPerScene) + 1; // 1-5 for each scene
-        
+        // Show current wave out of total waves (e.g., "Wave: 3/20")
         if (waveText != null)
         {
-            waveText.text = $"Wave: {waveInCurrentScene}/{wavesPerScene}";
+            if (totalWaves > 0)
+            {
+                waveText.text = $"Wave: {currentWave}/{totalWaves}";
+            }
+            else
+            {
+                // Infinite waves mode
+                waveText.text = $"Wave: {currentWave}";
+            }
         }
         
-        // Update wave progress slider based on scene progress (0-5 waves)
-        if (waveProgressSlider != null)
+        // Update wave progress slider based on total wave progress
+        if (waveProgressSlider != null && totalWaves > 0)
         {
             // Ensure slider is configured correctly
             waveProgressSlider.minValue = 0f;
             waveProgressSlider.maxValue = 1f;
             
-            float progress = (float)waveInCurrentScene / wavesPerScene;
+            float progress = (float)currentWave / totalWaves;
             waveProgressSlider.value = progress;
         }
         
-        // Update wave progress text to show scene progress
+        // Update wave progress text to show total progress
         if (waveProgressText != null)
         {
-            waveProgressText.text = $"Wave: {waveInCurrentScene}/{wavesPerScene}";
+            if (totalWaves > 0)
+            {
+                waveProgressText.text = $"Wave: {currentWave}/{totalWaves}";
+            }
+            else
+            {
+                waveProgressText.text = $"Wave: {currentWave}";
+            }
         }
     }
     
@@ -435,6 +447,9 @@ public class GameHUD : MonoBehaviour
                 // Ensure TowerButton component is enabled
                 towerButton.enabled = true;
                 towerButton.Initialize(availableTowers[i], i);
+                
+                // Force update the cost display immediately
+                towerButton.UpdateCost(availableTowers[i].cost);
             }
         }
     }
@@ -495,12 +510,12 @@ public class GameHUD : MonoBehaviour
     {
         if (placementText != null)
         {
-            string originalText = placementText.text;
             placementText.text = message;
             
             yield return new WaitForSeconds(duration);
             
-            placementText.text = originalText;
+            // Restore to default instructions instead of previous text
+            placementText.text = "Click a tower icon above, then click to place OR drag and drop to place";
         }
     }
     

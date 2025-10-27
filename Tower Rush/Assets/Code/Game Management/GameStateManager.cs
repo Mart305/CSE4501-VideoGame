@@ -87,18 +87,7 @@ public class GameStateManager : MonoBehaviour
     
     void Update()
     {
-        // Check for pause input (only during gameplay)
-        if (Input.GetKeyDown(KeyCode.P) && currentState == GameState.Playing)
-        {
-            PauseGame();
-        }
-        else if (Input.GetKeyDown(KeyCode.P) && currentState == GameState.Paused)
-        {
-            ResumeGame();
-        }
-        
-        // ESC key functionality removed
-        
+        // Pause is now handled by PauseMenuManager using ESC key only
         // Game over input handling can be added later if needed
     }
     
@@ -148,6 +137,18 @@ public class GameStateManager : MonoBehaviour
         // CRITICAL: Reset all game state for fresh start
         currentState = GameState.Playing;
         Time.timeScale = 1f;
+        
+        // Reset tower costs to base values
+        if (TowerPlacementManager.Instance != null)
+        {
+            TowerPlacementManager.Instance.ResetTowerCosts();
+        }
+        
+        // Force WaveManager to store these reset costs as base costs
+        if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.ForceStoreBaseTowerCosts();
+        }
         
         // Hide main menu before moving to DontDestroyOnLoad
         if (mainMenuManager != null)
@@ -243,10 +244,21 @@ public class GameStateManager : MonoBehaviour
             {
                 CurrencyManager.Instance.ResetCurrency();
             }
-        }
-        else
-        {
-            Debug.LogError("GameHUDCanvas not found after scene load!");
+            
+            // Force UI update to show correct tower costs
+            if (GameHUD.Instance != null && TowerPlacementManager.Instance != null)
+            {
+                GameHUD.Instance.InitializeTowerButtons();
+                
+                // Wait another frame and force update again to ensure costs are correct
+                yield return null;
+                yield return null; // Extra frame for safety
+                
+                if (GameHUD.Instance != null)
+                {
+                    GameHUD.Instance.InitializeTowerButtons();
+                }
+            }
         }
     }
     
@@ -285,6 +297,13 @@ public class GameStateManager : MonoBehaviour
                 // Skip EnemySpawner - let each scene have its own spawn points
                 EnemySpawner enemySpawner = obj.GetComponent<EnemySpawner>();
                 if (enemySpawner != null)
+                {
+                    continue;
+                }
+                
+                // Skip Terrain - let each scene have its own terrain
+                Terrain terrain = obj.GetComponent<Terrain>();
+                if (terrain != null)
                 {
                     continue;
                 }
@@ -345,8 +364,6 @@ public class GameStateManager : MonoBehaviour
         
         // Freeze time for main menu
         Time.timeScale = 0f;
-        
-        Debug.Log("Returned to main menu - game state cleared");
     }
     
     public void QuitGame()
@@ -366,10 +383,6 @@ public class GameStateManager : MonoBehaviour
         {
             victoryPanel.ShowVictory(enemiesDefeated);
         }
-        else
-        {
-            Debug.LogError("VictoryPanel not assigned in GameStateManager!");
-        }
     }
     
     public void ShowDefeat()
@@ -377,10 +390,6 @@ public class GameStateManager : MonoBehaviour
         if (defeatPanel != null)
         {
             defeatPanel.ShowDefeat();
-        }
-        else
-        {
-            Debug.LogError("DefeatPanel not assigned in GameStateManager!");
         }
     }
     

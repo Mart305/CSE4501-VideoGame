@@ -36,7 +36,6 @@ public class OptionsPanel : MonoBehaviour
     {
         if (settingsContainer == null)
         {
-            Debug.LogError("Settings Container is not assigned!");
             return;
         }
         

@@ -21,10 +21,6 @@ public class PauseMenuManager : MonoBehaviour
         
         // Find EventSystem in scene
         eventSystem = FindObjectOfType<EventSystem>();
-        if (eventSystem == null)
-        {
-            Debug.LogWarning("No EventSystem found! UI buttons won't work. Add one via: GameObject -> UI -> Event System");
-        }
     }
 
     void Update()
@@ -115,10 +111,6 @@ public class PauseMenuManager : MonoBehaviour
         {
             optionsPanel.OpenPanel();
         }
-        else
-        {
-            Debug.LogError("OptionsPanel reference not assigned in PauseMenuManager!");
-        }
         
         // Play sound effect
         if (AudioManager.Instance != null)
@@ -179,8 +171,6 @@ public class PauseMenuManager : MonoBehaviour
         {
             AudioManager.Instance.PlayButtonClickSound();
         }
-        
-        Debug.Log("Quitting game...");
         
         #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
