@@ -17,7 +17,7 @@ public class WaveManager : MonoBehaviour
 
 	[Header("Enemy Count Scaling")]
 	[SerializeField] private int baseEnemiesPerWave = 12; 
-	[SerializeField] private float enemyCountMultiplier = 1.30f;
+	[SerializeField] private float enemyCountMultiplier = 1.35f; // Increased from 1.30f
 
 	[Header("Batch Spawning")]
 	[SerializeField] private bool useBatchSpawning = true;
@@ -538,8 +538,8 @@ public class WaveManager : MonoBehaviour
 		float baseCount = baseEnemiesPerWave;
 		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, relativeWave - 1);
 		
-		// Progressive difficulty bonus: each new scene is 45% harder than previous
-		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.45f);
+		// Progressive difficulty bonus: each new scene is 50% harder than previous
+		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.50f);
 		
 		// Add some randomness (±20%)
 		float randomFactor = Random.Range(0.8f, 1.2f);

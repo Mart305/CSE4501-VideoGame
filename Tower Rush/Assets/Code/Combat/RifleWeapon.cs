@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class RifleWeapon : PlayerWeapon
 {
@@ -25,7 +26,7 @@ public class RifleWeapon : PlayerWeapon
         }
     }
 
-    System.Collections.IEnumerator FireBurst()
+    IEnumerator FireBurst()
     {
         for (int i = 0; i < burstCount; i++)
         {
@@ -33,7 +34,7 @@ public class RifleWeapon : PlayerWeapon
                 break;
 
             base.Fire();
-            yield return new System.Collections.WaitForSeconds(burstDelay);
+            yield return new WaitForSeconds(burstDelay);
         }
     }
 }
