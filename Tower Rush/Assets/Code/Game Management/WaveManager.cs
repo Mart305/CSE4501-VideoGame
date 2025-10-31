@@ -63,6 +63,14 @@ public class WaveManager : MonoBehaviour
 	private Dictionary<string, int> originalTowerCosts = new Dictionary<string, int>();
 	private bool hasStoredOriginalCosts = false;
 
+	// No-tower gold drain
+	[Header("No-Tower Gold Drain")]
+	[SerializeField] private bool enableNoTowerGoldDrain = true;
+	[SerializeField] private int goldDrainPerSecondWhenNoTowers = 200;
+	[SerializeField] private float goldDrainTickSeconds = 1f;
+	private Coroutine noTowersDrainMonitor;
+	private Coroutine noTowersDrainCoroutine;
+
 	public int GetCurrentWave() => currentWave;
 	public int GetMaxWaves() => maxWaves;
 	public bool IsWaveActive() => isWaveActive;
@@ -156,7 +164,7 @@ public class WaveManager : MonoBehaviour
 			gameHUD.UpdateWaveDisplay(currentWave, maxWaves);
 		}
 	}
-	
+
 	// Public method to force storage of current tower costs as base costs
 	public void ForceStoreBaseTowerCosts()
 	{
@@ -359,6 +367,15 @@ public class WaveManager : MonoBehaviour
 			gameHUD.UpdateWaveDisplay(currentWave, maxWaves);
 		}
 
+		// Start monitoring gold drain while no towers (during the wave)
+		if (enableNoTowerGoldDrain) {
+			if (noTowersDrainMonitor != null) {
+				StopCoroutine(noTowersDrainMonitor);
+				noTowersDrainMonitor = null;
+			}
+			noTowersDrainMonitor = StartCoroutine(MonitorNoTowersDrain());
+		}
+
 		// Notify wave started
 		OnWaveStarted?.Invoke(currentWave);
 
@@ -455,6 +472,7 @@ public class WaveManager : MonoBehaviour
 			// Immediate defeat if no towers and cannot afford any tower
 			if (ShouldDefeatNow()) {
 				isWaveActive = false;
+				StopNoTowerDrain();
 				GameStateManager.Instance?.ShowDefeat();
 				yield break;
 			}
@@ -465,6 +483,9 @@ public class WaveManager : MonoBehaviour
 		}
 
 		isWaveActive = false;
+
+		// Stop no-tower drain monitors when the wave ends normally
+		StopNoTowerDrain();
 
 		if (currentWaveCoroutine != null) {
 			StopCoroutine(currentWaveCoroutine);
@@ -915,5 +936,70 @@ public class WaveManager : MonoBehaviour
 		// Final frame wait to ensure all updates are applied
 		yield return new WaitForEndOfFrame();
 	}
-	
+
+	// ===== No-tower gold drain helpers =====
+
+	private IEnumerator MonitorNoTowersDrain()
+	{
+		while (isWaveActive) {
+			if (!AnyTowerAlive()) {
+				if (noTowersDrainCoroutine == null) {
+					noTowersDrainCoroutine = StartCoroutine(DrainGoldWhileNoTowers());
+				}
+			}
+			else {
+				if (noTowersDrainCoroutine != null) {
+					StopCoroutine(noTowersDrainCoroutine);
+					noTowersDrainCoroutine = null;
+				}
+			}
+			yield return new WaitForSeconds(0.2f);
+		}
+
+		// Safety stop
+		if (noTowersDrainCoroutine != null) {
+			StopCoroutine(noTowersDrainCoroutine);
+			noTowersDrainCoroutine = null;
+		}
+	}
+
+	private IEnumerator DrainGoldWhileNoTowers()
+	{
+		while (isWaveActive && !AnyTowerAlive()) {
+			if (CurrencyManager.Instance != null) {
+				int current = CurrencyManager.Instance.GetCurrentCurrency();
+				int toSpend = Mathf.Min(goldDrainPerSecondWhenNoTowers, Mathf.Max(current, 0));
+				if (toSpend > 0) {
+					CurrencyManager.Instance.SpendCurrency(toSpend);
+					if (GameHUD.Instance != null) {
+						GameHUD.Instance.ShowCurrencyChange(-toSpend);
+					}
+				}
+			}
+			yield return new WaitForSeconds(goldDrainTickSeconds);
+		}
+	}
+
+	private bool AnyTowerAlive()
+	{
+		BaseTower[] towers = FindObjectsOfType<BaseTower>();
+		foreach (var t in towers) {
+			if (t != null && t.GetCurrentHealth() > 0f) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void StopNoTowerDrain()
+	{
+		if (noTowersDrainMonitor != null) {
+			StopCoroutine(noTowersDrainMonitor);
+			noTowersDrainMonitor = null;
+		}
+		if (noTowersDrainCoroutine != null) {
+			StopCoroutine(noTowersDrainCoroutine);
+			noTowersDrainCoroutine = null;
+		}
+	}
 }
