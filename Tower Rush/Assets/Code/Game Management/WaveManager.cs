@@ -269,6 +269,12 @@ public class WaveManager : MonoBehaviour
 			}
 		}
 
+		// Switch to first gameplay scene music (index 1) when starting gameplay
+		// currentSceneIndex is 0 here (first gameplay scene), so we use index 1 for music
+		Debug.Log($"[WaveManager] LoadFirstGameplayScene: Switching to gameplay scene music (index 1)");
+		if (AudioManager.Instance != null)
+			AudioManager.Instance.PlaySceneMusicByIndex(1, skipFade: true);
+
 		// Unload the ManagerScene (but keep DontDestroyOnLoad objects)
 		Scene managerScene = SceneManager.GetSceneByName("ManagerScene");
 		if (managerScene.IsValid() && managerScene.isLoaded) {
@@ -671,6 +677,11 @@ public class WaveManager : MonoBehaviour
 			string currentScene = gameplaySceneNames[currentSceneIndex];
 			currentSceneIndex = (currentSceneIndex + 1) % gameplaySceneNames.Length;
 			string nextScene = gameplaySceneNames[currentSceneIndex];
+
+			// Switch background music for this scene (index 1-4 for gameplay scenes)
+			// Use instant switch (no fade) during scene changes for immediate music response
+			if (AudioManager.Instance != null)
+				AudioManager.Instance.PlaySceneMusicByIndex(currentSceneIndex + 1, skipFade: true);
 
 			// Update costs before load (keeps internal state in sync)
 			ApplyTowerCostMultiplier();

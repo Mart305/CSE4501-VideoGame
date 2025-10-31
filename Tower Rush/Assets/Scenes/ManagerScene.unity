@@ -652,7 +652,14 @@ MonoBehaviour:
   buttonClickSound: {fileID: 8300000, guid: 489f0b3499987440fa80405df799bd6b, type: 3}
   waveStartSound: {fileID: 8300000, guid: a84df82ca3cb14be2ad566ea155d7d4d, type: 3}
   waveCompleteSound: {fileID: 8300000, guid: c70c6268913ac46cab29ed0706bdec9b, type: 3}
-  backgroundMusic: {fileID: 8300000, guid: 30bf7c1ea7ed64ef7a34f4009f19cea5, type: 3}
+  backgroundMusic: {fileID: 0}
+  sceneMusic:
+  - {fileID: 8300000, guid: 30bf7c1ea7ed64ef7a34f4009f19cea5, type: 3}
+  - {fileID: 8300000, guid: 30bf7c1ea7ed64ef7a34f4009f19cea5, type: 3}
+  - {fileID: 8300000, guid: 3bc0f2fd27601d0408dba11bb371b43e, type: 3}
+  - {fileID: 8300000, guid: 931742c2e7d62704fb041f209cff53aa, type: 3}
+  - {fileID: 8300000, guid: 6d0f5d9fbcbe53a46b5410689143d1c5, type: 3}
+  musicFadeDuration: 0.1
   musicVolume: 0.2
   sfxVolume: 1
 --- !u!4 &319693332
@@ -3289,6 +3296,9 @@ MonoBehaviour:
   - Waves 6-10
   - Waves 11-15
   - Waves 16-20
+  enableNoTowerGoldDrain: 1
+  goldDrainPerSecondWhenNoTowers: 200
+  goldDrainTickSeconds: 1
 --- !u!4 &1946827578
 Transform:
   m_ObjectHideFlags: 0
