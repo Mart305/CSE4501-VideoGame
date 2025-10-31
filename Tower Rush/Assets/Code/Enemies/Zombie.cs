@@ -6,10 +6,10 @@ public class Zombie : Enemy
     
     protected override void Start()
     {
-        // Zombie stats (1.5x faster, 2x health)
-        moveSpeed = 2.25f; // 1.5f * 1.5
-        health = 100f; // 50f * 2
-        damage = 15f;
+        // Zombie stats - 10% faster and 15% stronger
+        moveSpeed = 2.5f; // Increased from 2.25f
+        health = 100f;
+        damage = 17.5f; // Increased from 15f
         attackCooldown = 2f;
 
         // Get or add Health component for health bar system

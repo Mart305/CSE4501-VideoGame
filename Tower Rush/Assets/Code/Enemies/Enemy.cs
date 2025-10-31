@@ -108,8 +108,8 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         if (navAgent == null) return;
         
         navAgent.speed = moveSpeed;
-        // Set stoppingDistance to match attackRange so enemies maintain proper spacing
-        navAgent.stoppingDistance = attackRange;
+        // Add small buffer to stoppingDistance to prevent enemies going inside towers
+        navAgent.stoppingDistance = attackRange + 1f; // Added 1f buffer
         navAgent.acceleration = 8f;
         navAgent.angularSpeed = 120f;
         navAgent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
