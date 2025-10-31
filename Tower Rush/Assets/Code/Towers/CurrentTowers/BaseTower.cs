@@ -346,27 +346,65 @@ public class BaseTower : MonoBehaviour
             currentHealth = 0;
             OnTowerDestroyed();
         }
-    }
+	}
 
-    protected virtual void OnTowerDestroyed()
-    {
-        // Stop all coroutines to prevent continued shooting
-        StopAllCoroutines();
-        
-        // Stop all particle effects
-        if (towerFX != null) towerFX.Stop();
-        if (attackFX != null) attackFX.Stop();
-        if (explosionFX != null) explosionFX.Stop();
-        
-        // Clear target
-        currentTarget = null;
-        
-        // Actually destroy the GameObject after a short delay
-        Destroy(gameObject, 0.5f);
-    }
+	protected virtual void OnTowerDestroyed()
+	{
+		// Calculate deduction amount based on current wave
+		if (CurrencyManager.Instance != null) {
+			// Get base deduction amount
+			int baseDeductAmount = 150;
 
-    // Upgrade System Methods
-    public virtual void RepairTower()
+			// Calculate multiplier based on wave number
+			int currentWave = 1;
+			if (WaveManager.Instance != null) {
+				currentWave = WaveManager.Instance.GetCurrentWave();
+			}
+
+			// Calculate which set of 5 waves we're in (0-based)
+			int waveTier = (currentWave - 1) / 5;
+
+			// Calculate multiplier: 1, 2, 4, 16, 32, etc. (2^tier)
+			int multiplier = 1;
+			for (int i = 0; i < waveTier; i++) {
+				multiplier *= 1;
+			}
+
+			// Calculate final deduction amount
+			int deductAmount = baseDeductAmount * multiplier;
+
+			// Cap at player's current currency so it doesn't go negative
+			int currentCurrency = CurrencyManager.Instance.GetCurrentCurrency();
+
+			// Store the previous gold amount before deduction
+			int previousGold = currentCurrency;
+
+			deductAmount = Mathf.Min(currentCurrency, deductAmount);
+
+			if (deductAmount > 0) {
+				CurrencyManager.Instance.SpendCurrency(deductAmount);
+
+				// Show visual feedback
+				if (GameHUD.Instance != null) {
+					GameHUD.Instance.ShowCurrencyChange(-deductAmount);
+				}
+
+				// Get the new gold amount after deduction
+			}
+		}
+
+		// Rest of your existing OnTowerDestroyed code...
+		StopAllCoroutines();
+		if (towerFX != null) towerFX.Stop();
+		if (attackFX != null) attackFX.Stop();
+		if (explosionFX != null) explosionFX.Stop();
+		currentTarget = null;
+		CheckForDefeat();
+		Destroy(gameObject, 0.5f);
+	}
+
+	// Upgrade System Methods
+	public virtual void RepairTower()
     {
         currentHealth = Mathf.Min(currentHealth + repairAmount, maxHealth);
         if (healthBar != null)
@@ -414,4 +452,47 @@ public class BaseTower : MonoBehaviour
             Gizmos.DrawLine(transform.position, currentTarget.transform.position);
         }
     }
+
+	private void CheckForDefeat()
+	{
+		// Count remaining towers after this one is destroyed
+		BaseTower[] remainingTowers = FindObjectsOfType<BaseTower>();
+		int aliveTowers = 0;
+
+		foreach (BaseTower tower in remainingTowers) {
+			if (tower != this && tower.GetCurrentHealth() > 0f) {
+				aliveTowers++;
+			}
+		}
+
+		// If any tower is still alive, do nothing
+		if (aliveTowers > 0) return;
+
+		// No towers left: evaluate affordability immediately (even during wave)
+		int currency = CurrencyManager.Instance != null ? CurrencyManager.Instance.GetCurrentCurrency() : 0;
+
+		var tpm = TowerPlacementManager.Instance;
+		if (tpm == null) {
+			GameStateManager.Instance?.ShowDefeat();
+			return;
+		}
+
+		var available = tpm.GetAvailableTowers();
+		if (available == null || available.Count == 0) {
+			GameStateManager.Instance?.ShowDefeat();
+			return;
+		}
+
+		int minCost = int.MaxValue;
+		foreach (var td in available) {
+			if (td != null && td.cost >= 0 && td.cost < minCost) {
+				minCost = td.cost;
+			}
+		}
+
+		if (minCost == int.MaxValue || currency < minCost) {
+			GameStateManager.Instance?.ShowDefeat();
+		}
+		// else: player can still afford at least one tower; allow them to place it
+	}
 }

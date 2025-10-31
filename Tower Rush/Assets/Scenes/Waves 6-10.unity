@@ -147,7 +147,7 @@ Transform:
   m_GameObject: {fileID: 109179469}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.471, y: 16, z: 6.71}
+  m_LocalPosition: {x: -1.49, y: 16, z: -0.39}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1049,7 +1049,7 @@ Transform:
   m_GameObject: {fileID: 480742566}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 7.46, y: 15.3, z: 3.64}
+  m_LocalPosition: {x: -3.13, y: 15.3, z: -3.33}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2687,7 +2687,7 @@ Transform:
   m_GameObject: {fileID: 1552890743}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.55, y: 15.3, z: 7.79}
+  m_LocalPosition: {x: -5.27, y: 15.3, z: -0.31}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3082,6 +3082,8 @@ MonoBehaviour:
   ghostPrefab: {fileID: 5163679325591557877, guid: 6f0b711772e2a8541b7916d6c58069e1, type: 3}
   skeletonPrefab: {fileID: 5664305964004973586, guid: b18e04a4c1fde5142a5eb97c10b4b19f, type: 3}
   mutantZombiePrefab: {fileID: 9063911118954261516, guid: 67a8c5d44c4c6c941816f8bbfd72d02b, type: 3}
+  spawnEffectManager: {fileID: 0}
+  usePortalEffects: 1
   showSpawnPoints: 1
 --- !u!4 &1838787415
 Transform:
@@ -3092,7 +3094,7 @@ Transform:
   m_GameObject: {fileID: 1838787413}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.4912558, y: 16.86899, z: 10.350597}
+  m_LocalPosition: {x: -9, y: 16.86899, z: -0.93}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3133,7 +3135,7 @@ Transform:
   m_GameObject: {fileID: 2010385974}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.838, y: 16, z: 8.641}
+  m_LocalPosition: {x: -2.31, y: 16, z: -1.71}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3235,6 +3237,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8861988077592065997, guid: 339d320f78d69425a9f853cf3e7aa07a, type: 3}
+      propertyPath: menuUI
+      value: 
+      objectReference: {fileID: 2042947022}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -3243,6 +3249,11 @@ PrefabInstance:
       addedObject: {fileID: 1864884296}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 339d320f78d69425a9f853cf3e7aa07a, type: 3}
+--- !u!1 &2042947022 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 684124460813492955, guid: 339d320f78d69425a9f853cf3e7aa07a, type: 3}
+  m_PrefabInstance: {fileID: 2042947021}
+  m_PrefabAsset: {fileID: 0}
 --- !u!43 &2119079976
 Mesh:
   m_ObjectHideFlags: 0

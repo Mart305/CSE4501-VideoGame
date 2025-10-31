@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8894210029379601375}
   - component: {fileID: 2571053102950219983}
   - component: {fileID: 6612954506433704458}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerCloseButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -144,7 +144,7 @@ GameObject:
   - component: {fileID: 4778079149354686499}
   - component: {fileID: 4061601095431264647}
   - component: {fileID: 7736493949086411913}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: CurrencyText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -279,7 +279,7 @@ GameObject:
   - component: {fileID: 3192180134501255387}
   - component: {fileID: 5192714605230680787}
   - component: {fileID: 1400958814435025275}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerMaxHealthButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -411,7 +411,7 @@ GameObject:
   - component: {fileID: 2780630017921724856}
   - component: {fileID: 7237306937042011491}
   - component: {fileID: 7536834261234046094}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerHealthText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -545,7 +545,7 @@ GameObject:
   - component: {fileID: 1681796543624243892}
   - component: {fileID: 1093747551899835961}
   - component: {fileID: 2984204488287703725}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: 3xBallistaTowerlvl03
   m_TagString: Tower
   m_Icon: {fileID: 0}
@@ -617,7 +617,7 @@ MeshCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
@@ -635,7 +635,7 @@ GameObject:
   - component: {fileID: 1681796543624243896}
   - component: {fileID: 1681796543621343894}
   - component: {fileID: 1681796543622342742}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Building
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -718,7 +718,7 @@ GameObject:
   - component: {fileID: 1681796543624243898}
   - component: {fileID: 1681796543621343896}
   - component: {fileID: 1681796543622342744}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Props
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -799,7 +799,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7042060481868981894}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -837,7 +837,7 @@ GameObject:
   - component: {fileID: 7599154729499917781}
   - component: {fileID: 1650591257896734983}
   - component: {fileID: 4146516006904355943}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -914,7 +914,7 @@ GameObject:
   - component: {fileID: 7108739314391522460}
   - component: {fileID: 6415690760710077580}
   - component: {fileID: 1448952980177786093}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerHealthBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1034,7 +1034,7 @@ GameObject:
   - component: {fileID: 8889931436222633571}
   - component: {fileID: 7475613683006808288}
   - component: {fileID: 430325687660322812}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerMaxHealthText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1168,7 +1168,7 @@ GameObject:
   - component: {fileID: 2530776214355596445}
   - component: {fileID: 2982517728210126707}
   - component: {fileID: 395613466481206484}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerDamageResistanceText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1303,7 +1303,7 @@ GameObject:
   - component: {fileID: 2663553412629463791}
   - component: {fileID: 3493774308764787612}
   - component: {fileID: 402656197012813706}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerRepairButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1436,7 +1436,7 @@ GameObject:
   - component: {fileID: 7695599391785090982}
   - component: {fileID: 5707034371913577799}
   - component: {fileID: 2488256907823036737}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerDamageResistanceButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1568,7 +1568,7 @@ GameObject:
   - component: {fileID: 9057633982867398392}
   - component: {fileID: 739275528796002690}
   - component: {fileID: 5846027331566264480}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1643,7 +1643,7 @@ GameObject:
   - component: {fileID: 980500987390977261}
   - component: {fileID: 7546183383728047553}
   - component: {fileID: 855190216997265378}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerRepairText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1777,7 +1777,7 @@ GameObject:
   - component: {fileID: 9067379668494161438}
   - component: {fileID: 9063202467086518512}
   - component: {fileID: 2975333018853401548}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: bow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1859,7 +1859,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7091275497641914146}
   - component: {fileID: 311008723240179096}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerHealthSlider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1926,7 +1926,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 0}
   m_FillRect: {fileID: 9057633982867398392}
   m_HandleRect: {fileID: 0}
@@ -1949,7 +1949,7 @@ GameObject:
   - component: {fileID: 8154048992006571482}
   - component: {fileID: 2115713611727542280}
   - component: {fileID: 4100645816885061814}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerUIPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2032,7 +2032,7 @@ GameObject:
   - component: {fileID: 1194805091545065761}
   - component: {fileID: 6568250086248332075}
   - component: {fileID: 8396887191777285625}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: UpgradeUICanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2047,7 +2047,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8365807038476115045}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 0.099999994, y: 0.099999994, z: 0.099999994}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2056,7 +2056,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 26}
+  m_AnchoredPosition: {x: 0, y: 10}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &2350693920137904168
@@ -2148,6 +2148,8 @@ MonoBehaviour:
   repairCost: 50
   maxHealthCost: 100
   resistanceCost: 150
+  uiRadius: 10
+  uiHeightOffset: 12
 --- !u!1 &8749959746326692096
 GameObject:
   m_ObjectHideFlags: 0
@@ -2157,7 +2159,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6292344859439302406}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Firepoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2190,7 +2192,7 @@ GameObject:
   - component: {fileID: 4723697595323209526}
   - component: {fileID: 4151268248058710706}
   - component: {fileID: 164737940947898832}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TowerCloseText
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -1,0 +1,200 @@
+name: ⚙️ CI/CD Dispatcher (Public)
+
+on:
+  workflow_dispatch:
+    inputs:
+      buildType:
+        description: "Build type: 'preview' for manual/dev builds, 'release_candidate' for staging, 'release' for production"
+        required: true
+        default: "preview"
+        type: choice
+        options:
+          - preview
+          - release_candidate
+          - release
+      deployTargets:
+        description: "JSON array of deploy targets"
+        required: true
+        default: '["itch.io"]'
+        type: string
+      buildTargets:
+        description: "JSON array of build targets"
+        required: true
+        default: '["WebGL"]'
+        type: string
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  validation:
+    name: Validate Secrets
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check last commit for [skip ci]
+        id: check
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          if [[ "$COMMIT_MSG" == *"[skip ci]"* || "$COMMIT_MSG" == *"[ci skip]"* ]]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate Required Secrets
+        run: |
+          REQUIRED_SECRETS=("UNITY_EMAIL" "UNITY_LICENSE" "UNITY_PASSWORD" "BUTLER_API_KEY" "ITCH_USER" "ITCH_GAME")
+          MISSING=0
+          for SECRET_NAME in "${REQUIRED_SECRETS[@]}"; do
+            VALUE_VAR="SECRET_${SECRET_NAME}"
+            VALUE="${!VALUE_VAR}"
+            if [[ -z "$VALUE" ]]; then
+              echo "❌ Required secret '$SECRET_NAME' is not set!"
+              MISSING=1
+            else
+              echo "✅ Secret '$SECRET_NAME' is present."
+            fi
+          done
+          if [[ "$MISSING" -eq 1 ]]; then
+            exit 1
+          fi
+        env:
+          SECRET_UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          SECRET_UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          SECRET_UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          SECRET_BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          SECRET_ITCH_USER: ${{ secrets.ITCH_USER }}
+          SECRET_ITCH_GAME: ${{ secrets.ITCH_GAME }}
+
+  build:
+    name: 🛠️ Build WebGL
+    needs: validation
+    if: ${{ needs.validation.outputs.should_run == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    
+    steps:
+      - name: 🧹 Free Disk Space (Part 1)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: 🧹 Free Disk Space (Part 2 - Extra Aggressive)
+        run: |
+          echo "=== Disk space before extra cleanup ==="
+          df -h
+          
+          # Remove additional large directories
+          sudo rm -rf /usr/local/lib/node_modules || true
+          sudo rm -rf /usr/local/.ghcup || true
+          sudo rm -rf /opt/az || true
+          sudo rm -rf /usr/share/miniconda || true
+          sudo rm -rf /usr/local/share/chromium || true
+          sudo rm -rf /usr/local/share/powershell || true
+          sudo rm -rf /usr/share/kotlinc || true
+          sudo rm -rf /usr/local/julia* || true
+          
+          # Clean package manager caches
+          sudo apt-get clean
+          sudo apt-get autoremove -y --purge
+          sudo apt-get autoclean -y
+          
+          # Remove man pages and docs
+          sudo rm -rf /usr/share/man/* || true
+          sudo rm -rf /usr/share/doc/* || true
+          
+          echo ""
+          echo "=== Disk space after extra cleanup ==="
+          df -h
+          echo ""
+          echo "=== Available space on root ==="
+          df -h / | awk 'NR==2 {print "Available: " $4}'
+
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 💾 Restore Unity Library Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            Tower Rush/Library
+            Tower Rush/Library/BuildCache
+            Tower Rush/Library/Il2cppBuildCache
+          key: Library-WebGL-${{ hashFiles('Tower Rush/Assets/**', 'Tower Rush/Packages/**', 'Tower Rush/ProjectSettings/**') }}
+          restore-keys: |
+            Library-WebGL-
+            Library-
+
+      - name: 🎮 Build Unity WebGL
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: Tower Rush
+          targetPlatform: WebGL
+          unityVersion: 2022.3.62f1
+
+      - name: 🔧 Fix Permissions
+        run: sudo chown -R $USER:$USER build/
+
+      - name: 🗑️ Remove Burst Debug Files
+        run: find build/WebGL -name '*BurstDebugInformation_DoNotShip*' -exec rm -rf {} + || true
+
+      - name: 📤 Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TowerRush-WebGL
+          path: build/WebGL
+          retention-days: 14
+
+  deploy:
+    needs: build
+    name: 🕹️ Deploy to itch.io
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: TowerRush-WebGL
+          path: deployment-artifacts/WebGL
+
+      - name: 🧾 List Artifacts
+        run: ls -R deployment-artifacts/
+
+      - name: 🤵 Install Butler
+        uses: remarkablegames/setup-butler@v1
+
+      - name: 🚀 Deploy to itch.io
+        run: |
+          if [ -z "${{ secrets.ITCH_USER }}" ] || [ -z "${{ secrets.ITCH_GAME }}" ]; then
+            echo "❌ Missing itch.io credentials"
+            exit 1
+          fi
+          
+          VERSION="${{ github.ref_name }}-${{ github.run_number }}"
+          
+          echo "➡️ Pushing WebGL build to itch.io channel: html5"
+          butler push deployment-artifacts/WebGL ${{ secrets.ITCH_USER }}/${{ secrets.ITCH_GAME }}:html5 \
+            --userversion "$VERSION" \
+            --if-changed
+          
+          echo "✅ Successfully deployed to itch.io!"
+          echo "🎮 Play at: https://${{ secrets.ITCH_USER }}.itch.io/${{ secrets.ITCH_GAME }}"
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}

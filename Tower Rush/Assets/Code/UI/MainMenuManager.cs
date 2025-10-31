@@ -9,18 +9,25 @@ public class MainMenuManager : MonoBehaviour
     [SerializeField] private GameObject mainMenuPanel;
     [SerializeField] private Button startButton;
     [SerializeField] private Button howToPlayButton;
+    [SerializeField] private HowToPlayPanel howToPlayPanel;
     
     [Header("Game Settings")]
     [SerializeField] private bool showCursor = true;
     
     void Start()
     {
-        // Setup button listeners
+        // Setup button listeners (remove first to prevent duplicates)
         if (startButton != null)
+        {
+            startButton.onClick.RemoveListener(StartGame);
             startButton.onClick.AddListener(StartGame);
+        }
             
         if (howToPlayButton != null)
+        {
+            howToPlayButton.onClick.RemoveListener(OpenHowToPlay);
             howToPlayButton.onClick.AddListener(OpenHowToPlay);
+        }
         
         // Initialize UI
         ShowMainMenu();
@@ -58,6 +65,10 @@ public class MainMenuManager : MonoBehaviour
     
     public void OpenHowToPlay()
     {
+        if (howToPlayPanel != null)
+        {
+            howToPlayPanel.OpenPanel();
+        }
     }
     
     public void ShowMainMenu()

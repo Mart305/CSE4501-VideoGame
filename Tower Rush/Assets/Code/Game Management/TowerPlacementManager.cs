@@ -36,8 +36,13 @@ public class TowerPlacementManager : MonoBehaviour
     public UnityEvent<GameObject> OnTowerPlaced;
     public UnityEvent<TowerData> OnTowerSelected;
     public UnityEvent OnPlacementCancelled;
-    
-    private Camera playerCamera;
+
+	[Header("Tower Cost Scaling")]
+	private List<int> baseTowerCosts = new List<int>(); // Not serialized - captured once in Awake
+	[SerializeField] private bool costScalingEnabled = true;
+	private int currentSceneTier = 0;
+
+	private Camera playerCamera;
     private TowerData selectedTowerData;
     private GameObject previewTower;
     private bool isPlacingTower = false;
@@ -55,29 +60,93 @@ public class TowerPlacementManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            
+            // CRITICAL: Capture base costs immediately in Awake before anything can modify them
+            // This happens only once when the manager is first created
+            baseTowerCosts.Clear();
+            foreach (var tower in availableTowers) {
+                baseTowerCosts.Add(tower.cost);
+            }
         }
         else
         {
             Destroy(gameObject);
         }
     }
-    
-    void Start()
-    {
-        playerCamera = Camera.main;
-        if (playerCamera == null)
-            playerCamera = FindObjectOfType<Camera>();
-            
-        // Initialize events
-        if (OnTowerPlaced == null)
-            OnTowerPlaced = new UnityEvent<GameObject>();
-        if (OnTowerSelected == null)
-            OnTowerSelected = new UnityEvent<TowerData>();
-        if (OnPlacementCancelled == null)
-            OnPlacementCancelled = new UnityEvent();
-    }
-    
-    void Update()
+
+	void Start()
+	{
+		playerCamera = Camera.main;
+		if (playerCamera == null)
+			playerCamera = FindObjectOfType<Camera>();
+
+		// Initialize events
+		if (OnTowerPlaced == null)
+			OnTowerPlaced = new UnityEvent<GameObject>();
+		if (OnTowerSelected == null)
+			OnTowerSelected = new UnityEvent<TowerData>();
+		if (OnPlacementCancelled == null)
+			OnPlacementCancelled = new UnityEvent();
+
+	}
+
+	// Add this method to apply the multiplier
+	public void UpdateTowerCostsByWave(int currentWave)
+	{
+		if (!costScalingEnabled) return;
+
+		// Calculate which tier we're in (0-based)
+		int tier = (currentWave - 1) / 5;
+
+		// If tier hasn't changed, don't update costs
+		if (tier == currentSceneTier) return;
+
+		// Store the new tier
+		currentSceneTier = tier;
+
+		// Ensure base costs were captured (should have been done in Awake)
+		if (baseTowerCosts.Count == 0) {
+			return;
+		}
+
+		// Calculate multiplier: 2^tier
+		int multiplier = 1;
+		for (int i = 0; i < tier; i++) {
+			multiplier *= 2;
+		}
+
+		// Apply to all towers
+		for (int i = 0; i < availableTowers.Count && i < baseTowerCosts.Count; i++) {
+			int newCost = baseTowerCosts[i] * multiplier;
+			availableTowers[i].cost = newCost;
+		}
+
+		// Update UI if GameHUD exists
+		if (GameHUD.Instance != null) {
+			GameHUD.Instance.InitializeTowerButtons();
+		}
+	}
+
+	// Reset tower costs to base values (for new game)
+	public void ResetTowerCosts()
+	{
+		// Reset tier to 0
+		currentSceneTier = 0;
+
+		// Restore all tower costs to their base values (captured in Awake)
+		if (baseTowerCosts.Count > 0) {
+			for (int i = 0; i < availableTowers.Count && i < baseTowerCosts.Count; i++) {
+				availableTowers[i].cost = baseTowerCosts[i];
+			}
+		}
+
+		// Update UI if GameHUD exists
+		if (GameHUD.Instance != null) {
+			GameHUD.Instance.InitializeTowerButtons();
+		}
+	}
+
+	void Update()
     {
 		// Re-acquire camera if it was destroyed (scene changed)
 		if (playerCamera == null)
@@ -219,7 +288,7 @@ public class TowerPlacementManager : MonoBehaviour
         }
     }
 
-	private void HandleTowerPlacement()
+    private void HandleTowerPlacement()
     {
         // Cancel placement with ESC or right click
         if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1))

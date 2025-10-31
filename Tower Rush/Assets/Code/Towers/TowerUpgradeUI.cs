@@ -26,11 +26,15 @@ public class TowerUpgradeUI : MonoBehaviour
     [SerializeField] private int maxHealthCost = 100;
     [SerializeField] private int resistanceCost = 150;
     
+    [Header("UI Positioning")]
+    [SerializeField] private float uiRadius = 10f; // Distance from tower center
+    [SerializeField] private float uiHeightOffset = 10f; // Height offset from tower center
+    
     private BaseTower selectedTower;
     private Camera playerCamera;
     
     void Start()
-    {
+    {   
         // If no tower is assigned, try to find one on the same GameObject or parent
         if (associatedTower == null)
         {
@@ -95,12 +99,10 @@ public class TowerUpgradeUI : MonoBehaviour
             }
         }
         
-        // Make panel continuously face camera while open
-        if (upgradePanel != null && upgradePanel.activeInHierarchy && playerCamera != null)
+        // Position panel around tower and make it face camera while open
+        if (upgradePanel != null && upgradePanel.activeInHierarchy && playerCamera != null && associatedTower != null)
         {
-            Vector3 directionToCamera = playerCamera.transform.position - upgradePanel.transform.position;
-            directionToCamera.y = 0; // Keep panel upright
-            upgradePanel.transform.rotation = Quaternion.LookRotation(-directionToCamera);
+            PositionUIAroundTower();
         }
     }
     
@@ -208,15 +210,51 @@ public class TowerUpgradeUI : MonoBehaviour
         {
             upgradePanel.SetActive(true);
             
-            // Position UI at fixed world position and make it face camera
-            if (selectedTower != null)
+            // Position UI around tower based on player position
+            if (selectedTower != null && playerCamera != null && associatedTower != null)
             {   
-                // Make panel face the camera
-                Vector3 directionToCamera = playerCamera.transform.position - upgradePanel.transform.position;
-                directionToCamera.y = 0; // Keep panel upright
-                upgradePanel.transform.rotation = Quaternion.LookRotation(-directionToCamera);
+                PositionUIAroundTower();
             }
         }
+    }
+    
+    void PositionUIAroundTower()
+    {
+        // Safety checks
+        if (associatedTower == null || playerCamera == null || upgradePanel == null)
+            return;
+            
+        // Get the canvas (parent of upgradePanel)
+        Transform canvas = upgradePanel.transform.parent;
+        if (canvas == null)
+            return;
+            
+        // Get tower center position (world space)
+        Vector3 towerCenter = associatedTower.transform.position;
+        
+        // Get direction from tower to player camera (on horizontal plane only)
+        Vector3 directionToPlayer = playerCamera.transform.position - towerCenter;
+        directionToPlayer.y = 0; // Flatten to horizontal plane (ignore height difference)
+        
+        // If camera is directly above, use forward direction
+        if (directionToPlayer.magnitude < 0.1f)
+        {
+            directionToPlayer = Vector3.forward;
+        }
+        else
+        {
+            directionToPlayer.Normalize();
+        }
+        
+        // Position the canvas (not the panel) relative to tower
+        // Canvas is a child of tower, so use local position
+        Vector3 localPosition = directionToPlayer * uiRadius;
+        localPosition.y = uiHeightOffset;
+        
+        canvas.localPosition = localPosition;
+        
+        // Make canvas face the camera (world rotation)
+        canvas.rotation = Quaternion.LookRotation(-directionToPlayer);
     }
     
     void UpdateUI()
@@ -264,6 +302,19 @@ public class TowerUpgradeUI : MonoBehaviour
             bool canRepair = selectedTower.GetCurrentHealth() < selectedTower.GetMaxHealth();
             bool hasEnoughCurrency = HasEnoughCurrency(repairCost);
             repairButton.interactable = canRepair && hasEnoughCurrency;
+            
+            // Visual feedback for insufficient funds
+            if (repairButtonText != null)
+            {
+                if (!hasEnoughCurrency && canRepair)
+                {
+                    repairButtonText.color = Color.red;
+                }
+                else
+                {
+                    repairButtonText.color = Color.black;
+                }
+            }
         }
         
         // Max health button - disable if not enough currency
@@ -271,6 +322,12 @@ public class TowerUpgradeUI : MonoBehaviour
         {
             bool hasEnoughCurrency = HasEnoughCurrency(maxHealthCost);
             maxHealthButton.interactable = hasEnoughCurrency;
+            
+            // Visual feedback for insufficient funds
+            if (maxHealthButtonText != null)
+            {
+                maxHealthButtonText.color = hasEnoughCurrency ? Color.black : Color.red;
+            }
         }
         
         // Resistance button - disable if at max resistance or not enough currency
@@ -279,6 +336,23 @@ public class TowerUpgradeUI : MonoBehaviour
             bool canUpgrade = selectedTower.GetDamageResistance() < 0.8f;
             bool hasEnoughCurrency = HasEnoughCurrency(resistanceCost);
             damageResistanceButton.interactable = canUpgrade && hasEnoughCurrency;
+            
+            // Visual feedback for insufficient funds
+            if (resistanceButtonText != null)
+            {
+                if (!hasEnoughCurrency && canUpgrade)
+                {
+                    resistanceButtonText.color = Color.red;
+                }
+                else if (!canUpgrade)
+                {
+                    resistanceButtonText.color = Color.gray;
+                }
+                else
+                {
+                    resistanceButtonText.color = Color.black;
+                }
+            }
         }
     }
     
