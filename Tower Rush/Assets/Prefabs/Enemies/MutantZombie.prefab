@@ -6856,6 +6856,7 @@ GameObject:
   - component: {fileID: 8507336606876215379}
   - component: {fileID: 2595987585013930577}
   - component: {fileID: 7575516469184022713}
+  - component: {fileID: 506899532842073089}
   m_Layer: 0
   m_Name: MutantZombie
   m_TagString: Enemy
@@ -6920,6 +6921,8 @@ MonoBehaviour:
   attackCooldown: 1
   damage: 5
   health: 20
+  stoppingDistance: 1.2
+  updateDestinationInterval: 0.5
   spawnEffectPrefab: {fileID: 0}
   deathEffectPrefab: {fileID: 0}
   spawnEffectDuration: 1
@@ -6947,6 +6950,28 @@ CapsuleCollider:
   m_Height: 2.671763
   m_Direction: 1
   m_Center: {x: -0.013770461, y: 0.8358815, z: 0}
+--- !u!195 &506899532842073089
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9063911118954261516}
+  m_Enabled: 0
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 1
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1 &9072413210657599959
 GameObject:
   m_ObjectHideFlags: 0

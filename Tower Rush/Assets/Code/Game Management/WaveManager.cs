@@ -16,8 +16,8 @@ public class WaveManager : MonoBehaviour
 	[SerializeField] private float waveStartDelay = 2f;
 
 	[Header("Enemy Count Scaling")]
-	[SerializeField] private int baseEnemiesPerWave = 5;
-	[SerializeField] private float enemyCountMultiplier = 1.15f; // Reduced from 1.3f to slow down scaling
+	[SerializeField] private int baseEnemiesPerWave = 12; 
+	[SerializeField] private float enemyCountMultiplier = 1.30f;
 
 	[Header("Batch Spawning")]
 	[SerializeField] private bool useBatchSpawning = true;
@@ -517,22 +517,43 @@ public class WaveManager : MonoBehaviour
 		}
 	}
 
+	// Helper method to calculate scene-relative wave number
+	private int GetSceneRelativeWaveNumber()
+	{
+		// Calculate wave number within current scene (1-5)
+		// Wave 1, 6, 11, 16, etc. all return 1 (first wave of scene)
+		// Wave 5, 10, 15, 20, etc. all return 5 (last wave of scene)
+		return ((currentWave - 1) % 5) + 1;
+	}
+
 	private int CalculateEnemiesForWave(int wave)
 	{
-		// Exponential growth with some randomness
+		// Use scene-relative wave so each scene starts easier
+		int relativeWave = GetSceneRelativeWaveNumber();
+		
+		// Calculate which scene we're in (0-based: 0 = waves 1-5, 1 = waves 6-10, etc.)
+		int sceneNumber = (wave - 1) / 5;
+		
+		// Base enemy count scaling within scene (waves 1-5 within each scene)
 		float baseCount = baseEnemiesPerWave;
-		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, wave - 1);
-
+		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, relativeWave - 1);
+		
+		// Progressive difficulty bonus: each new scene is 45% harder than previous
+		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.45f);
+		
 		// Add some randomness (±20%)
 		float randomFactor = Random.Range(0.8f, 1.2f);
 
-		return Mathf.RoundToInt(scaledCount * randomFactor);
+		return Mathf.RoundToInt(scaledCount * sceneDifficultyMultiplier * randomFactor);
 	}
 
 	private int CalculateBatchSize()
 	{
-		// Batch size increases with wave difficulty
-		float scaledBatchSize = baseBatchSize * Mathf.Pow(batchSizeMultiplier, currentWave - 1);
+		// Use scene-relative wave for batch size calculation
+		int relativeWave = GetSceneRelativeWaveNumber();
+		
+		// Batch size increases with wave difficulty within scene
+		float scaledBatchSize = baseBatchSize * Mathf.Pow(batchSizeMultiplier, relativeWave - 1);
 
 		// Add some randomness (±15%)
 		float randomFactor = Random.Range(0.85f, 1.15f);
@@ -558,7 +579,7 @@ public class WaveManager : MonoBehaviour
 		// Boss wave logic - reduced mutant zombie spawn rate
 		if (isRandomBossWave && currentWave >= mutantZombieUnlockWave && enemySpawner.mutantZombiePrefab != null) {
 			float bossRoll = Random.value;
-			// Boss waves: 25% mutant zombies (reduced from 40%), 35% skeletons, 25% ghosts, 15% zombies
+			// Boss waves: 25% mutant zombies, 35% skeletons, 25% ghosts, 15% zombies
 			if (bossRoll < 0.25f)
 				return enemySpawner.mutantZombiePrefab;
 			else if (bossRoll < 0.6f)
