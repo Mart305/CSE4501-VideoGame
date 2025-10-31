@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Events;
 using System.Collections.Generic;
 
@@ -31,6 +32,9 @@ public class TowerPlacementManager : MonoBehaviour
     [Header("Placement Validation")]
     [SerializeField] private float minDistanceBetweenTowers = 3f;
     [SerializeField] private bool canPlaceOnEnemies = false;
+    [SerializeField] private float obstacleCheckRadius = 2f; // Radius to check for obstacles
+    [SerializeField] private LayerMask obstacleLayers = ~8; // All layers except Ground (layer 8)
+    [SerializeField] private bool requireNavMeshAccess = true; // Ensure enemies can reach the tower
     
     [Header("Events")]
     public UnityEvent<GameObject> OnTowerPlaced;
@@ -674,7 +678,149 @@ public class TowerPlacementManager : MonoBehaviour
             }
         }
         
+        // Check for obstacles overlapping with placement position
+        Collider[] obstacles = Physics.OverlapSphere(position, obstacleCheckRadius, obstacleLayers);
+        foreach (Collider col in obstacles)
+        {
+            // Ignore towers, enemies, and ground
+            if (col.CompareTag("Tower") || col.CompareTag("Enemy"))
+                continue;
+                
+            // Check if this collider's layer is NOT the ground layer
+            if (col.gameObject.layer != LayerMask.NameToLayer("Ground"))
+            {
+                // This is an obstacle - placement is invalid
+                return false;
+            }
+        }
+        
+        // Ensure the position is on/near the NavMesh so enemies can reach it
+        if (requireNavMeshAccess)
+        {
+            NavMeshHit hit;
+            // Sample the NavMesh near the placement position
+            // This checks if there's valid NavMesh within 2 units (adjust as needed)
+            if (!NavMesh.SamplePosition(position, out hit, 2f, NavMesh.AllAreas))
+            {
+                // Position is not accessible via NavMesh - invalid placement
+                return false;
+            }
+            
+            // Additional check: Verify that at least one spawn point can pathfind to this position
+            // This prevents placing towers in isolated areas
+            if (!CanReachFromSpawnPoints(position))
+            {
+                return false;
+            }
+        }
+        
+        // Check if placement would be blocked by existing NavMeshObstacles
+        // This prevents placing inside areas that are carved out by obstacles
+        if (IsBlockedByNavMeshObstacles(position))
+        {
+            return false;
+        }
+        
         return true;
+    }
+    
+    // Helper method to check if enemies can pathfind to this position from spawn points
+    private bool CanReachFromSpawnPoints(Vector3 targetPosition)
+    {
+        EnemySpawner spawner = FindObjectOfType<EnemySpawner>();
+        if (spawner == null || spawner.spawnPoints == null || spawner.spawnPoints.Length == 0)
+        {
+            // If no spawner found, just check NavMesh accessibility
+            return true;
+        }
+        
+        // Check if at least one spawn point can pathfind to the target
+        foreach (Transform spawnPoint in spawner.spawnPoints)
+        {
+            if (spawnPoint == null) continue;
+            
+            NavMeshPath path = new NavMeshPath();
+            NavMeshHit spawnHit, targetHit;
+            
+            // Sample NavMesh at spawn point
+            if (!NavMesh.SamplePosition(spawnPoint.position, out spawnHit, 2f, NavMesh.AllAreas))
+                continue;
+                
+            // Sample NavMesh at target position
+            if (!NavMesh.SamplePosition(targetPosition, out targetHit, 2f, NavMesh.AllAreas))
+                continue;
+            
+            // Calculate path from spawn to target
+            if (NavMesh.CalculatePath(spawnHit.position, targetHit.position, NavMesh.AllAreas, path))
+            {
+                // Path found - position is reachable
+                return true;
+            }
+        }
+        
+        // No valid path from any spawn point - position is unreachable
+        return false;
+    }
+
+    // Check if position is blocked by NavMeshObstacle components
+    private bool IsBlockedByNavMeshObstacles(Vector3 position)
+    {
+        // Check for NavMeshObstacles in the area
+        NavMeshObstacle[] obstacles = FindObjectsOfType<NavMeshObstacle>();
+        
+        foreach (NavMeshObstacle obstacle in obstacles)
+        {
+            if (obstacle == null || !obstacle.gameObject.activeInHierarchy)
+                continue;
+                
+            // Skip towers (they create obstacles but we want to check existing ones)
+            if (obstacle.CompareTag("Tower"))
+                continue;
+            
+            // Calculate distance from obstacle
+            float distance = Vector3.Distance(position, obstacle.transform.position);
+            
+            // Get obstacle bounds
+            Bounds bounds = GetObstacleBounds(obstacle);
+            
+            // Check if position is within obstacle bounds
+            Vector3 localPos = obstacle.transform.InverseTransformPoint(position);
+            if (bounds.Contains(localPos))
+            {
+                // Position is inside an obstacle - invalid
+                return true;
+            }
+            
+            // Also check if too close to obstacle edge (within carve radius)
+            float minDistance = Mathf.Max(bounds.extents.x, bounds.extents.z);
+            if (distance < minDistance + 1f) // 1f buffer
+            {
+                // Too close to obstacle - might cause pathfinding issues
+                // (Optional: you might want to remove this check or make it less strict)
+                // return true;
+            }
+        }
+        
+        return false;
+    }
+
+    // Helper to get bounds of a NavMeshObstacle
+    private Bounds GetObstacleBounds(NavMeshObstacle obstacle)
+    {
+        Bounds bounds = new Bounds();
+        
+        if (obstacle.shape == NavMeshObstacleShape.Box)
+        {
+            bounds = new Bounds(obstacle.center, obstacle.size);
+        }
+        else if (obstacle.shape == NavMeshObstacleShape.Capsule)
+        {
+            float radius = obstacle.radius;
+            float height = obstacle.height;
+            bounds = new Bounds(obstacle.center, new Vector3(radius * 2, height, radius * 2));
+        }
+        
+        return bounds;
     }
     
     // Store original materials for restoration

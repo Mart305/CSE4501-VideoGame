@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 public abstract class Enemy : MonoBehaviour
 {
@@ -12,6 +13,13 @@ public abstract class Enemy : MonoBehaviour
     protected BaseTower targetTower;
     private float lastAttackTime;
     private SlowEffect slowEffect;
+    protected NavMeshAgent navAgent;
+    
+    [Header("NavMesh Settings")]
+    [SerializeField] private float stoppingDistance = 1.2f;
+    [SerializeField] private float updateDestinationInterval = 0.5f; // Update destination every 0.5s instead of every frame
+    
+    private float lastDestinationUpdateTime;
     
     [Header("Effects")]
     [SerializeField] private GameObject spawnEffectPrefab;
@@ -23,6 +31,27 @@ public abstract class Enemy : MonoBehaviour
     {
         // Spawn effects are now handled by the portal system in SpawnEffectManager
         // PlaySpawnEffect(); // Disabled - using portal effects instead
+        
+        // Get or add NavMeshAgent component
+        navAgent = GetComponent<NavMeshAgent>();
+        if (navAgent == null)
+        {
+            navAgent = gameObject.AddComponent<NavMeshAgent>();
+        }
+        
+        // Configure NavMeshAgent
+        navAgent.speed = moveSpeed;
+        navAgent.stoppingDistance = stoppingDistance;
+        navAgent.acceleration = 8f;
+        navAgent.angularSpeed = 120f;
+        navAgent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+        
+        // If enemy has Rigidbody, set it to kinematic (required for NavMeshAgent)
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+        }
         
         FindTargetTower();
         
@@ -36,9 +65,12 @@ public abstract class Enemy : MonoBehaviour
 
     protected virtual void Update()
     {
+        if (navAgent == null) return;
+        
         if (targetTower == null || targetTower.GetCurrentHealth() <= 0)
         {
             FindTargetTower();
+            navAgent.isStopped = true;
             return;
         }
 
@@ -50,13 +82,15 @@ public abstract class Enemy : MonoBehaviour
         }
         else
         {
+            // Stop moving when in attack range
+            navAgent.isStopped = true;
             AttackTower();
         }
     }
 
     protected virtual void MoveTowardsTower()
     {
-        Vector3 direction = (targetTower.transform.position - transform.position).normalized;
+        if (navAgent == null || targetTower == null) return;
         
         // Apply slow effect if present
         float effectiveMoveSpeed = moveSpeed;
@@ -65,8 +99,41 @@ public abstract class Enemy : MonoBehaviour
             effectiveMoveSpeed *= slowEffect.GetSpeedMultiplier();
         }
         
-        transform.position += direction * effectiveMoveSpeed * Time.deltaTime;
-        transform.LookAt(targetTower.transform);
+        navAgent.speed = effectiveMoveSpeed;
+        navAgent.isStopped = false;
+        
+        // Update destination periodically (not every frame for performance)
+        if (Time.time - lastDestinationUpdateTime >= updateDestinationInterval)
+        {
+            // Check if destination is valid and on NavMesh
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(targetTower.transform.position, out hit, 5f, NavMesh.AllAreas))
+            {
+                navAgent.SetDestination(hit.position);
+            }
+            else
+            {
+                // Fallback: try to set destination directly (may fail if off NavMesh)
+                navAgent.SetDestination(targetTower.transform.position);
+            }
+            
+            lastDestinationUpdateTime = Time.time;
+        }
+        
+        // Face the target tower while moving
+        if (navAgent.velocity.magnitude > 0.1f)
+        {
+            Vector3 lookDirection = (targetTower.transform.position - transform.position);
+            lookDirection.y = 0; // Keep rotation on horizontal plane
+            if (lookDirection.magnitude > 0.1f)
+            {
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation, 
+                    Quaternion.LookRotation(lookDirection.normalized), 
+                    Time.deltaTime * 5f
+                );
+            }
+        }
     }
 
     protected virtual void AttackTower()
@@ -105,6 +172,12 @@ public abstract class Enemy : MonoBehaviour
 
     protected virtual void Die()
     {
+        // Stop NavMeshAgent
+        if (navAgent != null)
+        {
+            navAgent.isStopped = true;
+        }
+        
         // Play death effect before destroying
         PlayDeathEffect();
         
@@ -121,6 +194,10 @@ public abstract class Enemy : MonoBehaviour
     public void SetMoveSpeed(float newSpeed)
     {
         moveSpeed = newSpeed;
+        if (navAgent != null)
+        {
+            navAgent.speed = moveSpeed;
+        }
     }
     
     public void SetDamage(float newDamage)
