@@ -490,22 +490,47 @@ public class WaveManager : MonoBehaviour
 		}
 	}
 
+	// Helper method to calculate scene-relative wave number
+	private int GetSceneRelativeWaveNumber()
+	{
+		// Calculate wave number within current scene (1-5)
+		// Wave 1, 6, 11, 16, etc. all return 1 (first wave of scene)
+		// Wave 5, 10, 15, 20, etc. all return 5 (last wave of scene)
+		return ((currentWave - 1) % 5) + 1;
+	}
+
 	private int CalculateEnemiesForWave(int wave)
 	{
-		// Exponential growth with some randomness
+		// Use scene-relative wave so each scene starts easier
+		int relativeWave = GetSceneRelativeWaveNumber();
+		
+		// Calculate which scene we're in (0-based: 0 = waves 1-5, 1 = waves 6-10, etc.)
+		int sceneNumber = (wave - 1) / 5;
+		
+		// Base enemy count scaling within scene (waves 1-5 within each scene)
 		float baseCount = baseEnemiesPerWave;
-		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, wave - 1);
-
+		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, relativeWave - 1);
+		
+		// Progressive difficulty bonus: each new scene is 20% harder than previous
+		// Scene 1 (waves 1-5): 1.0x multiplier
+		// Scene 2 (waves 6-10): 1.20x multiplier
+		// Scene 3 (waves 11-15): 1.40x multiplier
+		// Scene 4 (waves 16-20): 1.60x multiplier
+		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.20f);
+		
 		// Add some randomness (±20%)
 		float randomFactor = Random.Range(0.8f, 1.2f);
 
-		return Mathf.RoundToInt(scaledCount * randomFactor);
+		return Mathf.RoundToInt(scaledCount * sceneDifficultyMultiplier * randomFactor);
 	}
 
 	private int CalculateBatchSize()
 	{
-		// Batch size increases with wave difficulty
-		float scaledBatchSize = baseBatchSize * Mathf.Pow(batchSizeMultiplier, currentWave - 1);
+		// Use scene-relative wave for batch size calculation
+		int relativeWave = GetSceneRelativeWaveNumber();
+		
+		// Batch size increases with wave difficulty within scene
+		float scaledBatchSize = baseBatchSize * Mathf.Pow(batchSizeMultiplier, relativeWave - 1);
 
 		// Add some randomness (±15%)
 		float randomFactor = Random.Range(0.85f, 1.15f);

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-public abstract class Enemy : MonoBehaviour
+public abstract class Enemy : MonoBehaviour, IPooledObject
 {
     [Header("Enemy Stats")]
     public float moveSpeed = 2f;
@@ -30,7 +30,6 @@ public abstract class Enemy : MonoBehaviour
     protected virtual void Start()
     {
         // Spawn effects are now handled by the portal system in SpawnEffectManager
-        // PlaySpawnEffect(); // Disabled - using portal effects instead
         
         // Get or add NavMeshAgent component
         navAgent = GetComponent<NavMeshAgent>();
@@ -39,18 +38,15 @@ public abstract class Enemy : MonoBehaviour
             navAgent = gameObject.AddComponent<NavMeshAgent>();
         }
         
-        // Configure NavMeshAgent
-        navAgent.speed = moveSpeed;
-        navAgent.stoppingDistance = stoppingDistance;
-        navAgent.acceleration = 8f;
-        navAgent.angularSpeed = 120f;
-        navAgent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
-        
-        // If enemy has Rigidbody, set it to kinematic (required for NavMeshAgent)
-        Rigidbody rb = GetComponent<Rigidbody>();
-        if (rb != null)
+        // Enable NavMeshAgent if it was disabled (from prefab or pool)
+        if (!navAgent.enabled)
         {
-            rb.isKinematic = true;
+            InitializeNavMeshAgent();
+        }
+        else
+        {
+            // Just configure if already enabled
+            ConfigureNavMeshAgent();
         }
         
         FindTargetTower();
@@ -61,6 +57,62 @@ public abstract class Enemy : MonoBehaviour
         {
             slowEffect = gameObject.AddComponent<SlowEffect>();
         }
+    }
+    
+    // IPooledObject interface - called when spawned from pool
+    public void OnObjectSpawn()
+    {
+        // Initialize NavMeshAgent when spawned at valid position
+        InitializeNavMeshAgent();
+        FindTargetTower();
+    }
+    
+    // Initialize and enable NavMeshAgent
+    private void InitializeNavMeshAgent()
+    {
+        if (navAgent == null)
+        {
+            navAgent = GetComponent<NavMeshAgent>();
+            if (navAgent == null)
+            {
+                navAgent = gameObject.AddComponent<NavMeshAgent>();
+            }
+        }
+        
+        // Configure NavMeshAgent settings
+        ConfigureNavMeshAgent();
+        
+        // If enemy has Rigidbody, set it to kinematic (required for NavMeshAgent)
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+        }
+        
+        // Warp to nearest NavMesh position to prevent warnings and enable agent
+        NavMeshHit hit;
+        if (NavMesh.SamplePosition(transform.position, out hit, 10f, NavMesh.AllAreas))
+        {
+            navAgent.Warp(hit.position);
+            navAgent.enabled = true;
+        }
+        else
+        {
+            // If no NavMesh found, enable anyway (spawn position should be valid)
+            navAgent.enabled = true;
+        }
+    }
+    
+    // Configure NavMeshAgent settings (without enabling/warping)
+    private void ConfigureNavMeshAgent()
+    {
+        if (navAgent == null) return;
+        
+        navAgent.speed = moveSpeed;
+        navAgent.stoppingDistance = stoppingDistance;
+        navAgent.acceleration = 8f;
+        navAgent.angularSpeed = 120f;
+        navAgent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
     }
 
     protected virtual void Update()
