@@ -16,7 +16,6 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     protected NavMeshAgent navAgent;
     
     [Header("NavMesh Settings")]
-    [SerializeField] private float stoppingDistance = 1.2f;
     [SerializeField] private float updateDestinationInterval = 0.5f; // Update destination every 0.5s instead of every frame
     
     private float lastDestinationUpdateTime;
@@ -109,7 +108,8 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         if (navAgent == null) return;
         
         navAgent.speed = moveSpeed;
-        navAgent.stoppingDistance = stoppingDistance;
+        // Set stoppingDistance to match attackRange so enemies maintain proper spacing
+        navAgent.stoppingDistance = attackRange;
         navAgent.acceleration = 8f;
         navAgent.angularSpeed = 120f;
         navAgent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
@@ -230,6 +230,16 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
             navAgent.isStopped = true;
         }
         
+        // Hide the enemy visually immediately (disable all renderers)
+        SetEnemyVisibility(false);
+        
+        // Disable colliders so dead enemies don't block anything
+        Collider[] colliders = GetComponentsInChildren<Collider>();
+        foreach (Collider col in colliders)
+        {
+            col.enabled = false;
+        }
+        
         // Play death effect before destroying
         PlayDeathEffect();
         
@@ -348,5 +358,15 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         
         // Destroy after duration
         Destroy(effectObject, deathEffectDuration);
+    }
+    
+    // Helper method to show/hide enemy visual components
+    private void SetEnemyVisibility(bool visible)
+    {
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+        foreach (Renderer renderer in renderers)
+        {
+            renderer.enabled = visible;
+        }
     }
 }
