@@ -16,8 +16,8 @@ public class WaveManager : MonoBehaviour
 	[SerializeField] private float waveStartDelay = 2f;
 
 	[Header("Enemy Count Scaling")]
-	[SerializeField] private int baseEnemiesPerWave = 5;
-	[SerializeField] private float enemyCountMultiplier = 1.15f; // Reduced from 1.3f to slow down scaling
+	[SerializeField] private int baseEnemiesPerWave = 12; 
+	[SerializeField] private float enemyCountMultiplier = 1.30f;
 
 	[Header("Batch Spawning")]
 	[SerializeField] private bool useBatchSpawning = true;
@@ -511,12 +511,8 @@ public class WaveManager : MonoBehaviour
 		float baseCount = baseEnemiesPerWave;
 		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, relativeWave - 1);
 		
-		// Progressive difficulty bonus: each new scene is 20% harder than previous
-		// Scene 1 (waves 1-5): 1.0x multiplier
-		// Scene 2 (waves 6-10): 1.20x multiplier
-		// Scene 3 (waves 11-15): 1.40x multiplier
-		// Scene 4 (waves 16-20): 1.60x multiplier
-		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.20f);
+		// Progressive difficulty bonus: each new scene is 45% harder than previous
+		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.45f);
 		
 		// Add some randomness (±20%)
 		float randomFactor = Random.Range(0.8f, 1.2f);
@@ -556,7 +552,7 @@ public class WaveManager : MonoBehaviour
 		// Boss wave logic - reduced mutant zombie spawn rate
 		if (isRandomBossWave && currentWave >= mutantZombieUnlockWave && enemySpawner.mutantZombiePrefab != null) {
 			float bossRoll = Random.value;
-			// Boss waves: 25% mutant zombies (reduced from 40%), 35% skeletons, 25% ghosts, 15% zombies
+			// Boss waves: 25% mutant zombies, 35% skeletons, 25% ghosts, 15% zombies
 			if (bossRoll < 0.25f)
 				return enemySpawner.mutantZombiePrefab;
 			else if (bossRoll < 0.6f)

@@ -3634,14 +3634,14 @@ NavMeshObstacle:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1786759294}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 6.977, y: 4.684, z: 4.7000003}
+  m_Shape: 0
+  m_Extents: {x: 8.528001, y: 4.1340003, z: 8.528001}
   m_MoveThreshold: 0.1
   m_Carve: 1
   m_CarveOnlyStationary: 1
-  m_Center: {x: 0.019000001, y: 4.684, z: 0.027}
+  m_Center: {x: 0.014, y: 4.1340003, z: -0.029000001}
   m_TimeToStationary: 0.5
 --- !u!43 &1915526583
 Mesh:
