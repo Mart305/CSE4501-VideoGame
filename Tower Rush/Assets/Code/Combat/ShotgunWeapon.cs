@@ -9,6 +9,12 @@ public class ShotgunWeapon : PlayerWeapon
     [SerializeField] private float shotgunDamagePerPellet = 12f;
     [SerializeField] private float shotgunRange = 15f;
 
+    void Awake()
+    {
+        weaponType = WeaponType.Shotgun;
+        weaponName = "Shotgun";
+    }
+
     public override void Fire()
     {
         if (Time.time < nextFireTime || isReloading)

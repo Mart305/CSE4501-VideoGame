@@ -4,6 +4,7 @@ public class WeaponManager : MonoBehaviour
 {
     [SerializeField] private PlayerWeapon primaryWeapon;
     [SerializeField] private ShotgunWeapon secondaryWeapon;
+    [SerializeField] private WeaponIdentifier weaponIdentifier;
 
     private int currentWeaponIndex = 0;
     private PlayerWeapon[] weapons;
@@ -17,6 +18,12 @@ public class WeaponManager : MonoBehaviour
             primaryWeapon.gameObject.SetActive(true);
         if (secondaryWeapon != null)
             secondaryWeapon.gameObject.SetActive(false);
+
+        // Show initial weapon
+        if (weaponIdentifier != null && primaryWeapon != null)
+        {
+            weaponIdentifier.ShowWeapon(primaryWeapon);
+        }
     }
 
     void Update()
@@ -58,6 +65,12 @@ public class WeaponManager : MonoBehaviour
         // Enable new weapon
         currentWeaponIndex = weaponIndex;
         weapons[currentWeaponIndex].gameObject.SetActive(true);
+
+        // Show weapon identifier
+        if (weaponIdentifier != null)
+        {
+            weaponIdentifier.ShowWeapon(weapons[currentWeaponIndex]);
+        }
     }
 
     public void Fire()
