@@ -16,8 +16,8 @@ public class WaveManager : MonoBehaviour
 	[SerializeField] private float waveStartDelay = 2f;
 
 	[Header("Enemy Count Scaling")]
-	[SerializeField] private int baseEnemiesPerWave = 5;
-	[SerializeField] private float enemyCountMultiplier = 1.15f; // Reduced from 1.3f to slow down scaling
+	[SerializeField] private int baseEnemiesPerWave = 12; 
+	[SerializeField] private float enemyCountMultiplier = 1.35f; // Increased from 1.30f
 
 	[Header("Batch Spawning")]
 	[SerializeField] private bool useBatchSpawning = true;
@@ -62,6 +62,14 @@ public class WaveManager : MonoBehaviour
 
 	private Dictionary<string, int> originalTowerCosts = new Dictionary<string, int>();
 	private bool hasStoredOriginalCosts = false;
+
+	// No-tower gold drain
+	[Header("No-Tower Gold Drain")]
+	[SerializeField] private bool enableNoTowerGoldDrain = true;
+	[SerializeField] private int goldDrainPerSecondWhenNoTowers = 200;
+	[SerializeField] private float goldDrainTickSeconds = 1f;
+	private Coroutine noTowersDrainMonitor;
+	private Coroutine noTowersDrainCoroutine;
 
 	public int GetCurrentWave() => currentWave;
 	public int GetMaxWaves() => maxWaves;
@@ -156,7 +164,7 @@ public class WaveManager : MonoBehaviour
 			gameHUD.UpdateWaveDisplay(currentWave, maxWaves);
 		}
 	}
-	
+
 	// Public method to force storage of current tower costs as base costs
 	public void ForceStoreBaseTowerCosts()
 	{
@@ -261,6 +269,12 @@ public class WaveManager : MonoBehaviour
 			}
 		}
 
+		// Switch to first gameplay scene music (index 1) when starting gameplay
+		// currentSceneIndex is 0 here (first gameplay scene), so we use index 1 for music
+		Debug.Log($"[WaveManager] LoadFirstGameplayScene: Switching to gameplay scene music (index 1)");
+		if (AudioManager.Instance != null)
+			AudioManager.Instance.PlaySceneMusicByIndex(1, skipFade: true);
+
 		// Unload the ManagerScene (but keep DontDestroyOnLoad objects)
 		Scene managerScene = SceneManager.GetSceneByName("ManagerScene");
 		if (managerScene.IsValid() && managerScene.isLoaded) {
@@ -359,6 +373,15 @@ public class WaveManager : MonoBehaviour
 			gameHUD.UpdateWaveDisplay(currentWave, maxWaves);
 		}
 
+		// Start monitoring gold drain while no towers (during the wave)
+		if (enableNoTowerGoldDrain) {
+			if (noTowersDrainMonitor != null) {
+				StopCoroutine(noTowersDrainMonitor);
+				noTowersDrainMonitor = null;
+			}
+			noTowersDrainMonitor = StartCoroutine(MonitorNoTowersDrain());
+		}
+
 		// Notify wave started
 		OnWaveStarted?.Invoke(currentWave);
 
@@ -455,6 +478,7 @@ public class WaveManager : MonoBehaviour
 			// Immediate defeat if no towers and cannot afford any tower
 			if (ShouldDefeatNow()) {
 				isWaveActive = false;
+				StopNoTowerDrain();
 				GameStateManager.Instance?.ShowDefeat();
 				yield break;
 			}
@@ -465,6 +489,9 @@ public class WaveManager : MonoBehaviour
 		}
 
 		isWaveActive = false;
+
+		// Stop no-tower drain monitors when the wave ends normally
+		StopNoTowerDrain();
 
 		if (currentWaveCoroutine != null) {
 			StopCoroutine(currentWaveCoroutine);
@@ -490,22 +517,43 @@ public class WaveManager : MonoBehaviour
 		}
 	}
 
+	// Helper method to calculate scene-relative wave number
+	private int GetSceneRelativeWaveNumber()
+	{
+		// Calculate wave number within current scene (1-5)
+		// Wave 1, 6, 11, 16, etc. all return 1 (first wave of scene)
+		// Wave 5, 10, 15, 20, etc. all return 5 (last wave of scene)
+		return ((currentWave - 1) % 5) + 1;
+	}
+
 	private int CalculateEnemiesForWave(int wave)
 	{
-		// Exponential growth with some randomness
+		// Use scene-relative wave so each scene starts easier
+		int relativeWave = GetSceneRelativeWaveNumber();
+		
+		// Calculate which scene we're in (0-based: 0 = waves 1-5, 1 = waves 6-10, etc.)
+		int sceneNumber = (wave - 1) / 5;
+		
+		// Base enemy count scaling within scene (waves 1-5 within each scene)
 		float baseCount = baseEnemiesPerWave;
-		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, wave - 1);
-
+		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, relativeWave - 1);
+		
+		// Progressive difficulty bonus: each new scene is 50% harder than previous
+		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.50f);
+		
 		// Add some randomness (±20%)
 		float randomFactor = Random.Range(0.8f, 1.2f);
 
-		return Mathf.RoundToInt(scaledCount * randomFactor);
+		return Mathf.RoundToInt(scaledCount * sceneDifficultyMultiplier * randomFactor);
 	}
 
 	private int CalculateBatchSize()
 	{
-		// Batch size increases with wave difficulty
-		float scaledBatchSize = baseBatchSize * Mathf.Pow(batchSizeMultiplier, currentWave - 1);
+		// Use scene-relative wave for batch size calculation
+		int relativeWave = GetSceneRelativeWaveNumber();
+		
+		// Batch size increases with wave difficulty within scene
+		float scaledBatchSize = baseBatchSize * Mathf.Pow(batchSizeMultiplier, relativeWave - 1);
 
 		// Add some randomness (±15%)
 		float randomFactor = Random.Range(0.85f, 1.15f);
@@ -531,7 +579,7 @@ public class WaveManager : MonoBehaviour
 		// Boss wave logic - reduced mutant zombie spawn rate
 		if (isRandomBossWave && currentWave >= mutantZombieUnlockWave && enemySpawner.mutantZombiePrefab != null) {
 			float bossRoll = Random.value;
-			// Boss waves: 25% mutant zombies (reduced from 40%), 35% skeletons, 25% ghosts, 15% zombies
+			// Boss waves: 25% mutant zombies, 35% skeletons, 25% ghosts, 15% zombies
 			if (bossRoll < 0.25f)
 				return enemySpawner.mutantZombiePrefab;
 			else if (bossRoll < 0.6f)
@@ -650,6 +698,11 @@ public class WaveManager : MonoBehaviour
 			string currentScene = gameplaySceneNames[currentSceneIndex];
 			currentSceneIndex = (currentSceneIndex + 1) % gameplaySceneNames.Length;
 			string nextScene = gameplaySceneNames[currentSceneIndex];
+
+			// Switch background music for this scene (index 1-4 for gameplay scenes)
+			// Use instant switch (no fade) during scene changes for immediate music response
+			if (AudioManager.Instance != null)
+				AudioManager.Instance.PlaySceneMusicByIndex(currentSceneIndex + 1, skipFade: true);
 
 			// Update costs before load (keeps internal state in sync)
 			ApplyTowerCostMultiplier();
@@ -915,5 +968,70 @@ public class WaveManager : MonoBehaviour
 		// Final frame wait to ensure all updates are applied
 		yield return new WaitForEndOfFrame();
 	}
-	
+
+	// ===== No-tower gold drain helpers =====
+
+	private IEnumerator MonitorNoTowersDrain()
+	{
+		while (isWaveActive) {
+			if (!AnyTowerAlive()) {
+				if (noTowersDrainCoroutine == null) {
+					noTowersDrainCoroutine = StartCoroutine(DrainGoldWhileNoTowers());
+				}
+			}
+			else {
+				if (noTowersDrainCoroutine != null) {
+					StopCoroutine(noTowersDrainCoroutine);
+					noTowersDrainCoroutine = null;
+				}
+			}
+			yield return new WaitForSeconds(0.2f);
+		}
+
+		// Safety stop
+		if (noTowersDrainCoroutine != null) {
+			StopCoroutine(noTowersDrainCoroutine);
+			noTowersDrainCoroutine = null;
+		}
+	}
+
+	private IEnumerator DrainGoldWhileNoTowers()
+	{
+		while (isWaveActive && !AnyTowerAlive()) {
+			if (CurrencyManager.Instance != null) {
+				int current = CurrencyManager.Instance.GetCurrentCurrency();
+				int toSpend = Mathf.Min(goldDrainPerSecondWhenNoTowers, Mathf.Max(current, 0));
+				if (toSpend > 0) {
+					CurrencyManager.Instance.SpendCurrency(toSpend);
+					if (GameHUD.Instance != null) {
+						GameHUD.Instance.ShowCurrencyChange(-toSpend);
+					}
+				}
+			}
+			yield return new WaitForSeconds(goldDrainTickSeconds);
+		}
+	}
+
+	private bool AnyTowerAlive()
+	{
+		BaseTower[] towers = FindObjectsOfType<BaseTower>();
+		foreach (var t in towers) {
+			if (t != null && t.GetCurrentHealth() > 0f) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void StopNoTowerDrain()
+	{
+		if (noTowersDrainMonitor != null) {
+			StopCoroutine(noTowersDrainMonitor);
+			noTowersDrainMonitor = null;
+		}
+		if (noTowersDrainCoroutine != null) {
+			StopCoroutine(noTowersDrainCoroutine);
+			noTowersDrainCoroutine = null;
+		}
+	}
 }

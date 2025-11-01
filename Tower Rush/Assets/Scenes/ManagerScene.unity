@@ -652,7 +652,14 @@ MonoBehaviour:
   buttonClickSound: {fileID: 8300000, guid: 489f0b3499987440fa80405df799bd6b, type: 3}
   waveStartSound: {fileID: 8300000, guid: a84df82ca3cb14be2ad566ea155d7d4d, type: 3}
   waveCompleteSound: {fileID: 8300000, guid: c70c6268913ac46cab29ed0706bdec9b, type: 3}
-  backgroundMusic: {fileID: 8300000, guid: 30bf7c1ea7ed64ef7a34f4009f19cea5, type: 3}
+  backgroundMusic: {fileID: 0}
+  sceneMusic:
+  - {fileID: 8300000, guid: 30bf7c1ea7ed64ef7a34f4009f19cea5, type: 3}
+  - {fileID: 8300000, guid: 30bf7c1ea7ed64ef7a34f4009f19cea5, type: 3}
+  - {fileID: 8300000, guid: 3bc0f2fd27601d0408dba11bb371b43e, type: 3}
+  - {fileID: 8300000, guid: 931742c2e7d62704fb041f209cff53aa, type: 3}
+  - {fileID: 8300000, guid: 6d0f5d9fbcbe53a46b5410689143d1c5, type: 3}
+  musicFadeDuration: 0.1
   musicVolume: 0.2
   sfxVolume: 1
 --- !u!4 &319693332
@@ -2984,6 +2991,69 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1387016504}
   m_CullTransparentMesh: 1
+--- !u!1 &1446832202
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1446832204}
+  - component: {fileID: 1446832203}
+  m_Layer: 0
+  m_Name: NavMesh
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1446832203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446832202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AgentTypeID: 0
+  m_CollectObjects: 0
+  m_Size: {x: 10, y: 10, z: 10}
+  m_Center: {x: 0, y: 2, z: 0}
+  m_LayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_UseGeometry: 1
+  m_DefaultArea: 0
+  m_GenerateLinks: 0
+  m_IgnoreNavMeshAgent: 1
+  m_IgnoreNavMeshObstacle: 1
+  m_OverrideTileSize: 0
+  m_TileSize: 256
+  m_OverrideVoxelSize: 0
+  m_VoxelSize: 0.16666667
+  m_MinRegionArea: 2
+  m_NavMeshData: {fileID: 23800000, guid: 1b16d838ee53949af87a4b57c08eca0c, type: 2}
+  m_BuildHeightMesh: 0
+--- !u!4 &1446832204
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446832202}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -752, y: 673.98114, z: 221.79546}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1477658684
 GameObject:
   m_ObjectHideFlags: 0
@@ -3289,6 +3359,9 @@ MonoBehaviour:
   - Waves 6-10
   - Waves 11-15
   - Waves 16-20
+  enableNoTowerGoldDrain: 1
+  goldDrainPerSecondWhenNoTowers: 200
+  goldDrainTickSeconds: 1
 --- !u!4 &1946827578
 Transform:
   m_ObjectHideFlags: 0
@@ -3787,3 +3860,4 @@ SceneRoots:
   - {fileID: 368436430}
   - {fileID: 591582562}
   - {fileID: 1962479290}
+  - {fileID: 1446832204}

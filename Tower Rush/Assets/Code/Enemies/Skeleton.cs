@@ -6,12 +6,12 @@ public class Skeleton : Enemy
     
     protected override void Start()
     {
-        // Skeleton stats (1.5x faster, 2x health) - Fast, low-health enemy
-        moveSpeed = 7.5f; // 5f * 1.5 - Very fast
-        health = 30f; // 15f * 2 - Low health but doubled
-        damage = 8f; // Moderate damage
-        attackCooldown = 0.8f; // Fast attacks
-        attackRange = 1.2f; // Slightly smaller attack range
+        // Skeleton stats - 10% faster and 15% stronger
+        moveSpeed = 8.25f; // Increased from 7.5f
+        health = 30f;
+        damage = 9.2f; // Increased from 8f
+        attackCooldown = 0.8f;
+        attackRange = 1.5f; // Match other enemies to prevent going inside towers
 
         // Get or add Health component for health bar system
         healthComponent = GetComponent<Health>();

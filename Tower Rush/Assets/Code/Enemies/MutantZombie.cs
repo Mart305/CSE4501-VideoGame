@@ -6,12 +6,12 @@ public class MutantZombie : Enemy
     
     protected override void Start()
     {
-        // Mutant Zombie stats (balanced for mid-game boss) - Reduced from overpowered values
-        moveSpeed = 2.8f; // Reduced from 4.5f - Still faster but not overwhelming
-        health = 80f; // Reduced from 300f - Strong but manageable
-        damage = 12f; // Reduced from 30f - Dangerous but not instant kill
-        attackCooldown = 1.8f; // Slightly slower attacks for balance
-        attackRange = 2f; // Slightly larger attack range
+        // Mutant Zombie stats - 10% faster and 15% stronger
+        moveSpeed = 3.1f; // Increased from 2.8f
+        health = 80f;
+        damage = 13.8f; // Increased from 12f
+        attackCooldown = 1.8f;
+        attackRange = 2f;
 
         // Get or add Health component for health bar system
         healthComponent = GetComponent<Health>();

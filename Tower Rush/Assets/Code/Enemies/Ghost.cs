@@ -6,10 +6,10 @@ public class Ghost : Enemy
     
     protected override void Start()
     {
-        // Ghost stats (1.5x faster, 2x health)
-        moveSpeed = 5.25f; // 3.5f * 1.5
-        health = 40f; // 20f * 2
-        damage = 5f;
+        // Ghost stats - 10% faster and 15% stronger
+        moveSpeed = 5.75f; // Increased from 5.25f
+        health = 40f;
+        damage = 5.75f; // Increased from 5f
         attackCooldown = 1f;
 
         // Get or add Health component for health bar system
