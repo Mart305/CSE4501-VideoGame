@@ -19,6 +19,7 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     [SerializeField] private float updateDestinationInterval = 0.5f; // Update destination every 0.5s instead of every frame
     
     private float lastDestinationUpdateTime;
+    private float lastTargetEvaluationTime = 0f; // Track when we last evaluated which tower to target
     
     [Header("Effects")]
     [SerializeField] private GameObject spawnEffectPrefab;
@@ -90,7 +91,7 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         
         // Warp to nearest NavMesh position to prevent warnings and enable agent
         NavMeshHit hit;
-        if (NavMesh.SamplePosition(transform.position, out hit, 10f, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(transform.position, out hit, 0.5f, NavMesh.AllAreas)) // Reduced from 10f to prevent distant teleporting
         {
             navAgent.Warp(hit.position);
             navAgent.enabled = true;
@@ -118,6 +119,13 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     protected virtual void Update()
     {
         if (navAgent == null) return;
+        
+        // Re-evaluate target to catch new towers being placed
+        if (Time.time - lastTargetEvaluationTime >= updateDestinationInterval)
+        {
+            FindTargetTower();
+            lastTargetEvaluationTime = Time.time;
+        }
         
         if (targetTower == null || targetTower.GetCurrentHealth() <= 0)
         {

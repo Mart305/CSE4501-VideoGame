@@ -6,10 +6,10 @@ public class Skeleton : Enemy
     
     protected override void Start()
     {
-        // Skeleton stats - 10% faster and 15% stronger
-        moveSpeed = 8.25f; // Increased from 7.5f
-        health = 30f;
-        damage = 9.2f; // Increased from 8f
+        // Skeleton stats - significantly harder
+        moveSpeed = 10f;   // Much faster
+        health = 40f;      // More health
+        damage = 15f;      // More damage
         attackCooldown = 0.8f;
         attackRange = 1.5f; // Match other enemies to prevent going inside towers
 
@@ -21,13 +21,13 @@ public class Skeleton : Enemy
         }
         
         // Set health through the Health component
-        healthComponent.SetMaxHealth(30f);
+        healthComponent.SetMaxHealth(40f);
         
         // Initialize health bar if present
         EnemyHealthBar healthBar = GetComponentInChildren<EnemyHealthBar>();
         if (healthBar != null)
         {
-            healthBar.Initialize(30f);
+            healthBar.Initialize(40f);
         }
 
         base.Start();

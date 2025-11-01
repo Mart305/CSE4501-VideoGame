@@ -17,7 +17,7 @@ public class WaveManager : MonoBehaviour
 
 	[Header("Enemy Count Scaling")]
 	[SerializeField] private int baseEnemiesPerWave = 12; 
-	[SerializeField] private float enemyCountMultiplier = 1.35f; // Increased from 1.30f
+	[SerializeField] private float enemyCountMultiplier = 1.6f; // Increased to make game harder
 
 	[Header("Batch Spawning")]
 	[SerializeField] private bool useBatchSpawning = true;
@@ -695,9 +695,13 @@ public class WaveManager : MonoBehaviour
 			if (TowerPlacementManager.Instance != null)
 				TowerPlacementManager.Instance.ClearPlacedTowers();
 
-			string currentScene = gameplaySceneNames[currentSceneIndex];
-			currentSceneIndex = (currentSceneIndex + 1) % gameplaySceneNames.Length;
-			string nextScene = gameplaySceneNames[currentSceneIndex];
+		string currentScene = gameplaySceneNames[currentSceneIndex];
+		currentSceneIndex++;
+		if (currentSceneIndex >= gameplaySceneNames.Length)
+		{
+			currentSceneIndex = gameplaySceneNames.Length - 1;
+		}
+		string nextScene = gameplaySceneNames[currentSceneIndex];
 
 			// Switch background music for this scene (index 1-4 for gameplay scenes)
 			// Use instant switch (no fade) during scene changes for immediate music response
@@ -938,9 +942,6 @@ public class WaveManager : MonoBehaviour
 
 		foreach (var terrain in terrains) {
 			if (terrain != null && terrain.gameObject.scene == activeScene) {
-				// Store original settings
-				bool wasEnabled = terrain.enabled;
-
 				// Force terrain data to refresh
 				terrain.Flush();
 
@@ -950,18 +951,8 @@ public class WaveManager : MonoBehaviour
 				terrain.enabled = true;
 				yield return null; // Wait another frame
 
-				// Ensure terrain collision and rendering is updated
-				if (terrain.terrainData != null) {
-					terrain.terrainData.SyncHeightmap();
-				}
-
-				// Force physics update for terrain collider
-				TerrainCollider collider = terrain.GetComponent<TerrainCollider>();
-				if (collider != null) {
-					collider.enabled = false;
-					yield return null;
-					collider.enabled = true;
-				}
+				// REMOVED SyncHeightmap() - can cause hangs
+				// The terrain should already be correct from the scene load
 			}
 		}
 
