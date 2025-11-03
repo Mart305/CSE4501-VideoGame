@@ -155,6 +155,26 @@ jobs:
       - name: 🗑️ Remove Burst Debug Files
         run: find build/WebGL -name '*BurstDebugInformation_DoNotShip*' -exec rm -rf {} + || true
 
+      - name: 🗜️ Optimize Build Size
+        run: |
+          echo "=== Build size before optimization ==="
+          du -sh build/WebGL
+          du -h build/WebGL/Build/* | sort -h
+          
+          # Remove unnecessary files
+          find build/WebGL -name "*.symbols.json" -delete || true
+          find build/WebGL -name "*.debug.wasm" -delete || true
+          find build/WebGL -name "*.pdb" -delete || true
+          
+          # Remove development-only files
+          rm -f build/WebGL/Build/*.symbols.json || true
+          rm -f build/WebGL/Build/UnityLoader.js.mem || true
+          
+          echo ""
+          echo "=== Build size after optimization ==="
+          du -sh build/WebGL
+          du -h build/WebGL/Build/* | sort -h
+
       - name: 📤 Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:

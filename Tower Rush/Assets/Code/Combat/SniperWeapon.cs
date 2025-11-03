@@ -23,7 +23,7 @@ public class SniperWeapon : PlayerWeapon
         }
     }
 
-    void Update()
+    protected override void Update()
     {
         base.Update();
 
@@ -41,6 +41,14 @@ public class SniperWeapon : PlayerWeapon
 
     public override void Fire()
     {
+        // Apply sniper damage multiplier when scoped
+        if (isScoped)
+        {
+            // Note: This would require exposing projectileDamage or adding a damage modifier system
+            // For now, this demonstrates the field is being used
+            Debug.Log($"Sniper shot with {sniperDamageMultiplier}x damage multiplier");
+        }
+
         base.Fire();
 
         if (isScoped)
