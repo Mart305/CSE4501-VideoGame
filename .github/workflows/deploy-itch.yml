@@ -159,21 +159,44 @@ jobs:
         run: |
           echo "=== Build size before optimization ==="
           du -sh build/WebGL
-          du -h build/WebGL/Build/* | sort -h
+          du -h build/WebGL/Build/* 2>/dev/null | sort -h || echo "No Build files yet"
           
           # Remove unnecessary files
           find build/WebGL -name "*.symbols.json" -delete || true
           find build/WebGL -name "*.debug.wasm" -delete || true
           find build/WebGL -name "*.pdb" -delete || true
+          find build/WebGL -name "*.map" -delete || true
           
           # Remove development-only files
           rm -f build/WebGL/Build/*.symbols.json || true
           rm -f build/WebGL/Build/UnityLoader.js.mem || true
+          rm -rf build/WebGL/Build/Streaming || true
           
+          # Compress large data files if they exist
+          if [ -f "build/WebGL/Build/WebGL.data" ]; then
+            echo "Found uncompressed data file, compressing..."
+            gzip -9 build/WebGL/Build/WebGL.data || true
+          fi
+          
+          # Report individual file sizes
           echo ""
           echo "=== Build size after optimization ==="
           du -sh build/WebGL
-          du -h build/WebGL/Build/* | sort -h
+          echo ""
+          echo "=== Individual file sizes ==="
+          find build/WebGL/Build -type f -exec du -h {} \; | sort -h | tail -20
+          
+          # Check if data file is too large
+          DATA_FILE=$(find build/WebGL/Build -name "*.data*" -o -name "*.unityweb" | head -1)
+          if [ -n "$DATA_FILE" ]; then
+            SIZE=$(du -m "$DATA_FILE" | cut -f1)
+            echo ""
+            echo "=== Main data file: $DATA_FILE ==="
+            echo "Size: ${SIZE}MB"
+            if [ "$SIZE" -gt 500 ]; then
+              echo "⚠️  WARNING: Data file exceeds 500MB - may fail on itch.io"
+            fi
+          fi
 
       - name: 📤 Upload Build Artifact
         uses: actions/upload-artifact@v4
