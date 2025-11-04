@@ -80,9 +80,7 @@ public class TowerPlacementManager : MonoBehaviour
 
 	void Start()
 	{
-		playerCamera = Camera.main;
-		if (playerCamera == null)
-			playerCamera = FindObjectOfType<Camera>();
+		playerCamera = GetActiveCamera();
 
 		// Initialize events
 		if (OnTowerPlaced == null)
@@ -92,6 +90,21 @@ public class TowerPlacementManager : MonoBehaviour
 		if (OnPlacementCancelled == null)
 			OnPlacementCancelled = new UnityEvent();
 
+	}
+	
+	Camera GetActiveCamera()
+	{
+		// Find all active cameras and return the one that's enabled
+		Camera[] cameras = FindObjectsOfType<Camera>();
+		foreach (Camera cam in cameras)
+		{
+			if (cam.enabled && cam.gameObject.activeInHierarchy)
+			{
+				return cam;
+			}
+		}
+		// Fallback to Camera.main
+		return Camera.main;
 	}
 
 	// Add this method to apply the multiplier
@@ -152,9 +165,9 @@ public class TowerPlacementManager : MonoBehaviour
 
 	void Update()
     {
-		// Re-acquire camera if it was destroyed (scene changed)
-		if (playerCamera == null)
-			playerCamera = Camera.main;
+		// Re-acquire camera if it was destroyed or disabled (scene changed or camera mode switched)
+		if (playerCamera == null || !playerCamera.enabled)
+			playerCamera = GetActiveCamera();
 
 		// Handle drag-based placement
 		HandleDragPlacement();

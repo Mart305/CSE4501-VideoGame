@@ -490,7 +490,7 @@ GameObject:
   - component: {fileID: 201155297}
   m_Layer: 0
   m_Name: Cube
-  m_TagString: Untagged
+  m_TagString: Boundary
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -899,7 +899,7 @@ GameObject:
   - component: {fileID: 343686823}
   m_Layer: 0
   m_Name: Cube (3)
-  m_TagString: Untagged
+  m_TagString: Boundary
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1364,7 +1364,7 @@ GameObject:
   - component: {fileID: 534085551}
   m_Layer: 0
   m_Name: Cube (2)
-  m_TagString: Untagged
+  m_TagString: Boundary
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2159,11 +2159,23 @@ PrefabInstance:
     m_TransformParent: {fileID: 1452792527}
     m_Modifications:
     - target: {fileID: 1901270107865498692, guid: 8ab9d8a8210ee45a8bbadafd1ba01ef3, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1901270107865498692, guid: 8ab9d8a8210ee45a8bbadafd1ba01ef3, type: 3}
       propertyPath: GroundLayers.m_Bits
       value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 5227360247665290050, guid: 8ab9d8a8210ee45a8bbadafd1ba01ef3, type: 3}
       propertyPath: jump
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5227360247665290050, guid: 8ab9d8a8210ee45a8bbadafd1ba01ef3, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5431993190495771455, guid: 8ab9d8a8210ee45a8bbadafd1ba01ef3, type: 3}
+      propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7047080881283723912, guid: 8ab9d8a8210ee45a8bbadafd1ba01ef3, type: 3}
@@ -3149,7 +3161,7 @@ GameObject:
   - component: {fileID: 1750471441}
   m_Layer: 0
   m_Name: Cube (1)
-  m_TagString: Untagged
+  m_TagString: Boundary
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
