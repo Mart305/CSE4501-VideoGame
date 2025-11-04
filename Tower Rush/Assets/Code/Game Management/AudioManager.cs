@@ -67,7 +67,6 @@ public class AudioManager : MonoBehaviour
 		}
 		else if (backgroundMusic != null && musicSource != null) {
 			// Legacy fallback
-			Debug.LogWarning("[AudioManager] No scene music array configured, using legacy background music");
 			musicSource.clip = backgroundMusic;
 			musicSource.volume = musicVolume;
 			musicSource.loop = true;
@@ -109,59 +108,42 @@ public class AudioManager : MonoBehaviour
 	/// </summary>
 	public void PlaySceneMusicByIndex(int index, bool skipFade = false)
 	{
-		Debug.Log($"[AudioManager] PlaySceneMusicByIndex called with index={index}, skipFade={skipFade}");
-
 		if (musicSource == null) {
-			Debug.LogError("[AudioManager] musicSource is NULL!");
 			return;
 		}
 
 		if (sceneMusic == null || sceneMusic.Length == 0) {
-			Debug.LogError("[AudioManager] sceneMusic array is NULL or empty!");
 			return;
 		}
 
-		Debug.Log($"[AudioManager] sceneMusic array length: {sceneMusic.Length}");
-
 		// Clamp index to valid range
 		int clampedIndex = Mathf.Clamp(index, 0, sceneMusic.Length - 1);
-		Debug.Log($"[AudioManager] Clamped index: {clampedIndex}");
 
 		AudioClip targetClip = sceneMusic[clampedIndex];
 
 		if (targetClip == null) {
-			Debug.LogError($"[AudioManager] sceneMusic[{clampedIndex}] is NULL! No music clip assigned in Inspector.");
 			return;
 		}
-
-		Debug.Log($"[AudioManager] Target clip: '{targetClip.name}' from sceneMusic[{clampedIndex}]");
 
 		// If already playing this clip, don't restart
 		if (musicSource.clip == targetClip && musicSource.isPlaying) {
-			Debug.Log($"[AudioManager] Already playing '{targetClip.name}', skipping restart");
 			return;
 		}
 
-		Debug.Log($"[AudioManager] Current clip: '{(musicSource.clip != null ? musicSource.clip.name : "NULL")}', isPlaying: {musicSource.isPlaying}");
-
 		// Stop any existing fade
 		if (musicFadeCoroutine != null) {
-			Debug.Log("[AudioManager] Stopping existing fade coroutine");
 			StopCoroutine(musicFadeCoroutine);
 		}
 
 		if (skipFade) {
-			Debug.Log($"[AudioManager] INSTANT SWITCH to '{targetClip.name}'");
 			// Instant switch - no fade
 			musicSource.Stop();
 			musicSource.clip = targetClip;
 			musicSource.volume = musicVolume;
 			musicSource.loop = true;
 			musicSource.Play();
-			Debug.Log($"[AudioManager] Now playing: '{musicSource.clip.name}', volume: {musicSource.volume}, isPlaying: {musicSource.isPlaying}");
 		}
 		else {
-			Debug.Log($"[AudioManager] Starting FADE to '{targetClip.name}'");
 			// Start fade transition
 			musicFadeCoroutine = StartCoroutine(FadeToMusic(targetClip));
 		}
@@ -169,26 +151,20 @@ public class AudioManager : MonoBehaviour
 
 	private IEnumerator FadeToMusic(AudioClip newClip)
 	{
-		Debug.Log($"[AudioManager] FadeToMusic coroutine started for '{newClip.name}'");
 		float startVolume = musicSource.volume;
 		float elapsed = 0f;
 
 		// Fade out current music
-		Debug.Log($"[AudioManager] Fading out current music from volume {startVolume}");
 		while (elapsed < musicFadeDuration) {
 			elapsed += Time.unscaledDeltaTime;
 			musicSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / musicFadeDuration);
 			yield return null;
 		}
 
-		Debug.Log($"[AudioManager] Fade out complete, switching to '{newClip.name}'");
-
 		// Switch to new clip
 		musicSource.clip = newClip;
 		musicSource.loop = true;
 		musicSource.Play();
-
-		Debug.Log($"[AudioManager] New clip playing: '{musicSource.clip.name}', starting fade in");
 
 		// Fade in new music
 		elapsed = 0f;
@@ -199,7 +175,6 @@ public class AudioManager : MonoBehaviour
 		}
 
 		musicSource.volume = musicVolume;
-		Debug.Log($"[AudioManager] Fade in complete, volume: {musicSource.volume}");
 		musicFadeCoroutine = null;
 	}
 

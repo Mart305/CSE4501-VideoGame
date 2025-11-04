@@ -45,9 +45,7 @@ public class TowerUpgradeUI : MonoBehaviour
             }
         }
         
-        playerCamera = Camera.main;
-        if (playerCamera == null)
-            playerCamera = FindObjectOfType<Camera>();
+        playerCamera = GetActiveCamera();
             
         // Hide upgrade panel at start
         if (upgradePanel != null)
@@ -77,11 +75,26 @@ public class TowerUpgradeUI : MonoBehaviour
         }
     }
     
+    Camera GetActiveCamera()
+    {
+        // Find all active cameras and return the one that's enabled
+        Camera[] cameras = FindObjectsOfType<Camera>();
+        foreach (Camera cam in cameras)
+        {
+            if (cam.enabled && cam.gameObject.activeInHierarchy)
+            {
+                return cam;
+            }
+        }
+        // Fallback to Camera.main
+        return Camera.main;
+    }
+    
     void Update()
     {
-		// Re-acquire camera if it was destroyed (scene changed)
-		if (playerCamera == null)
-			playerCamera = Camera.main;
+		// Re-acquire camera if it was destroyed or disabled (scene changed or camera mode switched)
+		if (playerCamera == null || !playerCamera.enabled)
+			playerCamera = GetActiveCamera();
 
 		CheckTowerSelection();
         

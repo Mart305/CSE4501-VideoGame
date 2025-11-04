@@ -271,7 +271,6 @@ public class WaveManager : MonoBehaviour
 
 		// Switch to first gameplay scene music (index 1) when starting gameplay
 		// currentSceneIndex is 0 here (first gameplay scene), so we use index 1 for music
-		Debug.Log($"[WaveManager] LoadFirstGameplayScene: Switching to gameplay scene music (index 1)");
 		if (AudioManager.Instance != null)
 			AudioManager.Instance.PlaySceneMusicByIndex(1, skipFade: true);
 
@@ -364,6 +363,12 @@ public class WaveManager : MonoBehaviour
 		isWaveActive = true;
 		enemiesSpawnedThisWave = 0;
 		enemiesKilledThisWave = 0;
+
+		// CRITICAL: Refresh enemySpawner reference from current active scene
+		enemySpawner = GameObject.FindObjectOfType<EnemySpawner>();
+		if (enemySpawner == null) {
+			Debug.LogError($"WaveManager: No EnemySpawner found in scene for wave {currentWave}!");
+		}
 
 		// Calculate total enemies for this wave
 		totalEnemiesThisWave = CalculateEnemiesForWave(currentWave);
