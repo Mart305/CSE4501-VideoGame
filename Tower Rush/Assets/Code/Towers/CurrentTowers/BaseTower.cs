@@ -146,9 +146,12 @@ public class BaseTower : MonoBehaviour
 
     protected virtual void FindTarget()
     {
+        // Only find new target if we don't have one
+        if (currentTarget != null) return;
+        
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
         GameObject closestEnemy = null;
-        float closestDistance = range;
+        float closestDistance = float.MaxValue;
 
         // Check if enemies are found
         if (enemies.Length == 0)
@@ -181,21 +184,8 @@ public class BaseTower : MonoBehaviour
             }
         }
 
-        // Clear target if it's out of range or destroyed
-        if (currentTarget != null)
-        {
-            float targetDistance = Vector3.Distance(transform.position, currentTarget.transform.position);
-            if (targetDistance > range || currentTarget == null)
-            {
-                currentTarget = null;
-            }
-        }
-
-        // Set new target
-        if (closestEnemy != null && currentTarget == null)
-        {
-            currentTarget = closestEnemy;
-        }
+        // Set new target (closest enemy)
+        currentTarget = closestEnemy;
     }
 
     protected virtual void AttackTarget()
@@ -208,6 +198,9 @@ public class BaseTower : MonoBehaviour
         {
             PerformAttack();
             lastFireTime = Time.time;
+            
+            // Clear target after shooting to retarget closest enemy next frame
+            currentTarget = null;
         }
     }
 

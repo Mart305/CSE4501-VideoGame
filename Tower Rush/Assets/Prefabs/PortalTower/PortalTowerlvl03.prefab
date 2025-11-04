@@ -2465,6 +2465,8 @@ MonoBehaviour:
   maxHealthUpgrades: 0
   maxHealthUpgradeAmount: 25
   repairAmount: 50
+  warpDistance: 15
+  warpChance: 1
 --- !u!64 &8921835103558951724
 MeshCollider:
   m_ObjectHideFlags: 0
