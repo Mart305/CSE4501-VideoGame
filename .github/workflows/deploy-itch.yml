@@ -172,12 +172,6 @@ jobs:
           rm -f build/WebGL/Build/UnityLoader.js.mem || true
           rm -rf build/WebGL/Build/Streaming || true
           
-          # Compress large data files if they exist
-          if [ -f "build/WebGL/Build/WebGL.data" ]; then
-            echo "Found uncompressed data file, compressing..."
-            gzip -9 build/WebGL/Build/WebGL.data || true
-          fi
-          
           # Report individual file sizes
           echo ""
           echo "=== Build size after optimization ==="
@@ -186,16 +180,35 @@ jobs:
           echo "=== Individual file sizes ==="
           find build/WebGL/Build -type f -exec du -h {} \; | sort -h | tail -20
           
-          # Check if data file is too large
-          DATA_FILE=$(find build/WebGL/Build -name "*.data*" -o -name "*.unityweb" | head -1)
-          if [ -n "$DATA_FILE" ]; then
-            SIZE=$(du -m "$DATA_FILE" | cut -f1)
-            echo ""
-            echo "=== Main data file: $DATA_FILE ==="
-            echo "Size: ${SIZE}MB"
-            if [ "$SIZE" -gt 500 ]; then
-              echo "⚠️  WARNING: Data file exceeds 500MB - may fail on itch.io"
+          # Check all compressed files for size limits
+          echo ""
+          echo "=== Checking file sizes for itch.io compatibility ==="
+          FAIL=0
+          for FILE in build/WebGL/Build/*.{data,wasm,framework,code}.{gz,br} build/WebGL/Build/*.data build/WebGL/Build/*.wasm; do
+            if [ -f "$FILE" ]; then
+              SIZE=$(du -m "$FILE" | cut -f1)
+              FILENAME=$(basename "$FILE")
+              echo "📦 $FILENAME: ${SIZE}MB"
+              
+              # itch.io has a ~1GB limit per file in ZIP
+              if [ "$SIZE" -gt 900 ]; then
+                echo "❌ ERROR: $FILENAME exceeds 900MB (${SIZE}MB) - will fail on itch.io!"
+                FAIL=1
+              elif [ "$SIZE" -gt 700 ]; then
+                echo "⚠️  WARNING: $FILENAME is large (${SIZE}MB) - approaching itch.io limits"
+              fi
             fi
+          done
+          
+          if [ "$FAIL" -eq 1 ]; then
+            echo ""
+            echo "❌ Build contains files too large for itch.io deployment!"
+            echo "💡 Suggestions:"
+            echo "   1. Enable Asset Bundle compression in Unity"
+            echo "   2. Reduce texture quality/resolution"
+            echo "   3. Remove unused assets"
+            echo "   4. Use addressables for large assets"
+            exit 1
           fi
 
       - name: 📤 Upload Build Artifact
