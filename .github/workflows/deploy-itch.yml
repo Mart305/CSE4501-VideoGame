@@ -157,9 +157,13 @@ jobs:
 
       - name: 🗜️ Optimize Build Size
         run: |
+          echo "=== Build structure ==="
+          ls -la build/WebGL/
+          echo ""
+          
           echo "=== Build size before optimization ==="
           du -sh build/WebGL
-          du -h build/WebGL/Build/* 2>/dev/null | sort -h || echo "No Build files yet"
+          find build/WebGL -type f -name "*.data*" -o -name "*.wasm*" -o -name "*.unityweb" | xargs du -h 2>/dev/null | sort -h || echo "No build files found yet"
           
           # Remove unnecessary files
           find build/WebGL -name "*.symbols.json" -delete || true
@@ -167,24 +171,28 @@ jobs:
           find build/WebGL -name "*.pdb" -delete || true
           find build/WebGL -name "*.map" -delete || true
           
-          # Remove development-only files
-          rm -f build/WebGL/Build/*.symbols.json || true
-          rm -f build/WebGL/Build/UnityLoader.js.mem || true
-          rm -rf build/WebGL/Build/Streaming || true
+          # Remove development-only files (try both possible locations)
+          rm -f build/WebGL/Build/*.symbols.json 2>/dev/null || true
+          rm -f build/WebGL/*.symbols.json 2>/dev/null || true
+          rm -f build/WebGL/Build/UnityLoader.js.mem 2>/dev/null || true
+          rm -rf build/WebGL/Build/Streaming 2>/dev/null || true
+          rm -rf build/WebGL/Streaming 2>/dev/null || true
           
           # Report individual file sizes
           echo ""
           echo "=== Build size after optimization ==="
           du -sh build/WebGL
           echo ""
-          echo "=== Individual file sizes ==="
-          find build/WebGL/Build -type f -exec du -h {} \; | sort -h | tail -20
+          echo "=== Individual file sizes (top 20) ==="
+          find build/WebGL -type f -exec du -h {} \; 2>/dev/null | sort -rh | head -20
           
           # Check all compressed files for size limits
           echo ""
           echo "=== Checking file sizes for itch.io compatibility ==="
           FAIL=0
-          for FILE in build/WebGL/Build/*.{data,wasm,framework,code}.{gz,br} build/WebGL/Build/*.data build/WebGL/Build/*.wasm; do
+          
+          # Find all data and wasm files (both compressed and uncompressed)
+          while IFS= read -r FILE; do
             if [ -f "$FILE" ]; then
               SIZE=$(du -m "$FILE" | cut -f1)
               FILENAME=$(basename "$FILE")
@@ -198,7 +206,7 @@ jobs:
                 echo "⚠️  WARNING: $FILENAME is large (${SIZE}MB) - approaching itch.io limits"
               fi
             fi
-          done
+          done < <(find build/WebGL -type f \( -name "*.data*" -o -name "*.wasm*" -o -name "*.unityweb" -o -name "*.framework.js*" -o -name "*.code.js*" \) 2>/dev/null)
           
           if [ "$FAIL" -eq 1 ]; then
             echo ""
