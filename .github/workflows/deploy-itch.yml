@@ -81,47 +81,31 @@ jobs:
       fail-fast: false
     
     steps:
-      - name: 🧹 Free Disk Space (Part 1)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
-
-      - name: 🧹 Free Disk Space (Part 2 - Extra Aggressive)
+      - name: 🧹 Free Disk Space (Optimized)
         run: |
-          echo "=== Disk space before extra cleanup ==="
-          df -h
+          echo "=== Disk space before cleanup ==="
+          df -h / | awk 'NR==2 {print "Used: " $3 " / Available: " $4 " (" $5 ")"}'
           
-          # Remove additional large directories
-          sudo rm -rf /usr/local/lib/node_modules || true
-          sudo rm -rf /usr/local/.ghcup || true
-          sudo rm -rf /opt/az || true
-          sudo rm -rf /usr/share/miniconda || true
-          sudo rm -rf /usr/local/share/chromium || true
-          sudo rm -rf /usr/local/share/powershell || true
-          sudo rm -rf /usr/share/kotlinc || true
-          sudo rm -rf /usr/local/julia* || true
+          # Only remove the largest items that actually exist
+          echo "Removing Android SDK..."
+          sudo rm -rf /usr/local/lib/android || true
           
-          # Clean package manager caches
+          echo "Removing .NET..."
+          sudo rm -rf /usr/share/dotnet || true
+          
+          echo "Removing tool cache..."
+          sudo rm -rf /opt/hostedtoolcache || true
+          
+          echo "Removing swap..."
+          sudo swapoff -a || true
+          sudo rm -f /mnt/swapfile || true
+          
+          # Quick apt cleanup (no package removal)
           sudo apt-get clean
-          sudo apt-get autoremove -y --purge
-          sudo apt-get autoclean -y
-          
-          # Remove man pages and docs
-          sudo rm -rf /usr/share/man/* || true
-          sudo rm -rf /usr/share/doc/* || true
           
           echo ""
-          echo "=== Disk space after extra cleanup ==="
-          df -h
-          echo ""
-          echo "=== Available space on root ==="
-          df -h / | awk 'NR==2 {print "Available: " $4}'
+          echo "=== Disk space after cleanup ==="
+          df -h / | awk 'NR==2 {print "Used: " $3 " / Available: " $4 " (" $5 ")"}'
 
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
