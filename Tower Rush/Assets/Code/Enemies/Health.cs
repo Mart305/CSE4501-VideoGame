@@ -84,8 +84,15 @@ public class Health : MonoBehaviour
             CurrencyManager.Instance.AwardEnemyKill(enemyType);
         }
         
-        // Destroy the game object after a short delay
-        Destroy(gameObject, 0.5f);
+        // If this has an Enemy component, let Enemy.Die() handle destruction and animation
+        // Otherwise, destroy after a short delay (for non-enemy objects)
+        Enemy enemy = GetComponent<Enemy>();
+        if (enemy == null)
+        {
+            // Destroy the game object after a short delay (for non-enemy objects)
+            Destroy(gameObject, 0.5f);
+        }
+        // Enemy.Die() will handle destruction for enemy objects
     }
     
     public float GetHealth() => currentHealth;

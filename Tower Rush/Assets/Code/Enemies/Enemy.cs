@@ -15,6 +15,9 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     private SlowEffect slowEffect;
     protected NavMeshAgent navAgent;
     
+    [Header("Animation")]
+    protected Animator animator;
+    
     [Header("NavMesh Settings")]
     [SerializeField] private float updateDestinationInterval = 0.5f; // Update destination every 0.5s instead of every frame
     
@@ -30,6 +33,9 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     protected virtual void Start()
     {
         // Spawn effects are now handled by the portal system in SpawnEffectManager
+        
+        // Get Animator component
+        animator = GetComponent<Animator>();
         
         // Get or add NavMeshAgent component
         navAgent = GetComponent<NavMeshAgent>();
@@ -56,6 +62,32 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         if (slowEffect == null)
         {
             slowEffect = gameObject.AddComponent<SlowEffect>();
+        }
+        
+        // Subscribe to Health component death event if it exists
+        Health healthComponent = GetComponent<Health>();
+        if (healthComponent != null)
+        {
+            healthComponent.OnDeath.AddListener(OnHealthComponentDeath);
+        }
+    }
+    
+    private void OnHealthComponentDeath()
+    {
+        // Health component detected death, trigger Enemy.Die() for animation
+        if (!isDead)
+        {
+            Die();
+        }
+    }
+    
+    private void OnDestroy()
+    {
+        // Unsubscribe from Health component event
+        Health healthComponent = GetComponent<Health>();
+        if (healthComponent != null)
+        {
+            healthComponent.OnDeath.RemoveListener(OnHealthComponentDeath);
         }
     }
     
@@ -119,6 +151,9 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     protected virtual void Update()
     {
         if (navAgent == null) return;
+        
+        // Update animations
+        UpdateAnimations();
         
         // Re-evaluate target to catch new towers being placed
         if (Time.time - lastTargetEvaluationTime >= updateDestinationInterval)
@@ -200,8 +235,27 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     {
         if (Time.time - lastAttackTime >= attackCooldown)
         {
+            // Trigger attack animation
+            isAttacking = true;
+            if (animator != null)
+            {
+                animator.SetBool("IsAttacking", true);
+            }
+            
             targetTower.TakeDamage(damage);
             lastAttackTime = Time.time;
+            
+            // Reset attack animation after attack duration
+            Invoke(nameof(ResetAttackAnimation), 0.5f);
+        }
+    }
+    
+    private void ResetAttackAnimation()
+    {
+        isAttacking = false;
+        if (animator != null)
+        {
+            animator.SetBool("IsAttacking", false);
         }
     }
 
@@ -232,14 +286,25 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
 
     protected virtual void Die()
     {
+        if (isDead) return;
+        isDead = true;
+        
         // Stop NavMeshAgent
         if (navAgent != null)
         {
             navAgent.isStopped = true;
         }
         
-        // Hide the enemy visually immediately (disable all renderers)
-        SetEnemyVisibility(false);
+        // Trigger death animation
+        if (animator != null)
+        {
+            animator.SetTrigger("Die");
+            animator.SetBool("IsMoving", false);
+            animator.SetBool("IsAttacking", false);
+            
+            // For skeletons with two-stage death (Fall → Dead), the Animator Controller
+            // will handle the transition from Fall to Dead state automatically
+        }
         
         // Disable colliders so dead enemies don't block anything
         Collider[] colliders = GetComponentsInChildren<Collider>();
@@ -251,12 +316,22 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         // Play death effect before destroying
         PlayDeathEffect();
         
-        // Destroy after effect duration
+        // Wait for death animation to play, then hide and destroy
+        // Death animation length varies, so we'll wait a bit longer
+        Invoke(nameof(HideEnemyAfterDeath), 1.5f);
         Invoke(nameof(DestroyAfterDeathEffect), deathEffectDuration);
+    }
+    
+    private void HideEnemyAfterDeath()
+    {
+        // Hide the enemy visually after death animation plays
+        SetEnemyVisibility(false);
     }
     
     private void DestroyAfterDeathEffect()
     {
+        // Cancel any pending invokes before destroying
+        CancelInvoke();
         Destroy(gameObject);
     }
     
@@ -376,5 +451,22 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         {
             renderer.enabled = visible;
         }
+    }
+    
+    // Animation state tracking
+    private bool isDead = false;
+    private bool isAttacking = false;
+    
+    // Animation update method
+    protected virtual void UpdateAnimations()
+    {
+        if (animator == null || navAgent == null || isDead) return;
+        
+        // Check if enemy is moving
+        bool isMoving = navAgent.velocity.magnitude > 0.1f && !navAgent.isStopped;
+        
+        // Set animation parameters
+        animator.SetBool("IsMoving", isMoving);
+        animator.SetBool("IsAttacking", isAttacking);
     }
 }
