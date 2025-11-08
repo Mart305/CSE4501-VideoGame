@@ -56,6 +56,11 @@ public class PlayerWeapon : MonoBehaviour
     protected Quaternion originalRotation;
     protected Coroutine recoilCoroutine;
     protected Coroutine cameraShakeCoroutine;
+
+    private float lastFireSoundTime = 0f;
+    private float fireSoundCooldown = 0.05f;
+    private WaitForSeconds recoilWait;
+    private WaitForSeconds shakeWait;
     
     void Start()
     {
@@ -297,10 +302,11 @@ public class PlayerWeapon : MonoBehaviour
     
     protected virtual void PlayFireEffects()
     {
-        if (fireSound != null && audioSource != null)
+        if (fireSound != null && audioSource != null && Time.time - lastFireSoundTime > fireSoundCooldown)
         {
             audioSource.pitch = Random.Range(0.95f, 1.05f);
             audioSource.PlayOneShot(fireSound, fireSoundVolume);
+            lastFireSoundTime = Time.time;
         }
 
         if (muzzleFlashPrefab != null)
@@ -330,36 +336,17 @@ public class PlayerWeapon : MonoBehaviour
 
     void CreateMuzzleFlashParticles()
     {
-        GameObject particleObj = new GameObject("MuzzleFlashParticles");
-        particleObj.transform.position = firePoint.position;
-        particleObj.transform.rotation = firePoint.rotation;
+        GameObject particle = WeaponEffectsPool.Instance.GetMuzzleFlashParticle(
+            weaponType,
+            firePoint.position,
+            firePoint.rotation
+        );
 
-        ParticleSystem ps = particleObj.AddComponent<ParticleSystem>();
-        var main = ps.main;
-        main.duration = muzzleFlashDuration;
-        main.startLifetime = 0.15f;
-        main.startSpeed = particleSpeed;
-        main.startSize = 0.1f;
-        main.startColor = particleColor;
-        main.maxParticles = particleCount;
-
-        var emission = ps.emission;
-        emission.SetBursts(new ParticleSystem.Burst[] {
-            new ParticleSystem.Burst(0.0f, (short)particleCount)
-        });
-
-        var shape = ps.shape;
-        shape.shapeType = ParticleSystemShapeType.Cone;
-        shape.angle = 10f;
-        shape.radius = 0.05f;
-
-        var renderer = ps.GetComponent<ParticleSystemRenderer>();
-        Material mat = new Material(Shader.Find("Sprites/Default"));
-        mat.color = particleColor;
-        renderer.material = mat;
-        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-        Destroy(particleObj, 1f);
+        ParticleSystem ps = particle.GetComponent<ParticleSystem>();
+        if (ps != null)
+        {
+            ps.Play();
+        }
     }
     
     IEnumerator ApplyRecoil()
