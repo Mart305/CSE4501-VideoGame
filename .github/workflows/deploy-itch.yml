@@ -122,6 +122,14 @@ jobs:
             Library-WebGL-
             Library-
 
+      - name: 🧹 Clear Artifact Cache (Force Texture Reimport)
+        run: |
+          echo "Clearing artifact cache to force texture reimport with new compression settings..."
+          rm -rf "Tower Rush/Library/ArtifactDB"
+          rm -rf "Tower Rush/Library/Artifacts"
+          rm -rf "Tower Rush/Library/SourceAssetDB"
+          echo "Cache cleared - textures will be reimported with 1024px max size and DXT compression"
+
       - name: 🎮 Build Unity WebGL
         uses: game-ci/unity-builder@v4
         env:
