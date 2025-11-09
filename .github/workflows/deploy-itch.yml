@@ -132,6 +132,7 @@ jobs:
           projectPath: Tower Rush
           targetPlatform: WebGL
           unityVersion: 2022.3.62f1
+          buildMethod: BuildScript.BuildWebGL
 
       - name: 🔧 Fix Permissions
         run: sudo chown -R $USER:$USER build/
