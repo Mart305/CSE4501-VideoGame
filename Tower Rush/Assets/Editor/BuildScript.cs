@@ -38,11 +38,22 @@ public class BuildScript
     private static string[] GetScenePaths()
     {
         // Get all enabled scenes from build settings
-        var scenes = new string[EditorBuildSettings.scenes.Length];
-        for (int i = 0; i < scenes.Length; i++)
+        var enabledScenes = new System.Collections.Generic.List<string>();
+        foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
         {
-            scenes[i] = EditorBuildSettings.scenes[i].path;
+            if (scene.enabled)
+            {
+                enabledScenes.Add(scene.path);
+                Debug.Log($"Including scene: {scene.path}");
+            }
         }
-        return scenes;
+        
+        if (enabledScenes.Count == 0)
+        {
+            Debug.LogError("No enabled scenes found in build settings!");
+            EditorApplication.Exit(1);
+        }
+        
+        return enabledScenes.ToArray();
     }
 }
