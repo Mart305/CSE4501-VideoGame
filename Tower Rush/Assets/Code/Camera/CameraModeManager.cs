@@ -264,27 +264,16 @@ public class CameraModeManager : MonoBehaviour
             thirdPersonController = playerCharacter.GetComponent<ThirdPersonController>();
         }
         
-        // Set initial mode - only call SetCameraMode if starting in RTS, otherwise just ensure RTS is disabled
+        // Set initial mode - call SetCameraMode for both modes to ensure proper initialization
         if (currentMode == CameraMode.RTS)
         {
             SetCameraMode(CameraMode.RTS);
         }
         else
         {
-            // Just ensure RTS camera is disabled, don't touch player components
-            if (rtsCamera != null)
-            {
-                Camera rtsCam = rtsCamera.GetComponent<Camera>();
-                if (rtsCam != null) rtsCam.enabled = false;
-                
-                // Remove AudioListener from RTS camera if it exists
-                AudioListener rtsListener = rtsCamera.GetComponent<AudioListener>();
-                if (rtsListener != null) Destroy(rtsListener);
-                
-                if (rtsCameraController != null)
-                    rtsCameraController.enabled = false;
-            }
-            isRTSModeActive = false;
+            // Call EnableThirdPersonMode to ensure all player components are properly enabled
+            // This is critical for WebGL where component states may differ from editor
+            EnableThirdPersonMode();
         }
     }
     
