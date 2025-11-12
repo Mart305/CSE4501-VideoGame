@@ -4,9 +4,9 @@ using System.IO;
 
 public class TextureOptimizer : AssetPostprocessor
 {
-    // Maximum texture size for WebGL builds
-    private const int MAX_TEXTURE_SIZE = 2048; // Increased from 1024
-    private const int HIGH_QUALITY_TEXTURE_SIZE = 2048; // For important textures
+    // Maximum texture size for WebGL builds - reduced for itch.io file size limits
+    private const int MAX_TEXTURE_SIZE = 1024; // Reduced from 2048
+    private const int HIGH_QUALITY_TEXTURE_SIZE = 1024; // For important textures
     
     void OnPreprocessTexture()
     {
@@ -44,14 +44,14 @@ public class TextureOptimizer : AssetPostprocessor
             }
             else if (isHighQualityTexture)
             {
-                // High quality textures - use less compression
+                // High quality textures - use DXT compression instead of uncompressed
                 if (textureImporter.DoesSourceTextureHaveAlpha())
                 {
-                    webGLSettings.format = TextureImporterFormat.RGBA32; // Uncompressed for best quality
+                    webGLSettings.format = TextureImporterFormat.DXT5; // Compressed with alpha
                 }
                 else
                 {
-                    webGLSettings.format = TextureImporterFormat.RGB24; // Uncompressed for best quality
+                    webGLSettings.format = TextureImporterFormat.DXT1; // Compressed without alpha
                 }
                 webGLSettings.compressionQuality = 100; // Maximum quality
             }
@@ -108,7 +108,7 @@ public class TextureOptimizerMenu
                 
                 var webGLSettings = importer.GetPlatformTextureSettings("WebGL");
                 webGLSettings.overridden = true;
-                webGLSettings.maxTextureSize = isHighQualityTexture ? 2048 : 2048;
+                webGLSettings.maxTextureSize = isHighQualityTexture ? 1024 : 1024;
                 
                 // Compress based on texture type - check type FIRST
                 if (importer.textureType == TextureImporterType.SingleChannel)
@@ -125,14 +125,14 @@ public class TextureOptimizerMenu
                 }
                 else if (isHighQualityTexture)
                 {
-                    // High quality textures - use less compression
+                    // High quality textures - use DXT compression instead of uncompressed
                     if (importer.DoesSourceTextureHaveAlpha())
                     {
-                        webGLSettings.format = TextureImporterFormat.RGBA32;
+                        webGLSettings.format = TextureImporterFormat.DXT5;
                     }
                     else
                     {
-                        webGLSettings.format = TextureImporterFormat.RGB24;
+                        webGLSettings.format = TextureImporterFormat.DXT1;
                     }
                     webGLSettings.compressionQuality = 100;
                 }

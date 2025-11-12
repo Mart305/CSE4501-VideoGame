@@ -122,6 +122,14 @@ jobs:
             Library-WebGL-
             Library-
 
+      - name: 🧹 Clear Artifact Cache (Force Texture Reimport)
+        run: |
+          echo "Clearing artifact cache to force texture reimport with new compression settings..."
+          rm -rf "Tower Rush/Library/ArtifactDB"
+          rm -rf "Tower Rush/Library/Artifacts"
+          rm -rf "Tower Rush/Library/SourceAssetDB"
+          echo "Cache cleared - textures will be reimported with 1024px max size and DXT compression"
+
       - name: 🎮 Build Unity WebGL
         uses: game-ci/unity-builder@v4
         env:
@@ -224,6 +232,20 @@ jobs:
 
       - name: 🧾 List Artifacts
         run: ls -R deployment-artifacts/
+
+      - name: 🔧 Fix Double WebGL Folder Structure
+        run: |
+          echo "Checking for double WebGL folder..."
+          if [ -d "deployment-artifacts/WebGL/WebGL" ]; then
+            echo "Found double WebGL folder, fixing structure..."
+            mv deployment-artifacts/WebGL/WebGL/* deployment-artifacts/WebGL/
+            rmdir deployment-artifacts/WebGL/WebGL
+            echo "Structure fixed!"
+          else
+            echo "Structure is correct, no fix needed"
+          fi
+          echo "Final structure:"
+          ls -la deployment-artifacts/WebGL/
 
       - name: 🤵 Install Butler
         uses: remarkablegames/setup-butler@v1
