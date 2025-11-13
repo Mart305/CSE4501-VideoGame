@@ -491,6 +491,14 @@ public class CameraModeManager : MonoBehaviour
             if (animator != null)
             {
                 animator.enabled = true;
+                
+                // WebGL-specific animator refresh
+                #if UNITY_WEBGL && !UNITY_EDITOR
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                animator.updateMode = AnimatorUpdateMode.Normal;
+                animator.Rebind();
+                animator.Update(0f);
+                #endif
             }
             
             // Re-enable rigidbody physics if present
