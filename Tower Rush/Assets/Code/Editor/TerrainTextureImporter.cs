@@ -23,6 +23,15 @@ public class TerrainTextureImporter : AssetPostprocessor
         {
             TextureImporter textureImporter = (TextureImporter)assetImporter;
             
+            // Detect if this is a single-channel texture (normal, height, thickness, AO, etc.)
+            bool isSingleChannel = assetPath.Contains("_Normal") || 
+                                   assetPath.Contains("_Height") ||
+                                   assetPath.Contains("_Thickness") ||
+                                   assetPath.Contains("_AO") ||
+                                   assetPath.Contains("_Roughness") ||
+                                   assetPath.Contains("_Metallic") ||
+                                   assetPath.Contains("_Mask");
+            
             // Set high-quality settings
             textureImporter.maxTextureSize = 2048; // High resolution
             textureImporter.textureCompression = TextureImporterCompression.Uncompressed; // No compression
@@ -34,11 +43,23 @@ public class TerrainTextureImporter : AssetPostprocessor
             // Platform-specific settings for better quality
             var platformSettings = textureImporter.GetDefaultPlatformTextureSettings();
             platformSettings.maxTextureSize = 2048;
-            platformSettings.format = TextureImporterFormat.RGBA32; // Uncompressed
             platformSettings.textureCompression = TextureImporterCompression.Uncompressed;
+            
+            // Use appropriate format based on texture type
+            if (isSingleChannel)
+            {
+                // Single channel textures need R8 or Alpha8 format
+                platformSettings.format = TextureImporterFormat.R8; // Single channel uncompressed
+            }
+            else
+            {
+                // Color textures use RGBA32
+                platformSettings.format = TextureImporterFormat.RGBA32; // Uncompressed
+            }
+            
             textureImporter.SetPlatformTextureSettings(platformSettings);
             
-            Debug.Log($"[TerrainTextureImporter] Set high-quality import settings for: {assetPath}");
+            Debug.Log($"[TerrainTextureImporter] Set high-quality import settings for: {assetPath} (format: {(isSingleChannel ? "R8" : "RGBA32")})");
         }
     }
 }

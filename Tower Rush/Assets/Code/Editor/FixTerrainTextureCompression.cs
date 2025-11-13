@@ -170,6 +170,15 @@ public class FixTerrainTextureCompression : EditorWindow
         {
             bool changed = false;
             
+            // Detect if this is a single-channel texture
+            bool isSingleChannel = path.Contains("_Normal") || 
+                                   path.Contains("_Height") ||
+                                   path.Contains("_Thickness") ||
+                                   path.Contains("_AO") ||
+                                   path.Contains("_Roughness") ||
+                                   path.Contains("_Metallic") ||
+                                   path.Contains("_Mask");
+            
             // Set high-quality settings
             if (importer.maxTextureSize != 2048)
             {
@@ -207,8 +216,18 @@ public class FixTerrainTextureCompression : EditorWindow
                 platformSettings.textureCompression != TextureImporterCompression.Uncompressed)
             {
                 platformSettings.maxTextureSize = 2048;
-                platformSettings.format = TextureImporterFormat.RGBA32;
                 platformSettings.textureCompression = TextureImporterCompression.Uncompressed;
+                
+                // Use appropriate format based on texture type
+                if (isSingleChannel)
+                {
+                    platformSettings.format = TextureImporterFormat.R8; // Single channel
+                }
+                else
+                {
+                    platformSettings.format = TextureImporterFormat.RGBA32; // Color
+                }
+                
                 importer.SetPlatformTextureSettings(platformSettings);
                 changed = true;
             }
@@ -217,7 +236,7 @@ public class FixTerrainTextureCompression : EditorWindow
             {
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
                 texturesFixed++;
-                Debug.Log($"[FixTerrainTextureCompression] Fixed: {path}");
+                Debug.Log($"[FixTerrainTextureCompression] Fixed: {path} (format: {(isSingleChannel ? "R8" : "RGBA32")})");
             }
         }
     }

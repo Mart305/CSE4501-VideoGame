@@ -430,7 +430,7 @@ public class GameStateManager : MonoBehaviour
     private IEnumerator InitializeWebGLPlayerAnimator()
     {
         // Wait longer for WebGL to fully initialize
-        yield return new WaitForSeconds(1.0f);
+        yield return new WaitForSeconds(1.5f);
         
         // Try multiple times to find and fix the player animator
         for (int attempt = 0; attempt < 10; attempt++) // Increased from 5 to 10 attempts
@@ -457,6 +457,13 @@ public class GameStateManager : MonoBehaviour
                 
                 if (playerAnimator != null)
                 {
+                    // Check if CameraModeManager exists and ensure we're in third person mode
+                    CameraModeManager cameraManager = FindObjectOfType<CameraModeManager>();
+                    if (cameraManager != null)
+                    {
+                        Debug.Log("[GameStateManager] Found CameraModeManager - ensuring third person mode for animator");
+                    }
+                    
                     FixAnimatorForWebGL(playerAnimator);
                     
                     // Also check for child animators
@@ -509,7 +516,13 @@ public class GameStateManager : MonoBehaviour
     {
         if (animator == null) return;
         
-        Debug.Log($"[GameStateManager] Applying animator fixes for WebGL on {animator.gameObject.name}");
+        Debug.Log($"[GameStateManager] Applying animator fixes for WebGL on {animator.gameObject.name} (currently enabled: {animator.enabled})");
+        
+        // CRITICAL: Force enable first - something may be disabling it
+        animator.enabled = true;
+        
+        // Wait a frame to ensure it's actually enabled
+        UnityEngine.Object.DontDestroyOnLoad(animator.gameObject);
         
         // Disable first to reset state
         animator.enabled = false;
@@ -519,6 +532,12 @@ public class GameStateManager : MonoBehaviour
         
         // Set update mode to normal (not AnimatePhysics which can cause issues in WebGL)
         animator.updateMode = AnimatorUpdateMode.Normal;
+        
+        // Ensure the animator controller is assigned
+        if (animator.runtimeAnimatorController == null)
+        {
+            Debug.LogError($"[GameStateManager] Animator on {animator.gameObject.name} has no RuntimeAnimatorController!");
+        }
         
         // Re-enable animator
         animator.enabled = true;
@@ -537,7 +556,7 @@ public class GameStateManager : MonoBehaviour
             animator.Play(stateInfo.fullPathHash, 0, 0f);
         }
         
-        Debug.Log($"[GameStateManager] Animator fixed: {animator.gameObject.name} - culling=AlwaysAnimate, updateMode=Normal, rebound");
+        Debug.Log($"[GameStateManager] Animator fixed: {animator.gameObject.name} - enabled: {animator.enabled}, culling=AlwaysAnimate, updateMode=Normal, rebound");
     }
     
     private void AdjustTerrainQualityForWebGL()
