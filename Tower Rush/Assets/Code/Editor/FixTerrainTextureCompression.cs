@@ -170,14 +170,22 @@ public class FixTerrainTextureCompression : EditorWindow
         {
             bool changed = false;
             
-            // Detect if this is a single-channel texture
-            bool isSingleChannel = path.Contains("_Normal") || 
-                                   path.Contains("_Height") ||
+            // Detect texture type by filename
+            bool isNormalMap = path.Contains("_Normal") || path.Contains("_normal");
+            bool isSingleChannel = path.Contains("_Height") ||
                                    path.Contains("_Thickness") ||
                                    path.Contains("_AO") ||
                                    path.Contains("_Roughness") ||
                                    path.Contains("_Metallic") ||
                                    path.Contains("_Mask");
+            
+            // Set texture type first (important for normal maps)
+            TextureImporterType targetType = isNormalMap ? TextureImporterType.NormalMap : TextureImporterType.Default;
+            if (importer.textureType != targetType)
+            {
+                importer.textureType = targetType;
+                changed = true;
+            }
             
             // Set high-quality settings
             if (importer.maxTextureSize != 2048)
@@ -219,7 +227,11 @@ public class FixTerrainTextureCompression : EditorWindow
                 platformSettings.textureCompression = TextureImporterCompression.Uncompressed;
                 
                 // Use appropriate format based on texture type
-                if (isSingleChannel)
+                if (isNormalMap)
+                {
+                    platformSettings.format = TextureImporterFormat.RGBA32; // Normal maps
+                }
+                else if (isSingleChannel)
                 {
                     platformSettings.format = TextureImporterFormat.R8; // Single channel
                 }
@@ -236,7 +248,8 @@ public class FixTerrainTextureCompression : EditorWindow
             {
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
                 texturesFixed++;
-                Debug.Log($"[FixTerrainTextureCompression] Fixed: {path} (format: {(isSingleChannel ? "R8" : "RGBA32")})");
+                string formatType = isNormalMap ? "RGBA32 (NormalMap)" : (isSingleChannel ? "R8" : "RGBA32");
+                Debug.Log($"[FixTerrainTextureCompression] Fixed: {path} (format: {formatType})");
             }
         }
     }
