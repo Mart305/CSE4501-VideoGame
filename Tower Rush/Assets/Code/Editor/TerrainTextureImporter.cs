@@ -23,14 +23,24 @@ public class TerrainTextureImporter : AssetPostprocessor
         {
             TextureImporter textureImporter = (TextureImporter)assetImporter;
             
-            // Detect if this is a single-channel texture (normal, height, thickness, AO, etc.)
-            bool isSingleChannel = assetPath.Contains("_Normal") || 
-                                   assetPath.Contains("_Height") ||
+            // Detect texture type by filename
+            bool isNormalMap = assetPath.Contains("_Normal") || assetPath.Contains("_normal");
+            bool isSingleChannel = assetPath.Contains("_Height") ||
                                    assetPath.Contains("_Thickness") ||
                                    assetPath.Contains("_AO") ||
                                    assetPath.Contains("_Roughness") ||
                                    assetPath.Contains("_Metallic") ||
                                    assetPath.Contains("_Mask");
+            
+            // Set texture type first (important for normal maps)
+            if (isNormalMap)
+            {
+                textureImporter.textureType = TextureImporterType.NormalMap;
+            }
+            else
+            {
+                textureImporter.textureType = TextureImporterType.Default;
+            }
             
             // Set high-quality settings
             textureImporter.maxTextureSize = 2048; // High resolution
@@ -46,20 +56,26 @@ public class TerrainTextureImporter : AssetPostprocessor
             platformSettings.textureCompression = TextureImporterCompression.Uncompressed;
             
             // Use appropriate format based on texture type
-            if (isSingleChannel)
+            if (isNormalMap)
             {
-                // Single channel textures need R8 or Alpha8 format
-                platformSettings.format = TextureImporterFormat.R8; // Single channel uncompressed
+                // Normal maps need RGBA32 or specific normal map format
+                platformSettings.format = TextureImporterFormat.RGBA32;
+            }
+            else if (isSingleChannel)
+            {
+                // Single channel textures need R8 format
+                platformSettings.format = TextureImporterFormat.R8;
             }
             else
             {
                 // Color textures use RGBA32
-                platformSettings.format = TextureImporterFormat.RGBA32; // Uncompressed
+                platformSettings.format = TextureImporterFormat.RGBA32;
             }
             
             textureImporter.SetPlatformTextureSettings(platformSettings);
             
-            Debug.Log($"[TerrainTextureImporter] Set high-quality import settings for: {assetPath} (format: {(isSingleChannel ? "R8" : "RGBA32")})");
+            string formatType = isNormalMap ? "RGBA32 (NormalMap)" : (isSingleChannel ? "R8" : "RGBA32");
+            Debug.Log($"[TerrainTextureImporter] Set high-quality import settings for: {assetPath} (format: {formatType})");
         }
     }
 }
