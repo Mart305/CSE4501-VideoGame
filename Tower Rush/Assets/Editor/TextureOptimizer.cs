@@ -15,6 +15,10 @@ public class TextureOptimizer : AssetPostprocessor
         // Check if this is a high-quality texture that should not be compressed aggressively
         bool isHighQualityTexture = assetPath.Contains("Portal") || 
                                      assetPath.Contains("Terrain") ||
+                                     assetPath.Contains("Ground") ||
+                                     assetPath.Contains("Floor") ||
+                                     assetPath.Contains("Grass") ||
+                                     assetPath.Contains("Dirt") ||
                                      assetPath.Contains("Effect") ||
                                      assetPath.Contains("Particle");
         
@@ -63,20 +67,22 @@ public class TextureOptimizer : AssetPostprocessor
             }
             else
             {
-                // Standard RGB textures
+                // Standard RGB textures - increased from 50 to 75 for better quality
                 webGLSettings.format = TextureImporterFormat.DXT1;
-                webGLSettings.compressionQuality = 50;
+                webGLSettings.compressionQuality = 75;
             }
             
             textureImporter.SetPlatformTextureSettings(webGLSettings);
         }
         
         // Enable mipmaps for better quality at distance
-        if (assetPath.Contains("Normal") || assetPath.Contains("Height") || assetPath.Contains("Terrain"))
+        if (assetPath.Contains("Normal") || assetPath.Contains("Height") || assetPath.Contains("Terrain") || 
+            assetPath.Contains("Ground") || assetPath.Contains("Floor") || assetPath.Contains("Grass") || assetPath.Contains("Dirt"))
         {
             textureImporter.isReadable = false;
             textureImporter.mipmapEnabled = true;
             textureImporter.streamingMipmaps = true; // Enable mipmap streaming for better performance
+            textureImporter.mipmapFilter = TextureImporterMipFilter.KaiserFilter; // Better quality mipmaps
         }
     }
 }
@@ -103,6 +109,10 @@ public class TextureOptimizerMenu
                 // Check if this is a high-quality texture
                 bool isHighQualityTexture = path.Contains("Portal") || 
                                              path.Contains("Terrain") ||
+                                             path.Contains("Ground") ||
+                                             path.Contains("Floor") ||
+                                             path.Contains("Grass") ||
+                                             path.Contains("Dirt") ||
                                              path.Contains("Effect") ||
                                              path.Contains("Particle");
                 
@@ -143,8 +153,9 @@ public class TextureOptimizerMenu
                 }
                 else
                 {
+                    // Standard textures - increased from 50 to 75 for better quality
                     webGLSettings.format = TextureImporterFormat.DXT1;
-                    webGLSettings.compressionQuality = 50;
+                    webGLSettings.compressionQuality = 75;
                 }
                 
                 importer.SetPlatformTextureSettings(webGLSettings);

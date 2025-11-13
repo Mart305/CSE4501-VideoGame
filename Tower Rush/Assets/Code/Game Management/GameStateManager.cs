@@ -34,6 +34,12 @@ public class GameStateManager : MonoBehaviour
                 DontDestroyOnLoad(WaveManager.Instance.gameObject);
             if (CurrencyManager.Instance != null)
                 DontDestroyOnLoad(CurrencyManager.Instance.gameObject);
+            
+            // Apply WebGL-specific fixes
+            #if UNITY_WEBGL && !UNITY_EDITOR
+            Debug.Log("[GameStateManager] WebGL platform detected - applying fixes");
+            ApplyWebGLFixes();
+            #endif
         }
         else
         {
@@ -48,6 +54,11 @@ public class GameStateManager : MonoBehaviour
         // Find UI components in the scene
         if (mainMenuManager == null)
             mainMenuManager = FindObjectOfType<MainMenuManager>();
+        
+        // Initialize WebGL player animator fixes
+        #if UNITY_WEBGL && !UNITY_EDITOR
+        StartCoroutine(InitializeWebGLPlayerAnimator());
+        #endif
             
         GameOverUI gameOverUI = FindObjectOfType<GameOverUI>();
         if (gameOverUI != null)
@@ -396,4 +407,101 @@ public class GameStateManager : MonoBehaviour
     // Public getters
     public GameState GetCurrentState() => currentState;
     public bool IsGameActive() => currentState == GameState.Playing;
+    
+    // ===== WebGL-Specific Fixes =====
+    #if UNITY_WEBGL && !UNITY_EDITOR
+    
+    private void ApplyWebGLFixes()
+    {
+        // Fix terrain quality settings for WebGL
+        AdjustTerrainQualityForWebGL();
+        
+        // Log current quality level
+        int currentQuality = QualitySettings.GetQualityLevel();
+        Debug.Log($"[GameStateManager] WebGL Quality Level: {currentQuality}");
+    }
+    
+    private IEnumerator InitializeWebGLPlayerAnimator()
+    {
+        // Wait for scene to fully load
+        yield return new WaitForSeconds(0.3f);
+        
+        // Find player GameObject
+        GameObject playerArmature = GameObject.FindGameObjectWithTag("Player");
+        if (playerArmature == null)
+        {
+            playerArmature = GameObject.Find("PlayerArmature");
+        }
+        
+        if (playerArmature != null)
+        {
+            Animator playerAnimator = playerArmature.GetComponent<Animator>();
+            
+            if (playerAnimator != null)
+            {
+                FixAnimatorForWebGL(playerAnimator);
+            }
+            else
+            {
+                Debug.LogWarning("[GameStateManager] Player Animator component not found!");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[GameStateManager] PlayerArmature GameObject not found!");
+        }
+    }
+    
+    private void FixAnimatorForWebGL(Animator animator)
+    {
+        if (animator == null) return;
+        
+        Debug.Log("[GameStateManager] Applying animator fixes for WebGL");
+        
+        // Force animator to always animate mode (prevents culling issues in WebGL)
+        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        
+        // Ensure animator is enabled
+        animator.enabled = true;
+        
+        // Force animator to update immediately
+        animator.Update(0f);
+        
+        // Rebind animator to refresh all bindings (fixes WebGL state issues)
+        animator.Rebind();
+        
+        Debug.Log("[GameStateManager] Animator fixed: culling=AlwaysAnimate, rebound successfully");
+    }
+    
+    private void AdjustTerrainQualityForWebGL()
+    {
+        // Find all terrains in the scene
+        Terrain[] terrains = FindObjectsOfType<Terrain>();
+        
+        if (terrains.Length == 0)
+        {
+            Debug.Log("[GameStateManager] No terrains found in scene");
+            return;
+        }
+        
+        foreach (Terrain terrain in terrains)
+        {
+            if (terrain != null)
+            {
+                // Adjust terrain settings for better WebGL performance and rendering
+                terrain.heightmapPixelError = 5; // Slightly higher for WebGL (default is 1)
+                terrain.basemapDistance = 500; // Reduce from 1000 for WebGL
+                terrain.detailObjectDistance = 60; // Reduce from 80 for WebGL
+                terrain.treeDistance = 2000; // Reduce from 5000 for WebGL
+                terrain.treeBillboardDistance = 50;
+                terrain.treeCrossFadeLength = 5;
+                terrain.treeMaximumFullLODCount = 50;
+                
+                Debug.Log($"[GameStateManager] Adjusted terrain quality for WebGL: {terrain.name}");
+            }
+        }
+    }
+    
+    #endif
+    // ===== End WebGL-Specific Fixes =====
 }
