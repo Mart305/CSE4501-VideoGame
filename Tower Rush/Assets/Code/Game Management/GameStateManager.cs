@@ -59,6 +59,9 @@ public class GameStateManager : MonoBehaviour
         #if UNITY_WEBGL && !UNITY_EDITOR
         StartCoroutine(InitializeWebGLPlayerAnimator());
         #endif
+        
+        // Fix terrain basemaps on all platforms (fixes white spots at distance)
+        FixTerrainBasemaps();
             
         GameOverUI gameOverUI = FindObjectOfType<GameOverUI>();
         if (gameOverUI != null)
@@ -424,44 +427,70 @@ public class GameStateManager : MonoBehaviour
     private IEnumerator InitializeWebGLPlayerAnimator()
     {
         // Wait for scene to fully load
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(0.5f);
         
-        // Find player GameObject
-        GameObject playerArmature = GameObject.FindGameObjectWithTag("Player");
-        if (playerArmature == null)
+        // Try multiple times to find and fix the player animator
+        for (int attempt = 0; attempt < 5; attempt++)
         {
-            playerArmature = GameObject.Find("PlayerArmature");
-        }
-        
-        if (playerArmature != null)
-        {
-            Animator playerAnimator = playerArmature.GetComponent<Animator>();
-            
-            if (playerAnimator != null)
+            // Find player GameObject
+            GameObject playerArmature = GameObject.FindGameObjectWithTag("Player");
+            if (playerArmature == null)
             {
-                FixAnimatorForWebGL(playerAnimator);
+                playerArmature = GameObject.Find("PlayerArmature");
+            }
+            
+            if (playerArmature != null)
+            {
+                Animator playerAnimator = playerArmature.GetComponent<Animator>();
+                
+                if (playerAnimator != null)
+                {
+                    FixAnimatorForWebGL(playerAnimator);
+                    
+                    // Also check for child animators
+                    Animator[] childAnimators = playerArmature.GetComponentsInChildren<Animator>();
+                    foreach (Animator childAnim in childAnimators)
+                    {
+                        if (childAnim != playerAnimator)
+                        {
+                            FixAnimatorForWebGL(childAnim);
+                        }
+                    }
+                    
+                    yield break; // Success, exit coroutine
+                }
+                else
+                {
+                    Debug.LogWarning($"[GameStateManager] Player Animator not found on attempt {attempt + 1}");
+                }
             }
             else
             {
-                Debug.LogWarning("[GameStateManager] Player Animator component not found!");
+                Debug.LogWarning($"[GameStateManager] PlayerArmature not found on attempt {attempt + 1}");
             }
+            
+            yield return new WaitForSeconds(0.2f);
         }
-        else
-        {
-            Debug.LogWarning("[GameStateManager] PlayerArmature GameObject not found!");
-        }
+        
+        Debug.LogError("[GameStateManager] Failed to find PlayerArmature after 5 attempts!");
     }
     
     private void FixAnimatorForWebGL(Animator animator)
     {
         if (animator == null) return;
         
-        Debug.Log("[GameStateManager] Applying animator fixes for WebGL");
+        Debug.Log($"[GameStateManager] Applying animator fixes for WebGL on {animator.gameObject.name}");
+        
+        // Disable first to reset state
+        animator.enabled = false;
         
         // Force animator to always animate mode (prevents culling issues in WebGL)
         animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         
-        // Ensure animator is enabled
+        // Set update mode to normal (not AnimatePhysics which can cause issues in WebGL)
+        animator.updateMode = AnimatorUpdateMode.Normal;
+        
+        // Re-enable animator
         animator.enabled = true;
         
         // Force animator to update immediately
@@ -470,7 +499,15 @@ public class GameStateManager : MonoBehaviour
         // Rebind animator to refresh all bindings (fixes WebGL state issues)
         animator.Rebind();
         
-        Debug.Log("[GameStateManager] Animator fixed: culling=AlwaysAnimate, rebound successfully");
+        // Force play the default state
+        if (animator.runtimeAnimatorController != null && animator.layerCount > 0)
+        {
+            // Get the default state from layer 0
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            animator.Play(stateInfo.fullPathHash, 0, 0f);
+        }
+        
+        Debug.Log($"[GameStateManager] Animator fixed: {animator.gameObject.name} - culling=AlwaysAnimate, updateMode=Normal, rebound");
     }
     
     private void AdjustTerrainQualityForWebGL()
@@ -497,11 +534,86 @@ public class GameStateManager : MonoBehaviour
                 terrain.treeCrossFadeLength = 5;
                 terrain.treeMaximumFullLODCount = 50;
                 
+                // Force terrain to refresh its material
+                if (terrain.materialTemplate != null)
+                {
+                    Material terrainMat = terrain.materialTemplate;
+                    
+                    // Enable keywords that might be disabled in WebGL
+                    if (terrainMat.HasProperty("_MainTex"))
+                    {
+                        terrainMat.EnableKeyword("_NORMALMAP");
+                    }
+                    
+                    // Force shader to refresh
+                    terrain.materialTemplate = terrainMat;
+                    terrain.Flush();
+                }
+                
                 Debug.Log($"[GameStateManager] Adjusted terrain quality for WebGL: {terrain.name}");
             }
         }
+        
+        // Also adjust global terrain quality settings
+        QualitySettings.terrainPixelError = 5;
+        QualitySettings.terrainDetailDensityScale = 0.8f;
+        QualitySettings.terrainBasemapDistance = 500;
+        QualitySettings.terrainDetailDistance = 60;
+        QualitySettings.terrainTreeDistance = 2000;
+        
+        Debug.Log("[GameStateManager] Applied global terrain quality settings for WebGL");
     }
+    
     
     #endif
     // ===== End WebGL-Specific Fixes =====
+    
+    // ===== Terrain Basemap Fix (All Platforms) =====
+    // This fixes white spots on terrain at distance in both editor and builds
+    private void FixTerrainBasemaps()
+    {
+        Terrain[] terrains = FindObjectsOfType<Terrain>();
+        
+        foreach (Terrain terrain in terrains)
+        {
+            if (terrain != null && terrain.terrainData != null)
+            {
+                // Increase basemap distance to prevent white spots and compression artifacts
+                terrain.basemapDistance = 2000f; // Increased from 1000 to reduce compression
+                
+                // Set lower pixel error for better quality (lower = higher quality)
+                terrain.heightmapPixelError = 1f;
+                
+                // Enable draw instanced for better performance
+                terrain.drawInstanced = true;
+                
+                // Increase heightmap resolution if it looks too compressed
+                // This doesn't change the actual heightmap, just how it's rendered
+                terrain.heightmapMaximumLOD = 0; // 0 = highest quality, no LOD reduction
+                
+                // Set detail settings for better quality
+                terrain.detailObjectDensity = 1.0f; // Maximum detail density
+                terrain.detailObjectDistance = 80f; // How far to render details
+                
+                // Force terrain to regenerate basemap with higher quality
+                terrain.terrainData.SetBaseMapDirty();
+                terrain.Flush();
+                
+                Debug.Log($"[GameStateManager] Fixed terrain basemap for: {terrain.name} (basemapDistance: 2000, heightmapMaxLOD: 0)");
+            }
+        }
+        
+        // Adjust global quality settings to reduce compression
+        QualitySettings.terrainBasemapDistance = 2000f;
+        QualitySettings.terrainPixelError = 1f;
+        QualitySettings.terrainDetailDensityScale = 1.0f;
+        
+        // Disable texture mipmap limiting which can cause compression artifacts
+        QualitySettings.globalTextureMipmapLimit = 0; // 0 = full resolution, no mipmap reduction
+        
+        // Enable anisotropic filtering for better terrain texture quality at angles
+        QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
+        
+        Debug.Log("[GameStateManager] Applied high-quality terrain settings to reduce compression (mipmap limit: 0, anisotropic: enabled)");
+    }
 }
