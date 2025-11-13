@@ -1,4 +1,4 @@
-﻿Shader "Starter Assets/Triplanar" {
+Shader "Starter Assets/Triplanar" {
 Properties{
     _MainTex("Albedo (RGB)", 2D) = "white" {}
     [NoScaleOffset] _BumpMap("Normal Map", 2D) = "bump" {}
@@ -15,8 +15,8 @@ SubShader{
         // Physically based Standard lighting model, and enable shadows on all light types
         #pragma surface surf Standard fullforwardshadows
 
-        // Use shader model 3.0 target, to get nicer looking lighting
-        #pragma target 3.0
+        // Use shader model 2.5 target for WebGL compatibility
+        #pragma target 2.5
 
         #include "UnityStandardUtils.cginc"
 
