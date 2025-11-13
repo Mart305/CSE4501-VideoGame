@@ -419,6 +419,9 @@ public class GameStateManager : MonoBehaviour
         // Fix terrain quality settings for WebGL
         AdjustTerrainQualityForWebGL();
         
+        // Also apply basemap fix for WebGL (helps with compression issues)
+        FixTerrainBasemaps();
+        
         // Log current quality level
         int currentQuality = QualitySettings.GetQualityLevel();
         Debug.Log($"[GameStateManager] WebGL Quality Level: {currentQuality}");
@@ -426,17 +429,26 @@ public class GameStateManager : MonoBehaviour
     
     private IEnumerator InitializeWebGLPlayerAnimator()
     {
-        // Wait for scene to fully load
-        yield return new WaitForSeconds(0.5f);
+        // Wait longer for WebGL to fully initialize
+        yield return new WaitForSeconds(1.0f);
         
         // Try multiple times to find and fix the player animator
-        for (int attempt = 0; attempt < 5; attempt++)
+        for (int attempt = 0; attempt < 10; attempt++) // Increased from 5 to 10 attempts
         {
-            // Find player GameObject
+            // Find player GameObject using multiple methods
             GameObject playerArmature = GameObject.FindGameObjectWithTag("Player");
             if (playerArmature == null)
             {
                 playerArmature = GameObject.Find("PlayerArmature");
+            }
+            if (playerArmature == null)
+            {
+                // Try finding by component
+                ThirdPersonController controller = FindObjectOfType<ThirdPersonController>();
+                if (controller != null)
+                {
+                    playerArmature = controller.gameObject;
+                }
             }
             
             if (playerArmature != null)
@@ -457,6 +469,9 @@ public class GameStateManager : MonoBehaviour
                         }
                     }
                     
+                    // Keep monitoring and re-fixing for the first few seconds
+                    StartCoroutine(ContinuousAnimatorMonitoring(playerAnimator));
+                    
                     yield break; // Success, exit coroutine
                 }
                 else
@@ -469,10 +484,25 @@ public class GameStateManager : MonoBehaviour
                 Debug.LogWarning($"[GameStateManager] PlayerArmature not found on attempt {attempt + 1}");
             }
             
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.3f);
         }
         
-        Debug.LogError("[GameStateManager] Failed to find PlayerArmature after 5 attempts!");
+        Debug.LogError("[GameStateManager] Failed to find PlayerArmature after 10 attempts!");
+    }
+    
+    private IEnumerator ContinuousAnimatorMonitoring(Animator animator)
+    {
+        // Re-apply fixes every second for the first 5 seconds
+        for (int i = 0; i < 5; i++)
+        {
+            yield return new WaitForSeconds(1.0f);
+            
+            if (animator != null && animator.gameObject.activeInHierarchy)
+            {
+                FixAnimatorForWebGL(animator);
+                Debug.Log($"[GameStateManager] Re-applied animator fix (check {i + 1}/5)");
+            }
+        }
     }
     
     private void FixAnimatorForWebGL(Animator animator)
@@ -525,24 +555,33 @@ public class GameStateManager : MonoBehaviour
         {
             if (terrain != null)
             {
-                // Adjust terrain settings for better WebGL performance and rendering
-                terrain.heightmapPixelError = 5; // Slightly higher for WebGL (default is 1)
-                terrain.basemapDistance = 500; // Reduce from 1000 for WebGL
-                terrain.detailObjectDistance = 60; // Reduce from 80 for WebGL
-                terrain.treeDistance = 2000; // Reduce from 5000 for WebGL
+                // Balance between quality and WebGL performance
+                terrain.heightmapPixelError = 3; // Lower = better quality (was 5)
+                terrain.basemapDistance = 1000; // Increased from 500 to reduce compression visibility
+                terrain.detailObjectDistance = 60;
+                terrain.treeDistance = 2000;
                 terrain.treeBillboardDistance = 50;
                 terrain.treeCrossFadeLength = 5;
                 terrain.treeMaximumFullLODCount = 50;
+                terrain.heightmapMaximumLOD = 0; // Highest quality heightmap
                 
                 // Force terrain to refresh its material
                 if (terrain.materialTemplate != null)
                 {
                     Material terrainMat = terrain.materialTemplate;
                     
-                    // Enable keywords that might be disabled in WebGL
+                    // Enable all relevant shader keywords for WebGL
                     if (terrainMat.HasProperty("_MainTex"))
                     {
                         terrainMat.EnableKeyword("_NORMALMAP");
+                    }
+                    
+                    // Try to improve texture filtering in WebGL
+                    Texture mainTex = terrainMat.GetTexture("_MainTex");
+                    if (mainTex != null)
+                    {
+                        mainTex.filterMode = FilterMode.Trilinear;
+                        mainTex.anisoLevel = 4; // Moderate aniso for WebGL
                     }
                     
                     // Force shader to refresh
@@ -550,18 +589,27 @@ public class GameStateManager : MonoBehaviour
                     terrain.Flush();
                 }
                 
-                Debug.Log($"[GameStateManager] Adjusted terrain quality for WebGL: {terrain.name}");
+                // Force basemap regeneration
+                if (terrain.terrainData != null)
+                {
+                    terrain.terrainData.SetBaseMapDirty();
+                }
+                
+                Debug.Log($"[GameStateManager] Adjusted terrain quality for WebGL: {terrain.name} (basemap: 1000, heightmapLOD: 0)");
             }
         }
         
-        // Also adjust global terrain quality settings
-        QualitySettings.terrainPixelError = 5;
+        // Adjust global terrain quality settings for WebGL
+        QualitySettings.terrainPixelError = 3; // Better quality than before
         QualitySettings.terrainDetailDensityScale = 0.8f;
-        QualitySettings.terrainBasemapDistance = 500;
+        QualitySettings.terrainBasemapDistance = 1000; // Increased from 500
         QualitySettings.terrainDetailDistance = 60;
         QualitySettings.terrainTreeDistance = 2000;
         
-        Debug.Log("[GameStateManager] Applied global terrain quality settings for WebGL");
+        // Reduce mipmap limiting for better texture quality in WebGL
+        QualitySettings.globalTextureMipmapLimit = 0;
+        
+        Debug.Log("[GameStateManager] Applied global terrain quality settings for WebGL (basemap: 1000, mipmap: 0)");
     }
     
     
