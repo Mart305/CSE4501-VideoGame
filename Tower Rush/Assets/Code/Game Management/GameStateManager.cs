@@ -56,9 +56,9 @@ public class GameStateManager : MonoBehaviour
         if (mainMenuManager == null)
             mainMenuManager = FindObjectOfType<MainMenuManager>();
         
-        // Initialize WebGL player animator fixes
+        // Initialize WebGL player animator fixes immediately
         #if UNITY_WEBGL && !UNITY_EDITOR
-        StartCoroutine(InitializeWebGLPlayerAnimator());
+        FixWebGLPlayerAnimatorImmediate();
         #endif
         
         // Fix terrain basemaps on all platforms (fixes white spots at distance)
@@ -428,74 +428,61 @@ public class GameStateManager : MonoBehaviour
         Debug.Log($"[GameStateManager] WebGL Quality Level: {currentQuality}");
     }
     
-    private IEnumerator InitializeWebGLPlayerAnimator()
+    private void FixWebGLPlayerAnimatorImmediate()
     {
-        // Try immediately first, then retry if needed
-        yield return null; // Wait one frame for scene to load
-        
-        // Try multiple times to find and fix the player animator
-        for (int attempt = 0; attempt < 10; attempt++) // Increased from 5 to 10 attempts
+        // Apply fix immediately without any delay
+        // Find player GameObject using multiple methods
+        GameObject playerArmature = GameObject.FindGameObjectWithTag("Player");
+        if (playerArmature == null)
         {
-            // Find player GameObject using multiple methods
-            GameObject playerArmature = GameObject.FindGameObjectWithTag("Player");
-            if (playerArmature == null)
+            playerArmature = GameObject.Find("PlayerArmature");
+        }
+        if (playerArmature == null)
+        {
+            // Try finding by component
+            ThirdPersonController controller = FindObjectOfType<ThirdPersonController>();
+            if (controller != null)
             {
-                playerArmature = GameObject.Find("PlayerArmature");
+                playerArmature = controller.gameObject;
             }
-            if (playerArmature == null)
-            {
-                // Try finding by component
-                ThirdPersonController controller = FindObjectOfType<ThirdPersonController>();
-                if (controller != null)
-                {
-                    playerArmature = controller.gameObject;
-                }
-            }
+        }
+        
+        if (playerArmature != null)
+        {
+            Animator playerAnimator = playerArmature.GetComponent<Animator>();
             
-            if (playerArmature != null)
+            if (playerAnimator != null)
             {
-                Animator playerAnimator = playerArmature.GetComponent<Animator>();
+                // Check if CameraModeManager exists and ensure we're in third person mode
+                CameraModeManager cameraManager = FindObjectOfType<CameraModeManager>();
+                if (cameraManager != null)
+                {
+                    Debug.Log("[GameStateManager] Found CameraModeManager - ensuring third person mode for animator");
+                }
                 
-                if (playerAnimator != null)
+                FixAnimatorForWebGL(playerAnimator);
+                
+                // Also check for child animators
+                Animator[] childAnimators = playerArmature.GetComponentsInChildren<Animator>();
+                foreach (Animator childAnim in childAnimators)
                 {
-                    // Check if CameraModeManager exists and ensure we're in third person mode
-                    CameraModeManager cameraManager = FindObjectOfType<CameraModeManager>();
-                    if (cameraManager != null)
+                    if (childAnim != playerAnimator)
                     {
-                        Debug.Log("[GameStateManager] Found CameraModeManager - ensuring third person mode for animator");
+                        FixAnimatorForWebGL(childAnim);
                     }
-                    
-                    FixAnimatorForWebGL(playerAnimator);
-                    
-                    // Also check for child animators
-                    Animator[] childAnimators = playerArmature.GetComponentsInChildren<Animator>();
-                    foreach (Animator childAnim in childAnimators)
-                    {
-                        if (childAnim != playerAnimator)
-                        {
-                            FixAnimatorForWebGL(childAnim);
-                        }
-                    }
-                    
-                    // Keep monitoring and re-fixing for the first few seconds
-                    StartCoroutine(ContinuousAnimatorMonitoring(playerAnimator));
-                    
-                    yield break; // Success, exit coroutine
                 }
-                else
-                {
-                    Debug.LogWarning($"[GameStateManager] Player Animator not found on attempt {attempt + 1}");
-                }
+                
+                Debug.Log("[GameStateManager] Successfully fixed player animator for WebGL immediately");
             }
             else
             {
-                Debug.LogWarning($"[GameStateManager] PlayerArmature not found on attempt {attempt + 1}");
+                Debug.LogWarning("[GameStateManager] Player armature found but no Animator component");
             }
-            
-            yield return new WaitForSeconds(0.3f);
         }
-        
-        Debug.LogError("[GameStateManager] Failed to find PlayerArmature after 10 attempts!");
+        else
+        {
+            Debug.LogWarning("[GameStateManager] Could not find player armature immediately");
+        }
     }
     
     private IEnumerator ContinuousAnimatorMonitoring(Animator animator)
