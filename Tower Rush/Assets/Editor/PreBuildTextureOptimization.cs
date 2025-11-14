@@ -30,14 +30,19 @@ public class PreBuildTextureOptimization : IPreprocessBuildWithReport
                 continue;
             }
 
-            bool needsReimport = false;
-            
-            // Check if this is a terrain/ground texture that needs higher quality
+            // Check if this is a terrain/ground texture - SKIP terrain textures entirely
             bool isTerrainTexture = path.Contains("Terrain") || 
                                    path.Contains("Ground") || 
                                    path.Contains("Floor") ||
                                    path.Contains("Grass") ||
                                    path.Contains("Dirt");
+            
+            // Skip terrain textures - don't modify them at all
+            if (isTerrainTexture)
+            {
+                skippedCount++;
+                continue;
+            }
             
             // Get WebGL platform settings
             var webGLSettings = importer.GetPlatformTextureSettings("WebGL");
@@ -59,12 +64,6 @@ public class PreBuildTextureOptimization : IPreprocessBuildWithReport
                     webGLSettings.format = TextureImporterFormat.DXT5;
                     webGLSettings.compressionQuality = 100;
                 }
-                else if (isTerrainTexture)
-                {
-                    // Terrain textures need higher quality to avoid whitish appearance
-                    webGLSettings.format = TextureImporterFormat.DXT1;
-                    webGLSettings.compressionQuality = 100;
-                }
                 else
                 {
                     // Standard textures - increased from 50 to 75 for better quality
@@ -75,7 +74,6 @@ public class PreBuildTextureOptimization : IPreprocessBuildWithReport
                 importer.SetPlatformTextureSettings(webGLSettings);
                 importer.SaveAndReimport();
                 optimizedCount++;
-                needsReimport = true;
             }
             
             if (i % 100 == 0)
