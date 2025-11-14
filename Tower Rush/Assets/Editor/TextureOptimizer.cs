@@ -12,12 +12,25 @@ public class TextureOptimizer : AssetPostprocessor
     {
         TextureImporter textureImporter = (TextureImporter)assetImporter;
         
+        // Skip terrain textures - they're handled by TerrainTextureImporter with uncompressed settings
+        bool isTerrainTexture = assetPath.Contains("Terrain") || 
+                                assetPath.Contains("Ground") || 
+                                assetPath.Contains("Grass") ||
+                                assetPath.Contains("Sand") ||
+                                assetPath.Contains("Rock") ||
+                                assetPath.Contains("Soil") ||
+                                assetPath.Contains("Snow") ||
+                                assetPath.Contains("Mud");
+        
+        if (isTerrainTexture)
+        {
+            // Skip - let TerrainTextureImporter handle these with uncompressed settings
+            return;
+        }
+        
         // Check if this is a high-quality texture that should not be compressed aggressively
         bool isHighQualityTexture = assetPath.Contains("Portal") || 
-                                     assetPath.Contains("Terrain") ||
-                                     assetPath.Contains("Ground") ||
                                      assetPath.Contains("Floor") ||
-                                     assetPath.Contains("Grass") ||
                                      assetPath.Contains("Dirt") ||
                                      assetPath.Contains("Effect") ||
                                      assetPath.Contains("Particle");

@@ -74,6 +74,14 @@ public class TerrainTextureImporter : AssetPostprocessor
             
             textureImporter.SetPlatformTextureSettings(platformSettings);
             
+            // WebGL-specific settings for high quality
+            var webglSettings = textureImporter.GetPlatformTextureSettings("WebGL");
+            webglSettings.overridden = true;
+            webglSettings.maxTextureSize = 2048;
+            webglSettings.textureCompression = TextureImporterCompression.Uncompressed;
+            webglSettings.format = platformSettings.format; // Use same format as default
+            textureImporter.SetPlatformTextureSettings(webglSettings);
+            
             string formatType = isNormalMap ? "RGBA32 (NormalMap)" : (isSingleChannel ? "R8" : "RGBA32");
             Debug.Log($"[TerrainTextureImporter] Set high-quality import settings for: {assetPath} (format: {formatType})");
         }
