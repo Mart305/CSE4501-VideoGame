@@ -36,6 +36,11 @@ public class GameStateManager : MonoBehaviour
             if (CurrencyManager.Instance != null)
                 DontDestroyOnLoad(CurrencyManager.Instance.gameObject);
             
+            // WebGL: Ensure PlayerArmature components are active immediately
+            #if UNITY_WEBGL && !UNITY_EDITOR
+            EnsurePlayerComponentsActive();
+            #endif
+            
             // Apply WebGL-specific fixes
             #if UNITY_WEBGL && !UNITY_EDITOR
             Debug.Log("[GameStateManager] WebGL platform detected - applying fixes");
@@ -415,14 +420,55 @@ public class GameStateManager : MonoBehaviour
     // ===== WebGL-Specific Fixes =====
     #if UNITY_WEBGL && !UNITY_EDITOR
     
+    private void EnsurePlayerComponentsActive()
+    {
+        // Find PlayerArmature immediately
+        GameObject playerArmature = GameObject.FindGameObjectWithTag("Player");
+        if (playerArmature == null)
+        {
+            playerArmature = GameObject.Find("PlayerArmature");
+        }
+        if (playerArmature == null)
+        {
+            ThirdPersonController controller = FindObjectOfType<ThirdPersonController>();
+            if (controller != null)
+            {
+                playerArmature = controller.gameObject;
+            }
+        }
+        
+        if (playerArmature != null)
+        {
+            // Ensure all components are active
+            Animator animator = playerArmature.GetComponent<Animator>();
+            if (animator != null)
+            {
+                animator.enabled = true;
+                Debug.Log("[GameStateManager] Awake: Enabled Animator on PlayerArmature");
+            }
+            
+            ThirdPersonController tpc = playerArmature.GetComponent<ThirdPersonController>();
+            if (tpc != null)
+            {
+                tpc.enabled = true;
+                Debug.Log("[GameStateManager] Awake: Enabled ThirdPersonController");
+            }
+            
+            CharacterController cc = playerArmature.GetComponent<CharacterController>();
+            if (cc != null)
+            {
+                cc.enabled = true;
+                Debug.Log("[GameStateManager] Awake: Enabled CharacterController");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[GameStateManager] Awake: Could not find PlayerArmature immediately");
+        }
+    }
+    
     private void ApplyWebGLFixes()
     {
-        // Fix terrain quality settings for WebGL
-        AdjustTerrainQualityForWebGL();
-        
-        // Also apply basemap fix for WebGL (helps with compression issues)
-        FixTerrainBasemaps();
-        
         // Log current quality level
         int currentQuality = QualitySettings.GetQualityLevel();
         Debug.Log($"[GameStateManager] WebGL Quality Level: {currentQuality}");
@@ -454,7 +500,15 @@ public class GameStateManager : MonoBehaviour
             
             if (playerArmature != null)
             {
+                // Ensure all components are enabled
                 Animator playerAnimator = playerArmature.GetComponent<Animator>();
+                if (playerAnimator != null) playerAnimator.enabled = true;
+                
+                ThirdPersonController tpc = playerArmature.GetComponent<ThirdPersonController>();
+                if (tpc != null) tpc.enabled = true;
+                
+                CharacterController cc = playerArmature.GetComponent<CharacterController>();
+                if (cc != null) cc.enabled = true;
                 
                 if (playerAnimator != null)
                 {
@@ -462,7 +516,7 @@ public class GameStateManager : MonoBehaviour
                     CameraModeManager cameraManager = FindObjectOfType<CameraModeManager>();
                     if (cameraManager != null)
                     {
-                        Debug.Log("[GameStateManager] Found CameraModeManager - ensuring third person mode for animator");
+                        Debug.Log("[GameStateManager] Coroutine: Found CameraModeManager - ensuring third person mode for animator");
                     }
                     
                     FixAnimatorForWebGL(playerAnimator);
@@ -480,11 +534,12 @@ public class GameStateManager : MonoBehaviour
                     // Keep monitoring and re-fixing for the first few seconds
                     StartCoroutine(ContinuousAnimatorMonitoring(playerAnimator));
                     
+                    Debug.Log("[GameStateManager] Coroutine: Successfully enabled all PlayerArmature components");
                     yield break; // Success, exit coroutine
                 }
                 else
                 {
-                    Debug.LogWarning($"[GameStateManager] Player Animator not found on attempt {attempt + 1}");
+                    Debug.LogWarning($"[GameStateManager] Coroutine: Player Animator not found on attempt {attempt + 1}");
                 }
             }
             else
@@ -560,128 +615,13 @@ public class GameStateManager : MonoBehaviour
         Debug.Log($"[GameStateManager] Animator fixed: {animator.gameObject.name} - enabled: {animator.enabled}, culling=AlwaysAnimate, updateMode=Normal, rebound");
     }
     
-    private void AdjustTerrainQualityForWebGL()
-    {
-        // Find all terrains in the scene
-        Terrain[] terrains = FindObjectsOfType<Terrain>();
-        
-        if (terrains.Length == 0)
-        {
-            Debug.Log("[GameStateManager] No terrains found in scene");
-            return;
-        }
-        
-        foreach (Terrain terrain in terrains)
-        {
-            if (terrain != null)
-            {
-                // Balance between quality and WebGL performance
-                terrain.heightmapPixelError = 3; // Lower = better quality (was 5)
-                terrain.basemapDistance = 1000; // Increased from 500 to reduce compression visibility
-                terrain.detailObjectDistance = 60;
-                terrain.treeDistance = 2000;
-                terrain.treeBillboardDistance = 50;
-                terrain.treeCrossFadeLength = 5;
-                terrain.treeMaximumFullLODCount = 50;
-                terrain.heightmapMaximumLOD = 0; // Highest quality heightmap
-                
-                // Force terrain to refresh its material
-                if (terrain.materialTemplate != null)
-                {
-                    Material terrainMat = terrain.materialTemplate;
-                    
-                    // Enable all relevant shader keywords for WebGL
-                    if (terrainMat.HasProperty("_MainTex"))
-                    {
-                        terrainMat.EnableKeyword("_NORMALMAP");
-                    }
-                    
-                    // Try to improve texture filtering in WebGL
-                    Texture mainTex = terrainMat.GetTexture("_MainTex");
-                    if (mainTex != null)
-                    {
-                        mainTex.filterMode = FilterMode.Trilinear;
-                        mainTex.anisoLevel = 4; // Moderate aniso for WebGL
-                    }
-                    
-                    // Force shader to refresh
-                    terrain.materialTemplate = terrainMat;
-                    terrain.Flush();
-                }
-                
-                // Force basemap regeneration
-                if (terrain.terrainData != null)
-                {
-                    terrain.terrainData.SetBaseMapDirty();
-                }
-                
-                Debug.Log($"[GameStateManager] Adjusted terrain quality for WebGL: {terrain.name} (basemap: 1000, heightmapLOD: 0)");
-            }
-        }
-        
-        // Adjust global terrain quality settings for WebGL
-        QualitySettings.terrainPixelError = 3; // Better quality than before
-        QualitySettings.terrainDetailDensityScale = 0.8f;
-        QualitySettings.terrainBasemapDistance = 1000; // Increased from 500
-        QualitySettings.terrainDetailDistance = 60;
-        QualitySettings.terrainTreeDistance = 2000;
-        
-        // Reduce mipmap limiting for better texture quality in WebGL
-        QualitySettings.globalTextureMipmapLimit = 0;
-        
-        Debug.Log("[GameStateManager] Applied global terrain quality settings for WebGL (basemap: 1000, mipmap: 0)");
-    }
-    
-    
     #endif
     // ===== End WebGL-Specific Fixes =====
     
-    // ===== Terrain Basemap Fix (All Platforms) =====
-    // This fixes white spots on terrain at distance in both editor and builds
+    // ===== Terrain Basemap Fix - REMOVED =====
+    // No terrain quality modifications per user request
     private void FixTerrainBasemaps()
     {
-        Terrain[] terrains = FindObjectsOfType<Terrain>();
-        
-        foreach (Terrain terrain in terrains)
-        {
-            if (terrain != null && terrain.terrainData != null)
-            {
-                // Increase basemap distance to prevent white spots and compression artifacts
-                terrain.basemapDistance = 2000f; // Increased from 1000 to reduce compression
-                
-                // Set lower pixel error for better quality (lower = higher quality)
-                terrain.heightmapPixelError = 1f;
-                
-                // Enable draw instanced for better performance
-                terrain.drawInstanced = true;
-                
-                // Increase heightmap resolution if it looks too compressed
-                // This doesn't change the actual heightmap, just how it's rendered
-                terrain.heightmapMaximumLOD = 0; // 0 = highest quality, no LOD reduction
-                
-                // Set detail settings for better quality
-                terrain.detailObjectDensity = 1.0f; // Maximum detail density
-                terrain.detailObjectDistance = 80f; // How far to render details
-                
-                // Force terrain to regenerate basemap with higher quality
-                terrain.terrainData.SetBaseMapDirty();
-                terrain.Flush();
-                
-                Debug.Log($"[GameStateManager] Fixed terrain basemap for: {terrain.name} (basemapDistance: 2000, heightmapMaxLOD: 0)");
-            }
-        }
-        
-        // Adjust global quality settings to reduce compression
-        QualitySettings.terrainBasemapDistance = 2000f;
-        QualitySettings.terrainPixelError = 1f;
-        QualitySettings.terrainDetailDensityScale = 1.0f;
-        
-        // Disable texture mipmap limiting which can cause compression artifacts
-        QualitySettings.globalTextureMipmapLimit = 0; // 0 = full resolution, no mipmap reduction
-        
-        // Enable anisotropic filtering for better terrain texture quality at angles
-        QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
-        
-        Debug.Log("[GameStateManager] Applied high-quality terrain settings to reduce compression (mipmap limit: 0, anisotropic: enabled)");
+        // Intentionally empty - no terrain modifications
     }
 }
