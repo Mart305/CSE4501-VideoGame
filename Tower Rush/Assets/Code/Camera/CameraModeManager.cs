@@ -47,6 +47,17 @@ public class CameraModeManager : MonoBehaviour
     
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        // Clean up enemies from previous scene
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (GameObject enemy in enemies)
+        {
+            if (enemy.scene.name == "DontDestroyOnLoad")
+            {
+                Debug.Log($"[CameraModeManager] Destroying carried-over enemy: {enemy.name}");
+                Destroy(enemy);
+            }
+        }
+        
         // Re-find player and cameras when scene changes
         playerCharacter = null;
         thirdPersonCamera = null;
@@ -149,6 +160,37 @@ public class CameraModeManager : MonoBehaviour
         if (rtsCameraController != null)
         {
             rtsCameraController.RefreshBoundaries();
+        }
+        
+        // Force enable all components after scene load
+        if (playerCharacter != null)
+        {
+            if (thirdPersonController != null)
+            {
+                thirdPersonController.enabled = true;
+                Debug.Log("[CameraModeManager] Scene Load: Enabled ThirdPersonController");
+            }
+            
+            var animator = playerCharacter.GetComponent<Animator>();
+            if (animator != null)
+            {
+                animator.enabled = true;
+                Debug.Log("[CameraModeManager] Scene Load: Enabled Animator");
+            }
+            
+            var charController = playerCharacter.GetComponent<CharacterController>();
+            if (charController != null)
+            {
+                charController.enabled = true;
+                Debug.Log("[CameraModeManager] Scene Load: Enabled CharacterController");
+            }
+            
+            var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
+            if (starterInput != null)
+            {
+                starterInput.enabled = true;
+                Debug.Log("[CameraModeManager] Scene Load: Enabled StarterAssetsInputs");
+            }
         }
         
         // Components stay active - just ensure we're in third person mode
@@ -274,14 +316,38 @@ public class CameraModeManager : MonoBehaviour
             ToggleCameraMode();
         }
         
-        // Block WASD input when in RTS mode (but keep components active)
+        // Always ensure PlayerArmature components are active (WebGL fix)
+        if (playerCharacter != null)
+        {
+            // Force enable all critical components every frame
+            if (thirdPersonController != null && !thirdPersonController.enabled)
+            {
+                thirdPersonController.enabled = true;
+                Debug.LogWarning("[CameraModeManager] Re-enabled ThirdPersonController");
+            }
+            
+            var animator = playerCharacter.GetComponent<Animator>();
+            if (animator != null && !animator.enabled)
+            {
+                animator.enabled = true;
+                Debug.LogWarning("[CameraModeManager] Re-enabled Animator");
+            }
+            
+            var charController = playerCharacter.GetComponent<CharacterController>();
+            if (charController != null && !charController.enabled)
+            {
+                charController.enabled = true;
+                Debug.LogWarning("[CameraModeManager] Re-enabled CharacterController");
+            }
+        }
+        
+        // Block ALL player input when in RTS mode
         if (isRTSModeActive && playerCharacter != null)
         {
-            // Block WASD input by zeroing out the input
+            // Block all input by zeroing it out (WASD and Arrow keys)
             var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
             if (starterInput != null)
             {
-                // Zero out movement input
                 starterInput.move = Vector2.zero;
                 starterInput.look = Vector2.zero;
                 starterInput.jump = false;
