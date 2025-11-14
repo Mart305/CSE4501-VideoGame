@@ -555,15 +555,52 @@ public class GameStateManager : MonoBehaviour
     
     private IEnumerator ContinuousAnimatorMonitoring(Animator animator)
     {
-        // Re-apply fixes every second for the first 5 seconds
-        for (int i = 0; i < 5; i++)
+        // Monitor continuously throughout the entire game
+        while (true)
         {
-            yield return new WaitForSeconds(1.0f);
+            yield return new WaitForSeconds(0.5f); // Check every half second
             
             if (animator != null && animator.gameObject.activeInHierarchy)
             {
-                FixAnimatorForWebGL(animator);
-                Debug.Log($"[GameStateManager] Re-applied animator fix (check {i + 1}/5)");
+                // Check if we're in RTS mode - if so, don't re-enable components
+                CameraModeManager cameraManager = FindObjectOfType<CameraModeManager>();
+                bool isRTSMode = cameraManager != null && cameraManager.IsRTSMode();
+                
+                // Only re-enable components if NOT in RTS mode
+                if (!isRTSMode)
+                {
+                    // Ensure all PlayerArmature components stay active
+                    GameObject playerArmature = animator.gameObject;
+                    
+                    // Check and re-enable Animator
+                    if (!animator.enabled)
+                    {
+                        animator.enabled = true;
+                        Debug.LogWarning("[GameStateManager] Re-enabled Animator - it was disabled!");
+                    }
+                    
+                    // Check and re-enable ThirdPersonController
+                    ThirdPersonController tpc = playerArmature.GetComponent<ThirdPersonController>();
+                    if (tpc != null && !tpc.enabled)
+                    {
+                        tpc.enabled = true;
+                        Debug.LogWarning("[GameStateManager] Re-enabled ThirdPersonController - it was disabled!");
+                    }
+                    
+                    // Check and re-enable CharacterController
+                    CharacterController cc = playerArmature.GetComponent<CharacterController>();
+                    if (cc != null && !cc.enabled)
+                    {
+                        cc.enabled = true;
+                        Debug.LogWarning("[GameStateManager] Re-enabled CharacterController - it was disabled!");
+                    }
+                }
+            }
+            else
+            {
+                // Player was destroyed or deactivated, stop monitoring
+                Debug.LogWarning("[GameStateManager] Player no longer active, stopping monitoring");
+                yield break;
             }
         }
     }
