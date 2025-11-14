@@ -151,54 +151,7 @@ public class CameraModeManager : MonoBehaviour
             rtsCameraController.RefreshBoundaries();
         }
         
-        // EXPLICITLY enable all player components before calling EnableThirdPersonMode
-        if (playerCharacter != null)
-        {
-            // Enable third person controller
-            if (thirdPersonController != null)
-            {
-                thirdPersonController.enabled = true;
-            }
-            
-            // Enable StarterAssets input component
-            var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
-            if (starterInput != null)
-            {
-                starterInput.enabled = true;
-            }
-            
-            // Enable PlayerInput component (Unity Input System)
-            #if ENABLE_INPUT_SYSTEM
-            var playerInput = playerCharacter.GetComponent<UnityEngine.InputSystem.PlayerInput>();
-            if (playerInput != null)
-            {
-                playerInput.enabled = true;
-            }
-            #endif
-            
-            // Enable character controller
-            var charController = playerCharacter.GetComponent<CharacterController>();
-            if (charController != null)
-            {
-                charController.enabled = true;
-            }
-            
-            // Enable animator
-            var animator = playerCharacter.GetComponent<Animator>();
-            if (animator != null)
-            {
-                animator.enabled = true;
-            }
-            
-            // Re-enable rigidbody physics if present
-            var rb = playerCharacter.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.isKinematic = false;
-            }
-        }
-        
-        // Enable third person mode to restore all player input (calls the same logic again to be safe)
+        // Components stay active - just ensure we're in third person mode
         EnableThirdPersonMode();
     }
     
@@ -321,51 +274,18 @@ public class CameraModeManager : MonoBehaviour
             ToggleCameraMode();
         }
         
-        // Block player input when in RTS mode
+        // Block WASD input when in RTS mode (but keep components active)
         if (isRTSModeActive && playerCharacter != null)
         {
-            // Re-find third person controller if null
-            if (thirdPersonController == null)
-            {
-                thirdPersonController = playerCharacter.GetComponent<ThirdPersonController>();
-            }
-            
-            // Force disable ALL player components every frame
+            // Block WASD input by zeroing out the input
             var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
-            if (starterInput != null && starterInput.enabled)
+            if (starterInput != null)
             {
-                starterInput.enabled = false;
-            }
-            
-            #if ENABLE_INPUT_SYSTEM
-            var playerInput = playerCharacter.GetComponent<UnityEngine.InputSystem.PlayerInput>();
-            if (playerInput != null && playerInput.enabled)
-            {
-                playerInput.enabled = false;
-            }
-            #endif
-            
-            var charController = playerCharacter.GetComponent<CharacterController>();
-            if (charController != null && charController.enabled)
-            {
-                charController.enabled = false;
-            }
-            
-            if (thirdPersonController != null && thirdPersonController.enabled)
-            {
-                thirdPersonController.enabled = false;
-            }
-            
-            var animator = playerCharacter.GetComponent<Animator>();
-            if (animator != null && animator.enabled)
-            {
-                animator.enabled = false;
-            }
-            
-            var rb = playerCharacter.GetComponent<Rigidbody>();
-            if (rb != null && !rb.isKinematic)
-            {
-                rb.isKinematic = true;
+                // Zero out movement input
+                starterInput.move = Vector2.zero;
+                starterInput.look = Vector2.zero;
+                starterInput.jump = false;
+                starterInput.sprint = false;
             }
         }
         
@@ -454,60 +374,8 @@ public class CameraModeManager : MonoBehaviour
             rtsCameraController.enabled = false;
         }
         
-        // Enable ALL player input and movement components
-        if (playerCharacter != null)
-        {
-            // Enable third person controller
-            if (thirdPersonController != null)
-            {
-                thirdPersonController.enabled = true;
-            }
-            
-            // Enable StarterAssets input component
-            var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
-            if (starterInput != null)
-            {
-                starterInput.enabled = true;
-            }
-            
-            // Enable PlayerInput component (Unity Input System)
-            #if ENABLE_INPUT_SYSTEM
-            var playerInput = playerCharacter.GetComponent<UnityEngine.InputSystem.PlayerInput>();
-            if (playerInput != null)
-            {
-                playerInput.enabled = true;
-            }
-            #endif
-            
-            // Enable character controller
-            var charController = playerCharacter.GetComponent<CharacterController>();
-            if (charController != null)
-            {
-                charController.enabled = true;
-            }
-            
-            // Enable animator
-            var animator = playerCharacter.GetComponent<Animator>();
-            if (animator != null)
-            {
-                animator.enabled = true;
-                
-                // WebGL-specific animator refresh
-                #if UNITY_WEBGL && !UNITY_EDITOR
-                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-                animator.updateMode = AnimatorUpdateMode.Normal;
-                animator.Rebind();
-                animator.Update(0f);
-                #endif
-            }
-            
-            // Re-enable rigidbody physics if present
-            var rb = playerCharacter.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.isKinematic = false;
-            }
-        }
+        // PlayerArmature components stay active - just restore input
+        // WASD input will work automatically since we stop zeroing it in Update()
         
         // Lock cursor for gameplay
         Cursor.lockState = CursorLockMode.Locked;
@@ -549,52 +417,8 @@ public class CameraModeManager : MonoBehaviour
             rtsCameraController.enabled = true;
         }
         
-        // Disable ALL player input and movement components
-        if (playerCharacter != null)
-        {
-            // Disable third person controller
-            if (thirdPersonController != null)
-            {
-                thirdPersonController.enabled = false;
-            }
-            
-            // Disable StarterAssets input component
-            var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
-            if (starterInput != null)
-            {
-                starterInput.enabled = false;
-            }
-            
-            // Disable PlayerInput component (Unity Input System)
-            #if ENABLE_INPUT_SYSTEM
-            var playerInput = playerCharacter.GetComponent<UnityEngine.InputSystem.PlayerInput>();
-            if (playerInput != null)
-            {
-                playerInput.enabled = false;
-            }
-            #endif
-            
-            // Disable character controller to prevent physics movement
-            var charController = playerCharacter.GetComponent<CharacterController>();
-            if (charController != null)
-            {
-                charController.enabled = false;
-            }
-            
-            // Disable animator to freeze animations
-            var animator = playerCharacter.GetComponent<Animator>();
-            if (animator != null)
-            {
-                animator.enabled = false;
-            }
-            
-            // Disable rigidbody if present
-            var rb = playerCharacter.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.isKinematic = true;
-            }
-        }
+        // PlayerArmature components stay active - WASD input is blocked in Update()
+        // Arrow keys control RTS camera via RTSCameraController
         
         // Show cursor for RTS controls
         Cursor.lockState = CursorLockMode.None;
