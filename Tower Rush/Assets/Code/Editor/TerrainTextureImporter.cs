@@ -1,14 +1,15 @@
 using UnityEngine;
 using UnityEditor;
+using System.IO;
 
 /// <summary>
-/// Automatically sets high-quality import settings for terrain textures
-/// This prevents compression artifacts on terrain materials
+/// Automatically detects and sets texture types for terrain textures
 /// </summary>
 public class TerrainTextureImporter : AssetPostprocessor
 {
     void OnPreprocessTexture()
     {
+        
         // Check if this texture is in a terrain-related folder
         bool isTerrainTexture = assetPath.Contains("Terrain") || 
                                 assetPath.Contains("Ground") || 
@@ -25,65 +26,64 @@ public class TerrainTextureImporter : AssetPostprocessor
             
             // Detect texture type by filename
             bool isNormalMap = assetPath.Contains("_Normal") || assetPath.Contains("_normal");
-            bool isSingleChannel = assetPath.Contains("_Height") ||
-                                   assetPath.Contains("_Thickness") ||
-                                   assetPath.Contains("_AO") ||
-                                   assetPath.Contains("_Roughness") ||
-                                   assetPath.Contains("_Metallic") ||
-                                   assetPath.Contains("_Mask");
             
-            // Set texture type first (important for normal maps)
+            // Set texture type (important for normal maps)
             if (isNormalMap)
             {
                 textureImporter.textureType = TextureImporterType.NormalMap;
+                textureImporter.convertToNormalmap = false; // Don't convert, already a normal map
+                textureImporter.normalmapFilter = TextureImporterNormalFilter.Standard;
+                Debug.Log($"[TerrainTextureImporter] Set texture type to NormalMap for: {assetPath}");
             }
             else
             {
                 textureImporter.textureType = TextureImporterType.Default;
+                Debug.Log($"[TerrainTextureImporter] Set texture type to Default for: {assetPath}");
             }
-            
-            // Set high-quality settings
-            textureImporter.maxTextureSize = 2048; // High resolution
-            textureImporter.textureCompression = TextureImporterCompression.Uncompressed; // No compression
-            textureImporter.mipmapEnabled = true; // Keep mipmaps for distance
-            textureImporter.anisoLevel = 16; // Maximum anisotropic filtering
-            textureImporter.filterMode = FilterMode.Trilinear; // Best quality filtering
-            textureImporter.wrapMode = TextureWrapMode.Repeat; // For tiling
-            
-            // Platform-specific settings for better quality
-            var platformSettings = textureImporter.GetDefaultPlatformTextureSettings();
-            platformSettings.maxTextureSize = 2048;
-            platformSettings.textureCompression = TextureImporterCompression.Uncompressed;
-            
-            // Use appropriate format based on texture type
-            if (isNormalMap)
-            {
-                // Normal maps need RGBA32 or specific normal map format
-                platformSettings.format = TextureImporterFormat.RGBA32;
-            }
-            else if (isSingleChannel)
-            {
-                // Single channel textures need R8 format
-                platformSettings.format = TextureImporterFormat.R8;
-            }
-            else
-            {
-                // Color textures use RGBA32
-                platformSettings.format = TextureImporterFormat.RGBA32;
-            }
-            
-            textureImporter.SetPlatformTextureSettings(platformSettings);
-            
-            // WebGL-specific settings for high quality
-            var webglSettings = textureImporter.GetPlatformTextureSettings("WebGL");
-            webglSettings.overridden = true;
-            webglSettings.maxTextureSize = 2048;
-            webglSettings.textureCompression = TextureImporterCompression.Uncompressed;
-            webglSettings.format = platformSettings.format; // Use same format as default
-            textureImporter.SetPlatformTextureSettings(webglSettings);
-            
-            string formatType = isNormalMap ? "RGBA32 (NormalMap)" : (isSingleChannel ? "R8" : "RGBA32");
-            Debug.Log($"[TerrainTextureImporter] Set high-quality import settings for: {assetPath} (format: {formatType})");
         }
     }
 }
+
+#if UNITY_EDITOR
+[InitializeOnLoad]
+public class TerrainTextureMenu
+{
+    [MenuItem("Tools/Reimport All Terrain Textures")]
+    public static void ReimportTerrainTextures()
+    {
+        string[] terrainPaths = new string[]
+        {
+            "Assets/Textures/TerrainTextures",
+            "Assets/Terrains",
+            "Assets/Textures/TerrainLayers"
+        };
+        
+        int count = 0;
+        EditorUtility.DisplayProgressBar("Reimporting Terrain Textures", "Finding textures...", 0);
+        
+        foreach (string searchPath in terrainPaths)
+        {
+            if (!Directory.Exists(searchPath))
+                continue;
+                
+            string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { searchPath });
+            
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                EditorUtility.DisplayProgressBar("Reimporting Terrain Textures", 
+                    $"Processing {Path.GetFileName(path)}...", (float)count / (guids.Length * terrainPaths.Length));
+                
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                count++;
+            }
+        }
+        
+        EditorUtility.ClearProgressBar();
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        
+        Debug.Log($"[TerrainTextureMenu] Reimported {count} terrain textures");
+    }
+}
+#endif
