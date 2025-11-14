@@ -430,8 +430,8 @@ public class GameStateManager : MonoBehaviour
     
     private IEnumerator InitializeWebGLPlayerAnimator()
     {
-        // Wait longer for WebGL to fully initialize
-        yield return new WaitForSeconds(1.5f);
+        // Try immediately first, then retry if needed
+        yield return null; // Wait one frame for scene to load
         
         // Try multiple times to find and fix the player animator
         for (int attempt = 0; attempt < 10; attempt++) // Increased from 5 to 10 attempts
