@@ -309,16 +309,8 @@ public class PlayerWeapon : MonoBehaviour
             lastFireSoundTime = Time.time;
         }
 
-        if (muzzleFlashPrefab != null)
-        {
-            GameObject flash = Instantiate(muzzleFlashPrefab, firePoint.position, firePoint.rotation);
-            flash.transform.SetParent(firePoint);
-            Destroy(flash, muzzleFlashDuration);
-        }
-        else
-        {
-            CreateMuzzleFlashParticles();
-        }
+        // Always use pooled particles for better performance
+        CreateMuzzleFlashParticles();
 
         if (muzzleFlashLight != null)
         {
