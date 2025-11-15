@@ -5545,6 +5545,8 @@ MonoBehaviour:
   portalDuration: 2
   spawnDelay: 1
   useMagicCircles: 0
+  initialPoolSize: 5
+  maxPoolSize: 15
   portalOpenSound: {fileID: 8300000, guid: da2fa59a7a04b4d1d98a34f0e89de468, type: 3}
   portalCloseSound: {fileID: 8300000, guid: 681c90d17ac42450193a966eaac6aff0, type: 3}
   audioVolume: 0.7

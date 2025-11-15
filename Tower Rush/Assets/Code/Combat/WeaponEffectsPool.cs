@@ -13,6 +13,7 @@ public class WeaponEffectsPool : MonoBehaviour
                 GameObject poolObj = new GameObject("WeaponEffectsPool");
                 instance = poolObj.AddComponent<WeaponEffectsPool>();
                 DontDestroyOnLoad(poolObj);
+                instance.PreWarmPools();
             }
             return instance;
         }
@@ -20,8 +21,55 @@ public class WeaponEffectsPool : MonoBehaviour
 
     private Dictionary<string, Queue<GameObject>> particlePools = new Dictionary<string, Queue<GameObject>>();
     private Dictionary<string, GameObject> particlePrefabs = new Dictionary<string, GameObject>();
-    private int initialPoolSize = 5;
+    private Dictionary<GameObject, PoolReturnInfo> activeParticles = new Dictionary<GameObject, PoolReturnInfo>();
+    private int initialPoolSize = 3;
     private int maxPoolSize = 20;
+    private float particleLifetime = 1f;
+
+    private class PoolReturnInfo
+    {
+        public string poolKey;
+        public float returnTime;
+    }
+
+    void PreWarmPools()
+    {
+        // Pre-warm pools for all weapon types
+        WeaponType[] weaponTypes = { WeaponType.Pistol, WeaponType.Rifle, WeaponType.Shotgun, WeaponType.Sniper };
+
+        foreach (WeaponType weaponType in weaponTypes)
+        {
+            string poolKey = "MuzzleFlash_" + weaponType.ToString();
+            particlePools[poolKey] = new Queue<GameObject>();
+
+            for (int i = 0; i < initialPoolSize; i++)
+            {
+                GameObject particle = CreateMuzzleFlashParticle(weaponType, Vector3.zero, Quaternion.identity);
+                particle.SetActive(false);
+                particle.transform.SetParent(transform);
+                particlePools[poolKey].Enqueue(particle);
+            }
+        }
+    }
+
+    void Update()
+    {
+        // Check for particles that need to be returned to the pool
+        List<GameObject> particlesToReturn = new List<GameObject>();
+
+        foreach (var kvp in activeParticles)
+        {
+            if (Time.time >= kvp.Value.returnTime)
+            {
+                particlesToReturn.Add(kvp.Key);
+            }
+        }
+
+        foreach (GameObject particle in particlesToReturn)
+        {
+            ReturnParticleToPool(particle);
+        }
+    }
 
     public GameObject GetMuzzleFlashParticle(WeaponType weaponType, Vector3 position, Quaternion rotation)
     {
@@ -45,7 +93,13 @@ public class WeaponEffectsPool : MonoBehaviour
             particle = CreateMuzzleFlashParticle(weaponType, position, rotation);
         }
 
-        StartCoroutine(ReturnToPoolAfterDelay(particle, poolKey, 1f));
+        // Track particle for auto-return
+        activeParticles[particle] = new PoolReturnInfo
+        {
+            poolKey = poolKey,
+            returnTime = Time.time + particleLifetime
+        };
+
         return particle;
     }
 
@@ -117,27 +171,37 @@ public class WeaponEffectsPool : MonoBehaviour
         }
     }
 
-    System.Collections.IEnumerator ReturnToPoolAfterDelay(GameObject obj, string poolKey, float delay)
+    void ReturnParticleToPool(GameObject particle)
     {
-        yield return new WaitForSeconds(delay);
+        if (particle == null || !activeParticles.ContainsKey(particle))
+            return;
 
-        if (obj != null)
+        PoolReturnInfo info = activeParticles[particle];
+        activeParticles.Remove(particle);
+
+        particle.SetActive(false);
+
+        if (particlePools.ContainsKey(info.poolKey) && particlePools[info.poolKey].Count < maxPoolSize)
         {
-            obj.SetActive(false);
-
-            if (particlePools[poolKey].Count < maxPoolSize)
-            {
-                particlePools[poolKey].Enqueue(obj);
-            }
-            else
-            {
-                Destroy(obj);
-            }
+            particlePools[info.poolKey].Enqueue(particle);
+        }
+        else
+        {
+            Destroy(particle);
         }
     }
 
     public void ClearPool()
     {
+        // Clear active particles
+        foreach (var particle in activeParticles.Keys)
+        {
+            if (particle != null)
+                Destroy(particle);
+        }
+        activeParticles.Clear();
+
+        // Clear pooled particles
         foreach (var pool in particlePools.Values)
         {
             while (pool.Count > 0)
