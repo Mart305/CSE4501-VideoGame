@@ -14,60 +14,74 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     private float lastAttackTime;
     private SlowEffect slowEffect;
     protected NavMeshAgent navAgent;
+    protected Animator animator;
     
     [Header("NavMesh Settings")]
-    [SerializeField] private float updateDestinationInterval = 0.5f; // Update destination every 0.5s instead of every frame
+    [SerializeField] private float updateDestinationInterval = 0.5f;
     
     private float lastDestinationUpdateTime;
-    private float lastTargetEvaluationTime = 0f; // Track when we last evaluated which tower to target
+    private float lastTargetEvaluationTime = 0f;
     
     [Header("Effects")]
     [SerializeField] private GameObject spawnEffectPrefab;
     [SerializeField] private GameObject deathEffectPrefab;
     [SerializeField] private float spawnEffectDuration = 1f;
     [SerializeField] private float deathEffectDuration = 2f;
+    
+    [Header("Animation")]
+    [SerializeField] private string velocityParameterName = "velocity";
+    [SerializeField] private string attackTriggerName = "attack";
+    [SerializeField] private string deathTriggerName = "death";
+    private bool isAttacking = false;
+    private bool isDead = false;
 
     protected virtual void Start()
     {
-        // Spawn effects are now handled by the portal system in SpawnEffectManager
-        
-        // Get or add NavMeshAgent component
         navAgent = GetComponent<NavMeshAgent>();
         if (navAgent == null)
         {
             navAgent = gameObject.AddComponent<NavMeshAgent>();
         }
         
-        // Enable NavMeshAgent if it was disabled (from prefab or pool)
         if (!navAgent.enabled)
         {
             InitializeNavMeshAgent();
         }
         else
         {
-            // Just configure if already enabled
             ConfigureNavMeshAgent();
         }
         
         FindTargetTower();
         
-        // Get or add SlowEffect component
         slowEffect = GetComponent<SlowEffect>();
         if (slowEffect == null)
         {
             slowEffect = gameObject.AddComponent<SlowEffect>();
         }
+        
+        animator = GetComponent<Animator>();
+        if (animator == null)
+        {
+            animator = GetComponentInChildren<Animator>();
+        }
     }
     
-    // IPooledObject interface - called when spawned from pool
     public void OnObjectSpawn()
     {
-        // Initialize NavMeshAgent when spawned at valid position
         InitializeNavMeshAgent();
         FindTargetTower();
+        
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+            if (animator == null)
+            {
+                animator = GetComponentInChildren<Animator>();
+            }
+        }
     }
     
-    // Initialize and enable NavMeshAgent
     private void InitializeNavMeshAgent()
     {
         if (navAgent == null)
@@ -79,38 +93,32 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
             }
         }
         
-        // Configure NavMeshAgent settings
         ConfigureNavMeshAgent();
         
-        // If enemy has Rigidbody, set it to kinematic (required for NavMeshAgent)
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
             rb.isKinematic = true;
         }
         
-        // Warp to nearest NavMesh position to prevent warnings and enable agent
         NavMeshHit hit;
-        if (NavMesh.SamplePosition(transform.position, out hit, 0.5f, NavMesh.AllAreas)) // Reduced from 10f to prevent distant teleporting
+        if (NavMesh.SamplePosition(transform.position, out hit, 0.5f, NavMesh.AllAreas))
         {
             navAgent.Warp(hit.position);
             navAgent.enabled = true;
         }
         else
         {
-            // If no NavMesh found, enable anyway (spawn position should be valid)
             navAgent.enabled = true;
         }
     }
     
-    // Configure NavMeshAgent settings (without enabling/warping)
     private void ConfigureNavMeshAgent()
     {
         if (navAgent == null) return;
         
         navAgent.speed = moveSpeed;
-        // Add small buffer to stoppingDistance to prevent enemies going inside towers
-        navAgent.stoppingDistance = attackRange + 1f; // Added 1f buffer
+        navAgent.stoppingDistance = attackRange + 1f;
         navAgent.acceleration = 8f;
         navAgent.angularSpeed = 120f;
         navAgent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
@@ -120,7 +128,6 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     {
         if (navAgent == null) return;
         
-        // Re-evaluate target to catch new towers being placed
         if (Time.time - lastTargetEvaluationTime >= updateDestinationInterval)
         {
             FindTargetTower();
@@ -131,6 +138,7 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         {
             FindTargetTower();
             navAgent.isStopped = true;
+            UpdateAnimatorVelocity();
             return;
         }
 
@@ -138,21 +146,24 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
 
         if (distance > attackRange)
         {
+            isAttacking = false;
             MoveTowardsTower();
         }
         else
         {
-            // Stop moving when in attack range
             navAgent.isStopped = true;
+            isAttacking = true;
             AttackTower();
         }
+        
+        UpdateAnimatorVelocity();
+        UpdateAnimatorAttack();
     }
 
     protected virtual void MoveTowardsTower()
     {
         if (navAgent == null || targetTower == null) return;
         
-        // Apply slow effect if present
         float effectiveMoveSpeed = moveSpeed;
         if (slowEffect != null)
         {
@@ -162,10 +173,8 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         navAgent.speed = effectiveMoveSpeed;
         navAgent.isStopped = false;
         
-        // Update destination periodically (not every frame for performance)
         if (Time.time - lastDestinationUpdateTime >= updateDestinationInterval)
         {
-            // Check if destination is valid and on NavMesh
             NavMeshHit hit;
             if (NavMesh.SamplePosition(targetTower.transform.position, out hit, 5f, NavMesh.AllAreas))
             {
@@ -173,18 +182,16 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
             }
             else
             {
-                // Fallback: try to set destination directly (may fail if off NavMesh)
                 navAgent.SetDestination(targetTower.transform.position);
             }
             
             lastDestinationUpdateTime = Time.time;
         }
         
-        // Face the target tower while moving
         if (navAgent.velocity.magnitude > 0.1f)
         {
             Vector3 lookDirection = (targetTower.transform.position - transform.position);
-            lookDirection.y = 0; // Keep rotation on horizontal plane
+            lookDirection.y = 0;
             if (lookDirection.magnitude > 0.1f)
             {
                 transform.rotation = Quaternion.Slerp(
@@ -202,6 +209,7 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         {
             targetTower.TakeDamage(damage);
             lastAttackTime = Time.time;
+            TriggerAttackAnimation();
         }
     }
 
@@ -232,26 +240,23 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
 
     protected virtual void Die()
     {
-        // Stop NavMeshAgent
+        if (isDead) return;
+        isDead = true;
+        
         if (navAgent != null)
         {
             navAgent.isStopped = true;
         }
         
-        // Hide the enemy visually immediately (disable all renderers)
-        SetEnemyVisibility(false);
+        TriggerDeathAnimation();
         
-        // Disable colliders so dead enemies don't block anything
         Collider[] colliders = GetComponentsInChildren<Collider>();
         foreach (Collider col in colliders)
         {
             col.enabled = false;
         }
         
-        // Play death effect before destroying
         PlayDeathEffect();
-        
-        // Destroy after effect duration
         Invoke(nameof(DestroyAfterDeathEffect), deathEffectDuration);
     }
     
@@ -260,7 +265,6 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         Destroy(gameObject);
     }
     
-    // Public methods for wave scaling
     public void SetMoveSpeed(float newSpeed)
     {
         moveSpeed = newSpeed;
@@ -285,14 +289,11 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         health = newHealth;
     }
     
-    // Effect Methods
     protected virtual void PlaySpawnEffect()
     {
         if (spawnEffectPrefab != null)
         {
             GameObject effect = Instantiate(spawnEffectPrefab, transform.position, Quaternion.identity);
-            
-            // Destroy effect after duration
             if (effect != null)
             {
                 Destroy(effect, spawnEffectDuration);
@@ -300,7 +301,6 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         }
         else
         {
-            // Fallback: Simple particle effect using built-in components
             CreateSimpleSpawnEffect();
         }
     }
@@ -310,8 +310,6 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         if (deathEffectPrefab != null)
         {
             GameObject effect = Instantiate(deathEffectPrefab, transform.position, Quaternion.identity);
-            
-            // Destroy effect after duration
             if (effect != null)
             {
                 Destroy(effect, deathEffectDuration);
@@ -319,18 +317,15 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         }
         else
         {
-            // Fallback: Simple particle effect using built-in components
             CreateSimpleDeathEffect();
         }
     }
     
     private void CreateSimpleSpawnEffect()
     {
-        // Create a simple spawn effect using a particle system
         GameObject effectObject = new GameObject("SpawnEffect");
         effectObject.transform.position = transform.position;
         
-        // Add particle system
         ParticleSystem particles = effectObject.AddComponent<ParticleSystem>();
         var main = particles.main;
         main.startLifetime = spawnEffectDuration;
@@ -342,17 +337,14 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         var emission = particles.emission;
         emission.rateOverTime = 50f;
         
-        // Destroy after duration
         Destroy(effectObject, spawnEffectDuration);
     }
     
     private void CreateSimpleDeathEffect()
     {
-        // Create a simple death effect using a particle system
         GameObject effectObject = new GameObject("DeathEffect");
         effectObject.transform.position = transform.position;
         
-        // Add particle system
         ParticleSystem particles = effectObject.AddComponent<ParticleSystem>();
         var main = particles.main;
         main.startLifetime = deathEffectDuration;
@@ -364,11 +356,9 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         var emission = particles.emission;
         emission.rateOverTime = 100f;
         
-        // Destroy after duration
         Destroy(effectObject, deathEffectDuration);
     }
     
-    // Helper method to show/hide enemy visual components
     private void SetEnemyVisibility(bool visible)
     {
         Renderer[] renderers = GetComponentsInChildren<Renderer>();
@@ -376,5 +366,43 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         {
             renderer.enabled = visible;
         }
+    }
+    
+    protected virtual void UpdateAnimatorVelocity()
+    {
+        if (animator == null || navAgent == null || isDead) return;
+        
+        float velocity = isAttacking ? 0f : navAgent.velocity.magnitude;
+        animator.SetFloat(velocityParameterName, velocity);
+    }
+    
+    protected virtual void TriggerAttackAnimation()
+    {
+        if (animator == null || isDead) return;
+        animator.SetTrigger(attackTriggerName);
+    }
+    
+    protected virtual void TriggerDeathAnimation()
+    {
+        if (animator == null) return;
+        
+        bool hasParameter = false;
+        foreach (AnimatorControllerParameter param in animator.parameters)
+        {
+            if (param.name == deathTriggerName && param.type == AnimatorControllerParameterType.Trigger)
+            {
+                hasParameter = true;
+                break;
+            }
+        }
+        
+        if (!hasParameter) return;
+        
+        animator.SetTrigger(deathTriggerName);
+    }
+    
+    protected virtual void UpdateAnimatorAttack()
+    {
+        if (animator == null || isDead) return;
     }
 }

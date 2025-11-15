@@ -97,3 +97,7 @@ ServerData
 
 # Auto-generated scenes by play mode tests
 [Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+Enemy_Animation_Setup.md
+Mixamo_Zombie_Setup.md
+Zombie_Rigging_Guide.md
