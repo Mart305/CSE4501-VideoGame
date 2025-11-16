@@ -36,11 +36,6 @@ public class GameStateManager : MonoBehaviour
             if (CurrencyManager.Instance != null)
                 DontDestroyOnLoad(CurrencyManager.Instance.gameObject);
             
-            // WebGL: Ensure PlayerArmature components are active immediately
-            #if UNITY_WEBGL && !UNITY_EDITOR
-            EnsurePlayerComponentsActive();
-            #endif
-            
             // Apply WebGL-specific fixes
             #if UNITY_WEBGL && !UNITY_EDITOR
             Debug.Log("[GameStateManager] WebGL platform detected - applying fixes");
@@ -60,11 +55,6 @@ public class GameStateManager : MonoBehaviour
         // Find UI components in the scene
         if (mainMenuManager == null)
             mainMenuManager = FindObjectOfType<MainMenuManager>();
-        
-        // Initialize WebGL player animator fixes
-        #if UNITY_WEBGL && !UNITY_EDITOR
-        StartCoroutine(InitializeWebGLPlayerAnimator());
-        #endif
         
         // Fix terrain basemaps on all platforms (fixes white spots at distance)
         FixTerrainBasemaps();
@@ -223,6 +213,11 @@ public class GameStateManager : MonoBehaviour
         
         // Start coroutine to setup game after scene loads
         StartCoroutine(SetupGameAfterSceneLoad());
+        
+        // WebGL: Ensure PlayerArmature components are active when game starts
+        #if UNITY_WEBGL && !UNITY_EDITOR
+        StartCoroutine(EnsurePlayerComponentsActiveOnGameStart());
+        #endif
         
         // Lock cursor for gameplay
         Cursor.lockState = CursorLockMode.Locked;
@@ -420,69 +415,15 @@ public class GameStateManager : MonoBehaviour
     // ===== WebGL-Specific Fixes =====
     #if UNITY_WEBGL && !UNITY_EDITOR
     
-    private void EnsurePlayerComponentsActive()
+    private IEnumerator EnsurePlayerComponentsActiveOnGameStart()
     {
-        // Find PlayerArmature immediately
-        GameObject playerArmature = GameObject.FindGameObjectWithTag("Player");
-        if (playerArmature == null)
-        {
-            playerArmature = GameObject.Find("PlayerArmature");
-        }
-        if (playerArmature == null)
-        {
-            ThirdPersonController controller = FindObjectOfType<ThirdPersonController>();
-            if (controller != null)
-            {
-                playerArmature = controller.gameObject;
-            }
-        }
+        // Wait for scene to load and player to spawn
+        yield return new WaitForSeconds(0.5f);
         
-        if (playerArmature != null)
+        // Try multiple times to find and activate player components
+        for (int attempt = 0; attempt < 10; attempt++)
         {
-            // Ensure all components are active
-            Animator animator = playerArmature.GetComponent<Animator>();
-            if (animator != null)
-            {
-                animator.enabled = true;
-                Debug.Log("[GameStateManager] Awake: Enabled Animator on PlayerArmature");
-            }
-            
-            ThirdPersonController tpc = playerArmature.GetComponent<ThirdPersonController>();
-            if (tpc != null)
-            {
-                tpc.enabled = true;
-                Debug.Log("[GameStateManager] Awake: Enabled ThirdPersonController");
-            }
-            
-            CharacterController cc = playerArmature.GetComponent<CharacterController>();
-            if (cc != null)
-            {
-                cc.enabled = true;
-                Debug.Log("[GameStateManager] Awake: Enabled CharacterController");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[GameStateManager] Awake: Could not find PlayerArmature immediately");
-        }
-    }
-    
-    private void ApplyWebGLFixes()
-    {
-        // Log current quality level
-        int currentQuality = QualitySettings.GetQualityLevel();
-        Debug.Log($"[GameStateManager] WebGL Quality Level: {currentQuality}");
-    }
-    
-    private IEnumerator InitializeWebGLPlayerAnimator()
-    {
-        // Try immediately first, then retry if needed
-        yield return null; // Wait one frame for scene to load
-        
-        // Try multiple times to find and fix the player animator
-        for (int attempt = 0; attempt < 10; attempt++) // Increased from 5 to 10 attempts
-        {
-            // Find player GameObject using multiple methods
+            // Find PlayerArmature using multiple methods
             GameObject playerArmature = GameObject.FindGameObjectWithTag("Player");
             if (playerArmature == null)
             {
@@ -490,7 +431,6 @@ public class GameStateManager : MonoBehaviour
             }
             if (playerArmature == null)
             {
-                // Try finding by component
                 ThirdPersonController controller = FindObjectOfType<ThirdPersonController>();
                 if (controller != null)
                 {
@@ -500,55 +440,71 @@ public class GameStateManager : MonoBehaviour
             
             if (playerArmature != null)
             {
-                // Ensure all components are enabled
-                Animator playerAnimator = playerArmature.GetComponent<Animator>();
-                if (playerAnimator != null) playerAnimator.enabled = true;
+                Debug.Log($"[GameStateManager] Found PlayerArmature on attempt {attempt + 1} - ensuring all components are active");
+                
+                // Ensure ALL critical components are active
+                Animator animator = playerArmature.GetComponent<Animator>();
+                if (animator != null)
+                {
+                    animator.enabled = true;
+                    Debug.Log("[GameStateManager] GameStart: Enabled Animator");
+                }
                 
                 ThirdPersonController tpc = playerArmature.GetComponent<ThirdPersonController>();
-                if (tpc != null) tpc.enabled = true;
+                if (tpc != null)
+                {
+                    tpc.enabled = true;
+                    Debug.Log("[GameStateManager] GameStart: Enabled ThirdPersonController");
+                }
                 
                 CharacterController cc = playerArmature.GetComponent<CharacterController>();
-                if (cc != null) cc.enabled = true;
-                
-                if (playerAnimator != null)
+                if (cc != null)
                 {
-                    // Check if CameraModeManager exists and ensure we're in third person mode
-                    CameraModeManager cameraManager = FindObjectOfType<CameraModeManager>();
-                    if (cameraManager != null)
-                    {
-                        Debug.Log("[GameStateManager] Coroutine: Found CameraModeManager - ensuring third person mode for animator");
-                    }
-                    
-                    FixAnimatorForWebGL(playerAnimator);
+                    cc.enabled = true;
+                    Debug.Log("[GameStateManager] GameStart: Enabled CharacterController");
+                }
+                
+                StarterAssetsInputs inputs = playerArmature.GetComponent<StarterAssetsInputs>();
+                if (inputs != null)
+                {
+                    inputs.enabled = true;
+                    Debug.Log("[GameStateManager] GameStart: Enabled StarterAssetsInputs");
+                }
+                
+                // Apply animator fixes for WebGL
+                if (animator != null)
+                {
+                    FixAnimatorForWebGL(animator);
                     
                     // Also check for child animators
                     Animator[] childAnimators = playerArmature.GetComponentsInChildren<Animator>();
                     foreach (Animator childAnim in childAnimators)
                     {
-                        if (childAnim != playerAnimator)
+                        if (childAnim != animator)
                         {
                             FixAnimatorForWebGL(childAnim);
                         }
                     }
-                    
-                    Debug.Log("[GameStateManager] Coroutine: Successfully enabled all PlayerArmature components");
-                    yield break; // Success, exit coroutine
                 }
-                else
-                {
-                    Debug.LogWarning($"[GameStateManager] Coroutine: Player Animator not found on attempt {attempt + 1}");
-                }
-            }
-            else
-            {
-                Debug.LogWarning($"[GameStateManager] PlayerArmature not found on attempt {attempt + 1}");
+                
+                Debug.Log("[GameStateManager] GameStart: Successfully enabled all PlayerArmature components");
+                yield break; // Success, exit coroutine
             }
             
+            Debug.LogWarning($"[GameStateManager] PlayerArmature not found on attempt {attempt + 1}");
             yield return new WaitForSeconds(0.3f);
         }
         
         Debug.LogError("[GameStateManager] Failed to find PlayerArmature after 10 attempts!");
     }
+    
+    private void ApplyWebGLFixes()
+    {
+        // Log current quality level
+        int currentQuality = QualitySettings.GetQualityLevel();
+        Debug.Log($"[GameStateManager] WebGL Quality Level: {currentQuality}");
+    }
+    
     
     private void FixAnimatorForWebGL(Animator animator)
     {
