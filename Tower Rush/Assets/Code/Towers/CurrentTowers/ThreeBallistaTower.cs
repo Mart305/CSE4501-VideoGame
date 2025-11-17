@@ -17,12 +17,56 @@ public class ThreeBallistaTower : BaseTower
         base.Start();
     }
 
-    protected override void ConfigureProjectile(SimpleProjectile projectile)
+    protected override void ConfigureProjectile(ParticleCollisionHandler collisionHandler)
     {
         // Three Ballista - Multi-shot damage (hits 2 additional nearby enemies)
-        projectile.towerType = "ThreeBallista";
-        projectile.areaRadius = 8f; // Search radius for additional targets
-        projectile.areaMultiplier = 1.0f; // Full damage to additional targets
+        collisionHandler.towerType = "ThreeBallista";
+        collisionHandler.areaRadius = 8f; // Search radius for additional targets
+        collisionHandler.areaMultiplier = 1.0f; // Full damage to additional targets
+    }
+    
+    protected override void PerformAttack()
+    {
+        // For ThreeBallista, find the child attackFX and instantiate a copy
+        Transform attackFXTransform = transform.Find("3 Arrows");
+        if (attackFXTransform == null)
+        {
+            Debug.LogWarning($"[{gameObject.name}] No 3 Arrows child found!");
+            return;
+        }
+        
+        // Instantiate a copy preserving position and rotation
+        GameObject attackFXObj = Instantiate(attackFXTransform.gameObject, attackFXTransform.position, attackFXTransform.rotation);
+        
+        // Add particle collision handler if not already present
+        ParticleCollisionHandler collisionHandler = attackFXObj.GetComponent<ParticleCollisionHandler>();
+        if (collisionHandler == null)
+        {
+            collisionHandler = attackFXObj.AddComponent<ParticleCollisionHandler>();
+        }
+        collisionHandler.damage = damage;
+        collisionHandler.towerPosition = transform.position;
+        collisionHandler.explosionFX = explosionFX;
+        
+        // Add simple projectile script if not already present
+        SimpleProjectile projectile = attackFXObj.GetComponent<SimpleProjectile>();
+        if (projectile == null)
+        {
+            projectile = attackFXObj.AddComponent<SimpleProjectile>();
+        }
+        projectile.Initialize(currentTarget, 0f, explosionFX);
+        projectile.towerPosition = transform.position;
+        projectile.disableHoming = true; // Three Ballista shoots straight
+        
+        // Set tower-specific abilities
+        ConfigureProjectile(collisionHandler);
+        
+        // Play particle system
+        ParticleSystem ps = attackFXObj.GetComponent<ParticleSystem>();
+        if (ps != null)
+        {
+            ps.Play();
+        }
     }
     
     protected void PerformAttack_OLD()

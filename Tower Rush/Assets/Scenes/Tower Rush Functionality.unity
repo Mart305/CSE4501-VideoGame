@@ -1800,28 +1800,32 @@ PrefabInstance:
       value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
+      propertyPath: obstacleLayers.m_Bits
+      value: 247
+      objectReference: {fileID: 0}
+    - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.size
-      value: 6
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[0].cost
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
-      propertyPath: availableTowers.Array.data[1].cost
       value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
-      propertyPath: availableTowers.Array.data[2].cost
+      propertyPath: availableTowers.Array.data[1].cost
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
-      propertyPath: availableTowers.Array.data[3].cost
+      propertyPath: availableTowers.Array.data[2].cost
       value: 140
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
+      propertyPath: availableTowers.Array.data[3].cost
+      value: 160
+      objectReference: {fileID: 0}
+    - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[4].cost
-      value: 150
+      value: 160
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[5].cost
@@ -1830,42 +1834,42 @@ PrefabInstance:
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[0].towerIcon
       value: 
-      objectReference: {fileID: 21300000, guid: 875951503ee9f41d896ea32b0a536cba, type: 3}
+      objectReference: {fileID: 21300000, guid: 6dd975fb49ce54456b6906ffd0a7039b, type: 3}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[0].towerName
-      value: Ballista
+      value: Fire
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[1].towerIcon
       value: 
-      objectReference: {fileID: 21300000, guid: 6dd975fb49ce54456b6906ffd0a7039b, type: 3}
+      objectReference: {fileID: 21300000, guid: 78bbd86973fd94fa48a099489e66a301, type: 3}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[1].towerName
-      value: Fire
+      value: Ice
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[2].towerIcon
       value: 
-      objectReference: {fileID: 21300000, guid: 78bbd86973fd94fa48a099489e66a301, type: 3}
+      objectReference: {fileID: 21300000, guid: 6a5dd9b8cfb98401c83a1ba99c59ffaf, type: 3}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[2].towerName
-      value: Ice
+      value: Lightning
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[3].towerIcon
       value: 
-      objectReference: {fileID: 21300000, guid: 6a5dd9b8cfb98401c83a1ba99c59ffaf, type: 3}
+      objectReference: {fileID: 21300000, guid: 1e23f60a54f9a4fb9b822254eaf167b9, type: 3}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[3].towerName
-      value: Lightning
+      value: Portal
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[4].towerIcon
       value: 
-      objectReference: {fileID: 21300000, guid: 83e8d73803db54ba0aa96f0d67e288a4, type: 3}
+      objectReference: {fileID: 21300000, guid: 1e23f60a54f9a4fb9b822254eaf167b9, type: 3}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[4].towerName
-      value: 3xBallista
+      value: Portal
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[5].towerIcon
@@ -1877,44 +1881,44 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[0].description
-      value: Bow Shooter
+      value: Fire Shooter
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[0].towerPrefab
       value: 
-      objectReference: {fileID: 7833941157049236830, guid: 7a12d3a6e92d4854285e9f87570e671e, type: 3}
+      objectReference: {fileID: 6017897722388203714, guid: a6c772b3a2d8df4409c4b9ebbddd2566, type: 3}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[1].description
-      value: Fire Shooter
+      value: Ice Shooter
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[1].towerPrefab
       value: 
-      objectReference: {fileID: 6017897722388203714, guid: a6c772b3a2d8df4409c4b9ebbddd2566, type: 3}
+      objectReference: {fileID: 6142553789647345545, guid: 3fd56668cc5eafb4fb8a5ef580e03836, type: 3}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[2].description
-      value: Ice Shooter
+      value: Lightning Shooter
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[2].towerPrefab
       value: 
-      objectReference: {fileID: 6142553789647345545, guid: 3fd56668cc5eafb4fb8a5ef580e03836, type: 3}
+      objectReference: {fileID: 8076920662264817739, guid: 0ef2b0d111bbdd148aaf661a1a4b54bc, type: 3}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[3].description
-      value: Lightning Shooter
+      value: Portal Shooter
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[3].towerPrefab
       value: 
-      objectReference: {fileID: 8076920662264817739, guid: 0ef2b0d111bbdd148aaf661a1a4b54bc, type: 3}
+      objectReference: {fileID: 8655559165314570745, guid: 322fe11d6999ff84c89dd2d60d76ecf6, type: 3}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[4].description
-      value: Multishot Shooter
+      value: Portal Shooter
       objectReference: {fileID: 0}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[4].towerPrefab
       value: 
-      objectReference: {fileID: 1681796543624279700, guid: c0d039cffa75d854d921dc1ba2ecd5ac, type: 3}
+      objectReference: {fileID: 8655559165314570745, guid: 322fe11d6999ff84c89dd2d60d76ecf6, type: 3}
     - target: {fileID: 2398934943049401888, guid: 51deb98ffc3184363bd0df30ffb86629, type: 3}
       propertyPath: availableTowers.Array.data[5].description
       value: Portal Shooter
@@ -4582,7 +4586,7 @@ PrefabInstance:
       objectReference: {fileID: 1920583522}
     - target: {fileID: 8861988077592065997, guid: 339d320f78d69425a9f853cf3e7aa07a, type: 3}
       propertyPath: buttonRowOffsetX
-      value: -260
+      value: -410
       objectReference: {fileID: 0}
     - target: {fileID: 8861988077592065997, guid: 339d320f78d69425a9f853cf3e7aa07a, type: 3}
       propertyPath: waveProgressText

@@ -11,6 +11,8 @@ public class SimpleProjectile : MonoBehaviour
     private float speed = 20f;
     private float damage = 0f;
     private ParticleSystem explosionFX;
+    private float lifetime = 0f;
+    private float maxLifetime = 5f; // Destroy after 5 seconds if no hit
     
     // Tower-specific ability parameters
     public string towerType = ""; // "Fire", "Ice", "Lightning", etc.
@@ -24,6 +26,7 @@ public class SimpleProjectile : MonoBehaviour
     public float warpChance = 0f;
     public float warpDistance = 0f;
     public Vector3 towerPosition; // Position of the tower that fired this projectile
+    public bool disableHoming = false; // Disable homing for straight-shot projectiles
     
     public void Initialize(GameObject targetEnemy, float projectileDamage = 0f, ParticleSystem explosion = null)
     {
@@ -37,8 +40,23 @@ public class SimpleProjectile : MonoBehaviour
         // Don't move if we've already hit
         if (hasHit) return;
         
-        // Home towards target if it exists
-        if (target != null)
+        // Track lifetime and destroy if too old
+        lifetime += Time.deltaTime;
+        if (lifetime > maxLifetime)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        
+        // If target is dead/null, destroy immediately
+        if (target == null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        
+        // Home towards target if it exists (unless homing is disabled)
+        if (target != null && !disableHoming)
         {
             Vector3 targetPos = target.transform.position + Vector3.up * 1f;
             Vector3 direction = (targetPos - transform.position).normalized;
@@ -50,38 +68,13 @@ public class SimpleProjectile : MonoBehaviour
         
         // Move forward in the direction we're facing
         transform.position += transform.forward * speed * Time.deltaTime;
-        
-        // Check if we're close to ground using raycast
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, Vector3.down, out hit, 1.2f))
-        {
-            // Check if we hit ground layer
-            int groundLayer = LayerMask.NameToLayer("Ground");
-            if (hit.collider.gameObject.layer == groundLayer)
-            {
-                hasHit = true;
-                
-                // Stop emitting new particles but let existing ones finish
-                ParticleSystem ps = GetComponent<ParticleSystem>();
-                if (ps != null)
-                {
-                    var emission = ps.emission;
-                    emission.enabled = false;
-                    
-                    // Destroy after particles finish
-                    Destroy(gameObject, ps.main.startLifetime.constantMax);
-                }
-                else
-                {
-                    // No particle system, destroy immediately
-                    Destroy(gameObject);
-                }
-            }
-        }
     }
     
     void OnTriggerEnter(Collider other)
     {
+        // Trigger collision used for towers that don't use particle collision (e.g., Lightning)
+        // Also serves as backup for other towers
+        
         // Prevent multiple hits
         if (hasHit) return;
         
@@ -97,35 +90,35 @@ public class SimpleProjectile : MonoBehaviour
         {
             hasHit = true;
             
-            // Only deal damage if we hit an enemy (not ground)
-            if (isEnemyLayer && damage > 0)
+            // If we hit an enemy, try to deal damage via ParticleCollisionHandler
+            if (isEnemyLayer && damage == 0)
             {
-                // Try to find Health/Enemy on the hit object first, then root
-                GameObject rootObject = other.transform.root.gameObject;
-                Health enemyHealth = other.GetComponent<Health>() ?? rootObject.GetComponent<Health>();
-                Enemy enemyComponent = other.GetComponent<Enemy>() ?? rootObject.GetComponent<Enemy>();
-                
-                if (enemyHealth != null || enemyComponent != null)
+                // Get ParticleCollisionHandler and manually trigger damage
+                ParticleCollisionHandler collisionHandler = GetComponent<ParticleCollisionHandler>();
+                if (collisionHandler != null)
                 {
-                    // Deal primary damage
-                    if (enemyHealth != null)
-                        enemyHealth.TakeDamage(damage);
-                    else if (enemyComponent != null)
-                        enemyComponent.TakeDamage(damage);
+                    GameObject rootObject = other.transform.root.gameObject;
+                    Health enemyHealth = other.GetComponent<Health>() ?? rootObject.GetComponent<Health>();
+                    Enemy enemyComponent = other.GetComponent<Enemy>() ?? rootObject.GetComponent<Enemy>();
                     
-                    // Apply tower-specific abilities
-                    ApplyTowerAbility(other.gameObject, rootObject);
-                    
-                    // Play explosion effect at impact point
-                    if (explosionFX != null)
+                    if (enemyHealth != null || enemyComponent != null)
                     {
-                        explosionFX.transform.position = transform.position;
-                        explosionFX.Play();
+                        // Deal damage
+                        if (enemyHealth != null)
+                            enemyHealth.TakeDamage(collisionHandler.damage);
+                        else if (enemyComponent != null)
+                            enemyComponent.TakeDamage(collisionHandler.damage);
+                        
+                        // Play explosion at hit point
+                        if (explosionFX != null)
+                        {
+                            explosionFX.transform.position = transform.position;
+                            explosionFX.Play();
+                        }
+                        
+                        // Apply tower abilities
+                        ApplyTowerAbility(other.gameObject, rootObject);
                     }
-                    
-                    // Destroy projectile immediately after dealing damage
-                    Destroy(gameObject);
-                    return;
                 }
             }
             

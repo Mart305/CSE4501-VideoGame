@@ -14,11 +14,11 @@ public class FireTower : BaseTower
         base.Start();
     }
 
-    protected override void ConfigureProjectile(SimpleProjectile projectile)
+    protected override void ConfigureProjectile(ParticleCollisionHandler collisionHandler)
     {
         // Fire Tower - Area Damage
-        projectile.towerType = "Fire";
-        projectile.areaRadius = 5f;
-        projectile.areaMultiplier = 0.5f; // 50% damage to nearby enemies
+        collisionHandler.towerType = "Fire";
+        collisionHandler.areaRadius = 5f;
+        collisionHandler.areaMultiplier = 0.5f; // 50% damage to nearby enemies
     }
 }

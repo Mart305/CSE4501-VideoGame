@@ -18,12 +18,12 @@ public class VoidTower : BaseTower
         base.Start();
     }
 
-    protected override void ConfigureProjectile(SimpleProjectile projectile)
+    protected override void ConfigureProjectile(ParticleCollisionHandler collisionHandler)
     {
         // Void Tower - Warp Enemy
-        projectile.towerType = "Void";
-        projectile.warpChance = 1.0f; // 100% chance to warp
-        projectile.warpDistance = 20f; // Warp 20 units away
+        collisionHandler.towerType = "Void";
+        collisionHandler.warpChance = 1.0f; // 100% chance to warp
+        collisionHandler.warpDistance = 20f; // Warp 20 units away
     }
     
     protected void PerformAttack_OLD()
