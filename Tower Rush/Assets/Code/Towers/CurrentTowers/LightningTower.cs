@@ -19,7 +19,16 @@ public class LightningTower : BaseTower
         base.Start();
     }
 
-    protected override void PerformAttack()
+    protected override void ConfigureProjectile(SimpleProjectile projectile)
+    {
+        // Lightning Tower - Chain Attack
+        projectile.towerType = "Lightning";
+        projectile.chainCount = 3; // Chain to 3 additional enemies
+        projectile.chainRange = 10f;
+        projectile.chainReduction = 0.7f; // Each chain does 70% of previous damage
+    }
+    
+    protected void PerformAttack_OLD()
     {
         if (currentTarget == null) return;
 
@@ -38,17 +47,27 @@ public class LightningTower : BaseTower
             GameObject attackFXObj = Instantiate(attackFXPrefab);
             attackFX = attackFXObj.GetComponent<ParticleSystem>();
 
-            float scaleFactor = transform.localScale.x;
-            attackFXObj.transform.localScale = Vector3.one * scaleFactor;
+            attackFXObj.transform.localScale = Vector3.one * 0.3f;
             attackFXObj.transform.position = attackPos;
+            
+            // Also scale all children
+            foreach (Transform child in attackFXObj.transform)
+            {
+                child.localScale = Vector3.one * 0.3f;
+            }
 
             Vector3 enemyCenter = currentTarget.transform.position + Vector3.up * 1f;
             attackFXObj.transform.LookAt(enemyCenter);
 
             if (attackFX != null)
             {
+                // Override particle system stop action to prevent auto-destruction
+                var main = attackFX.main;
+                main.stopAction = ParticleSystemStopAction.None;
+                main.loop = false;
+                
                 attackFX.Play();
-                StartCoroutine(DestroyAttackFXAfterDelay(attackFXObj));
+                // TEMPORARILY DISABLED: StartCoroutine(DestroyAttackFXAfterDelay(attackFXObj));
             }
         }
 

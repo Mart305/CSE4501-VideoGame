@@ -25,7 +25,11 @@ public class EnemySpawner : MonoBehaviour
         // Auto-find SpawnEffectManager if not assigned
         if (spawnEffectManager == null)
         {
-            spawnEffectManager = FindObjectOfType<SpawnEffectManager>();
+            spawnEffectManager = SpawnEffectManager.Instance;
+            if (spawnEffectManager == null)
+            {
+                spawnEffectManager = FindObjectOfType<SpawnEffectManager>();
+            }
             if (spawnEffectManager == null)
             {
                 GameObject effectManagerObj = new GameObject("SpawnEffectManager");

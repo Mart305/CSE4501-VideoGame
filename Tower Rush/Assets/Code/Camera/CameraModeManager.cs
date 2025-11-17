@@ -53,8 +53,38 @@ public class CameraModeManager : MonoBehaviour
         {
             if (enemy.scene.name == "DontDestroyOnLoad")
             {
-                Debug.Log($"[CameraModeManager] Destroying carried-over enemy: {enemy.name}");
                 Destroy(enemy);
+            }
+        }
+        
+        // Clean up enemies, portals and other effects from previous scene
+        GameObject[] allObjects = FindObjectsOfType<GameObject>();
+        foreach (GameObject obj in allObjects)
+        {
+            if (obj.scene.name == "DontDestroyOnLoad")
+            {
+                string objName = obj.name.ToLower();
+                
+                // Skip managers - don't destroy them!
+                if (objName.Contains("manager"))
+                {
+                    continue;
+                }
+                
+                // Destroy enemies (by tag)
+                if (obj.CompareTag("Enemy"))
+                {
+                    Destroy(obj);
+                    continue;
+                }
+                
+                // Destroy portals, magic circles, projectiles, and other effects
+                if (objName.Contains("portal") || objName.Contains("magic") || objName.Contains("circle") ||
+                    objName.Contains("projectile") || objName.Contains("bullet") || objName.Contains("arrow") ||
+                    objName.Contains("effect") || objName.Contains("particle"))
+                {
+                    Destroy(obj);
+                }
             }
         }
         
@@ -63,7 +93,7 @@ public class CameraModeManager : MonoBehaviour
         thirdPersonCamera = null;
         thirdPersonController = null;
         
-        // Reset to third person mode on scene load and ensure player input is enabled
+        // Reset to third person mode on scene load
         currentMode = CameraMode.ThirdPerson;
         isRTSModeActive = false;
         
@@ -162,39 +192,65 @@ public class CameraModeManager : MonoBehaviour
             rtsCameraController.RefreshBoundaries();
         }
         
-        // Force enable all components after scene load
-        if (playerCharacter != null)
+        // Force enable all components after scene load ONLY if in third person mode
+        if (playerCharacter != null && !isRTSModeActive)
         {
             if (thirdPersonController != null)
             {
                 thirdPersonController.enabled = true;
-                Debug.Log("[CameraModeManager] Scene Load: Enabled ThirdPersonController");
             }
             
             var animator = playerCharacter.GetComponent<Animator>();
             if (animator != null)
             {
                 animator.enabled = true;
-                Debug.Log("[CameraModeManager] Scene Load: Enabled Animator");
             }
             
             var charController = playerCharacter.GetComponent<CharacterController>();
             if (charController != null)
             {
                 charController.enabled = true;
-                Debug.Log("[CameraModeManager] Scene Load: Enabled CharacterController");
             }
             
             var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
             if (starterInput != null)
             {
                 starterInput.enabled = true;
-                Debug.Log("[CameraModeManager] Scene Load: Enabled StarterAssetsInputs");
+            }
+            
+            // Components stay active - ensure we're in third person mode
+            EnableThirdPersonMode();
+        }
+        else if (isRTSModeActive && playerCharacter != null)
+        {
+            // If in RTS mode, keep player components disabled
+            if (thirdPersonController != null)
+            {
+                thirdPersonController.enabled = false;
+            }
+            
+            // Keep animator enabled but set parameters to 0
+            var animator = playerCharacter.GetComponent<Animator>();
+            if (animator != null)
+            {
+                animator.enabled = true;
+                animator.SetFloat("Speed", 0f);
+                animator.SetFloat("MotionSpeed", 0f);
+            }
+            
+            var charController = playerCharacter.GetComponent<CharacterController>();
+            if (charController != null)
+            {
+                charController.enabled = true;
+            }
+            
+            var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
+            if (starterInput != null)
+            {
+                starterInput.move = Vector2.zero;
+                starterInput.look = Vector2.zero;
             }
         }
-        
-        // Components stay active - just ensure we're in third person mode
-        EnableThirdPersonMode();
     }
     
     void Awake()
@@ -316,35 +372,38 @@ public class CameraModeManager : MonoBehaviour
             ToggleCameraMode();
         }
         
-        // Always ensure PlayerArmature components are active (WebGL fix)
-        if (playerCharacter != null)
+        // Always ensure PlayerArmature components are active (WebGL fix) - EXCEPT when in RTS mode
+        if (playerCharacter != null && !isRTSModeActive)
         {
-            // Force enable all critical components every frame
+            // Force enable all critical components every frame (only in Third Person mode)
             if (thirdPersonController != null && !thirdPersonController.enabled)
             {
                 thirdPersonController.enabled = true;
-                Debug.LogWarning("[CameraModeManager] Re-enabled ThirdPersonController");
             }
             
             var animator = playerCharacter.GetComponent<Animator>();
             if (animator != null && !animator.enabled)
             {
                 animator.enabled = true;
-                Debug.LogWarning("[CameraModeManager] Re-enabled Animator");
             }
             
             var charController = playerCharacter.GetComponent<CharacterController>();
             if (charController != null && !charController.enabled)
             {
                 charController.enabled = true;
-                Debug.LogWarning("[CameraModeManager] Re-enabled CharacterController");
             }
         }
         
         // Block ALL player input when in RTS mode
         if (isRTSModeActive && playerCharacter != null)
         {
-            // Block all input by zeroing it out (WASD and Arrow keys)
+            // CRITICAL: Disable ThirdPersonController entirely to prevent arrow key movement in WebGL
+            if (thirdPersonController != null && thirdPersonController.enabled)
+            {
+                thirdPersonController.enabled = false;
+            }
+            
+            // Also zero out input as backup
             var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
             if (starterInput != null)
             {
@@ -352,6 +411,25 @@ public class CameraModeManager : MonoBehaviour
                 starterInput.look = Vector2.zero;
                 starterInput.jump = false;
                 starterInput.sprint = false;
+            }
+            
+            // Keep animator parameters at 0 to prevent movement animations
+            Animator[] animators = playerCharacter.GetComponentsInChildren<Animator>();
+            foreach (Animator anim in animators)
+            {
+                if (anim != null && anim.enabled)
+                {
+                    anim.SetFloat("Speed", 0f);
+                    anim.SetFloat("MotionSpeed", 0f);
+                }
+            }
+        }
+        else if (!isRTSModeActive && playerCharacter != null)
+        {
+            // Re-enable ThirdPersonController when not in RTS mode
+            if (thirdPersonController != null && !thirdPersonController.enabled)
+            {
+                thirdPersonController.enabled = true;
             }
         }
         
@@ -417,6 +495,41 @@ public class CameraModeManager : MonoBehaviour
     {
         isRTSModeActive = false;
         
+        // CRITICAL: Re-find player if null (can happen after scene transitions)
+        if (playerCharacter == null)
+        {
+            // Try by tag first
+            GameObject taggedPlayer = GameObject.FindGameObjectWithTag("Player");
+            if (taggedPlayer != null)
+            {
+                playerCharacter = taggedPlayer;
+            }
+            else
+            {
+                // Try by ThirdPersonController component
+                ThirdPersonController controller = FindObjectOfType<ThirdPersonController>();
+                if (controller != null)
+                {
+                    playerCharacter = controller.gameObject;
+                }
+                else
+                {
+                    // Try by name
+                    playerCharacter = GameObject.Find("PlayerArmature");
+                    if (playerCharacter == null)
+                    {
+                        playerCharacter = GameObject.Find("Player");
+                    }
+                }
+            }
+            
+            // Also re-find controller
+            if (playerCharacter != null)
+            {
+                thirdPersonController = playerCharacter.GetComponent<ThirdPersonController>();
+            }
+        }
+        
         // Enable third person camera
         if (thirdPersonCamera != null)
         {
@@ -452,6 +565,79 @@ public class CameraModeManager : MonoBehaviour
     {
         isRTSModeActive = true;
         
+        // CRITICAL: Re-find player if null (can happen after scene transitions)
+        if (playerCharacter == null)
+        {
+            // Try by tag first
+            GameObject taggedPlayer = GameObject.FindGameObjectWithTag("Player");
+            if (taggedPlayer != null)
+            {
+                playerCharacter = taggedPlayer;
+            }
+            else
+            {
+                // Try by ThirdPersonController component
+                ThirdPersonController controller = FindObjectOfType<ThirdPersonController>();
+                if (controller != null)
+                {
+                    playerCharacter = controller.gameObject;
+                }
+                else
+                {
+                    // Try by name
+                    playerCharacter = GameObject.Find("PlayerArmature");
+                    if (playerCharacter == null)
+                    {
+                        playerCharacter = GameObject.Find("Player");
+                    }
+                }
+            }
+            
+            // Also re-find controller
+            if (playerCharacter != null)
+            {
+                thirdPersonController = playerCharacter.GetComponent<ThirdPersonController>();
+            }
+        }
+        
+        // CRITICAL: Clear all player input and stop movement BEFORE disabling controller
+        if (playerCharacter != null)
+        {
+            var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
+            if (starterInput != null)
+            {
+                starterInput.move = Vector2.zero;
+                starterInput.look = Vector2.zero;
+                starterInput.jump = false;
+                starterInput.sprint = false;
+            }
+            
+            // Stop character controller movement
+            var charController = playerCharacter.GetComponent<CharacterController>();
+            if (charController != null && charController.enabled)
+            {
+                // Move by zero to clear velocity
+                charController.Move(Vector3.zero);
+            }
+            
+            // Disable animator to stop movement animations
+            Animator[] animators = playerCharacter.GetComponentsInChildren<Animator>();
+            foreach (Animator anim in animators)
+            {
+                if (anim != null && anim.enabled)
+                {
+                    anim.SetFloat("Speed", 0f);
+                    anim.SetFloat("MotionSpeed", 0f);
+                }
+            }
+            
+            // Now disable ThirdPersonController
+            if (thirdPersonController != null)
+            {
+                thirdPersonController.enabled = false;
+            }
+        }
+        
         // Disable third person camera (but keep its AudioListener active)
         if (thirdPersonCamera != null)
         {
@@ -482,9 +668,6 @@ public class CameraModeManager : MonoBehaviour
             
             rtsCameraController.enabled = true;
         }
-        
-        // PlayerArmature components stay active - WASD input is blocked in Update()
-        // Arrow keys control RTS camera via RTSCameraController
         
         // Show cursor for RTS controls
         Cursor.lockState = CursorLockMode.None;

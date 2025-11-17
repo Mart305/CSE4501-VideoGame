@@ -17,7 +17,15 @@ public class ThreeBallistaTower : BaseTower
         base.Start();
     }
 
-    protected override void PerformAttack()
+    protected override void ConfigureProjectile(SimpleProjectile projectile)
+    {
+        // Three Ballista - Multi-shot damage (hits 2 additional nearby enemies)
+        projectile.towerType = "ThreeBallista";
+        projectile.areaRadius = 8f; // Search radius for additional targets
+        projectile.areaMultiplier = 1.0f; // Full damage to additional targets
+    }
+    
+    protected void PerformAttack_OLD()
     {
         if (currentTarget == null) return;
 
@@ -43,17 +51,27 @@ public class ThreeBallistaTower : BaseTower
                 GameObject attackFXObj = Instantiate(attackFXPrefab);
                 ParticleSystem attackParticle = attackFXObj.GetComponent<ParticleSystem>();
 
-                float scaleFactor = transform.localScale.x;
-                attackFXObj.transform.localScale = Vector3.one * scaleFactor;
+                attackFXObj.transform.localScale = Vector3.one * 0.3f;
                 attackFXObj.transform.position = attackPos;
+                
+                // Also scale all children
+                foreach (Transform child in attackFXObj.transform)
+                {
+                    child.localScale = Vector3.one * 0.3f;
+                }
 
                 Vector3 enemyCenter = target.transform.position + Vector3.up * 1f;
                 attackFXObj.transform.LookAt(enemyCenter);
 
                 if (attackParticle != null)
                 {
+                    // Override particle system stop action to prevent auto-destruction
+                    var main = attackParticle.main;
+                    main.stopAction = ParticleSystemStopAction.None;
+                    main.loop = false;
+                    
                     attackParticle.Play();
-                    StartCoroutine(DestroyAttackFXAfterDelay(attackFXObj));
+                    // TEMPORARILY DISABLED: StartCoroutine(DestroyAttackFXAfterDelay(attackFXObj));
                 }
             }
 

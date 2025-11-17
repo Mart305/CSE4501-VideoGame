@@ -39,12 +39,16 @@ public class BaseTower : MonoBehaviour
     protected GameObject currentTarget;
     protected float lastFireTime;
     protected float baseMaxHealth; // Store original max health
+    protected bool hasShot = false; // TEMP: Only shoot once for testing
 
     public virtual void Start()
     {
         baseMaxHealth = maxHealth;
         currentHealth = maxHealth;
         towerRenderer = GetComponent<Renderer>();
+        
+        // Initialize fire time to allow immediate first shot
+        lastFireTime = -999f;
         
         // Initialize visual feedback
         if (towerRenderer != null)
@@ -125,13 +129,14 @@ public class BaseTower : MonoBehaviour
         // Don't do anything if tower is destroyed
         if (currentHealth <= 0) return;
         
-        if (currentTarget != null)
+        // Find closest enemy to target
+        FindTarget();
+        
+        // Shoot at target if we have one
+        if (currentTarget != null && Time.time - lastFireTime >= 1f / fireRate)
         {
-            AttackTarget();
-        }
-        else
-        {
-            FindTarget();
+            PerformAttack();
+            lastFireTime = Time.time;
         }
     } // Handle mouse clicks for upgrade UI
     void OnMouseDown()
@@ -206,64 +211,107 @@ public class BaseTower : MonoBehaviour
 
     protected virtual void PerformAttack()
     {
-        if (currentTarget == null) return;
-
-        // Play tower shooting sound
-        if (AudioManager.Instance != null)
-        {
-            string towerType = this.GetType().Name;
-            Vector3 soundPosition = firePoint != null ? firePoint.position : transform.position;
-            AudioManager.Instance.PlayTowerShootSound(towerType, soundPosition);
-        }
-
-        // Create attackFX only when attacking
         if (attackFXPrefab != null)
         {
             Vector3 attackPos = firePoint != null ? firePoint.position : transform.position;
             GameObject attackFXObj = Instantiate(attackFXPrefab);
-            attackFX = attackFXObj.GetComponent<ParticleSystem>();
-
-            // Scale and position attack effect
-            float scaleFactor = transform.localScale.x;
-            attackFXObj.transform.localScale = Vector3.one * scaleFactor;
-            attackFXObj.transform.position = attackPos;
-
-            // Aim at enemy center (add height offset to target their center instead of feet)
-            Vector3 enemyCenter = currentTarget.transform.position + Vector3.up * 1f;
-            attackFXObj.transform.LookAt(enemyCenter);
-
-            if (attackFX != null)
+            
+            // Remove old scripts but add our simple collision script
+            MonoBehaviour[] scripts = attackFXObj.GetComponents<MonoBehaviour>();
+            foreach (MonoBehaviour script in scripts)
             {
-                attackFX.Play();
-
-                // Destroy attack effect after duration
-                StartCoroutine(DestroyAttackFXAfterDelay(attackFXObj));
+                Destroy(script);
             }
-        }
+            
+            // Remove any existing colliders and rigidbodies from prefab
+            Collider[] existingColliders = attackFXObj.GetComponents<Collider>();
+            foreach (Collider col in existingColliders)
+            {
+                Destroy(col);
+            }
+            
+            Rigidbody[] existingRigidbodies = attackFXObj.GetComponents<Rigidbody>();
+            foreach (Rigidbody rb in existingRigidbodies)
+            {
+                Destroy(rb);
+            }
+            
+            // Add kinematic rigidbody (needed for trigger detection)
+            Rigidbody projectileRb = attackFXObj.AddComponent<Rigidbody>();
+            projectileRb.isKinematic = true;
+            projectileRb.useGravity = false;
+            projectileRb.interpolation = RigidbodyInterpolation.None;
+            projectileRb.collisionDetectionMode = CollisionDetectionMode.Discrete;
+            
+            // Add sphere collider as trigger
+            SphereCollider sphereCol = attackFXObj.AddComponent<SphereCollider>();
+            sphereCol.isTrigger = true;
+            sphereCol.radius = 1.5f;
+            sphereCol.center = Vector3.zero;
+            
+            // Add simple projectile script for collision detection
+            SimpleProjectile projectile = attackFXObj.AddComponent<SimpleProjectile>();
+            projectile.Initialize(currentTarget, damage, explosionFX);
+            projectile.towerPosition = transform.position; // Store tower position for warp ability
+            
+            // Set tower-specific abilities (override in subclasses)
+            ConfigureProjectile(projectile);
+            
+            // Scale
+            attackFXObj.transform.localScale = Vector3.one * 0.3f;
+            attackFXObj.transform.position = attackPos;
+            
+            // Scale children
+            foreach (Transform child in attackFXObj.transform)
+            {
+                child.localScale = Vector3.one * 0.3f;
+            }
 
-        // Deal damage immediately
-        Health enemyHealth = currentTarget.GetComponent<Health>();
-        Enemy enemyComponent = currentTarget.GetComponent<Enemy>();
+            // Aim at enemy if we have a target, otherwise shoot forward
+            if (currentTarget != null)
+            {
+                Vector3 enemyCenter = currentTarget.transform.position + Vector3.up * 1f;
+                attackFXObj.transform.LookAt(enemyCenter);
+            }
+            else
+            {
+                attackFXObj.transform.rotation = transform.rotation;
+            }
 
-        if (enemyHealth != null)
-        {
-            enemyHealth.TakeDamage(damage);
-        }
-        else if (enemyComponent != null)
-        {
-            enemyComponent.TakeDamage(damage);
-        }
-
-        // Play explosion effect at target center
-        if (explosionFX != null)
-        {
-            Vector3 enemyCenter = currentTarget.transform.position + Vector3.up * 1f;
-            explosionFX.transform.position = enemyCenter;
-            explosionFX.Play();
-            StartCoroutine(StopExplosionAfterDelay());
+            // Get particle system and configure it
+            ParticleSystem ps = attackFXObj.GetComponent<ParticleSystem>();
+            if (ps != null)
+            {
+                // Set simulation space to Local so particles move with GameObject
+                var main = ps.main;
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.stopAction = ParticleSystemStopAction.None;
+                
+                // Disable particle collision (we use GameObject collider instead)
+                var collision = ps.collision;
+                collision.enabled = false;
+                
+                // Disable any velocity modules that might affect direction
+                var velocityOverLifetime = ps.velocityOverLifetime;
+                velocityOverLifetime.enabled = false;
+                
+                var forceOverLifetime = ps.forceOverLifetime;
+                forceOverLifetime.enabled = false;
+                
+                var inheritVelocity = ps.inheritVelocity;
+                inheritVelocity.enabled = false;
+                
+                ps.Play();
+            }
         }
     }
 
+    protected virtual void ConfigureProjectile(SimpleProjectile projectile)
+    {
+        // Base implementation does nothing
+        // Override in subclasses to add tower-specific abilities
+    }
+    
     protected virtual IEnumerator StopExplosionAfterDelay()
     {
         yield return new WaitForSeconds(2f);

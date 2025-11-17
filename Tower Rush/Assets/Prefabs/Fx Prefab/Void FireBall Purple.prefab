@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 420936247931946748}
   - component: {fileID: 420936247931946749}
   - component: {fileID: -757840553822829955}
-  - component: {fileID: 1334615556337943139}
   m_Layer: 0
   m_Name: Void FireBall Purple
   m_TagString: Untagged
@@ -45,7 +44,7 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 420936247931946626}
   serializedVersion: 8
-  lengthInSec: 5
+  lengthInSec: 999
   simulationSpeed: 2
   stopAction: 0
   cullingMode: 0
@@ -53,7 +52,7 @@ ParticleSystem:
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
   looping: 1
-  prewarm: 1
+  prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
   autoRandomSeed: 1
@@ -120,7 +119,7 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 10
+      scalar: 999
       minScalar: 5
       maxCurve:
         serializedVersion: 2
@@ -667,7 +666,7 @@ ParticleSystem:
         m_RotationOrder: 4
   ShapeModule:
     serializedVersion: 6
-    enabled: 0
+    enabled: 1
     type: 4
     angle: 0
     length: 5
@@ -676,7 +675,7 @@ ParticleSystem:
     donutRadius: 0.2
     m_Position: {x: 0, y: 0, z: 0}
     m_Rotation: {x: 0, y: 0, z: 0}
-    m_Scale: {x: 1, y: 1, z: 1}
+    m_Scale: {x: 1, y: 1, z: 20}
     placementMode: 0
     m_MeshMaterialIndex: 0
     m_MeshNormalOffset: 0
@@ -812,7 +811,7 @@ ParticleSystem:
           m_PostInfinity: 2
           m_RotationOrder: 4
     arc:
-      value: 90
+      value: 0
       mode: 0
       spread: 0
       speed:
@@ -3688,7 +3687,7 @@ ParticleSystem:
     colliderForce: 0
     multiplyColliderForceByParticleSize: 0
     multiplyColliderForceByParticleSpeed: 0
-    multiplyColliderForceByCollisionAngle: 1
+    multiplyColliderForceByCollisionAngle: 0
     m_Planes:
     - {fileID: 0}
     - {fileID: 0}
@@ -3857,10 +3856,10 @@ ParticleSystem:
         m_RotationOrder: 4
     minKillSpeed: 0
     maxKillSpeed: 10000
-    radiusScale: 1
+    radiusScale: 2
     collidesWith:
       serializedVersion: 2
-      m_Bits: 63
+      m_Bits: 136
     maxCollisionShapes: 256
     quality: 0
     voxelSize: 0.5
@@ -4925,10 +4924,10 @@ MonoBehaviour:
   speed: 20
   followTarget: 1
   rotateTowardsTarget: 1
-  moveGameObject: 0
-  maxLifetime: 5
-  destroyOnReachTarget: 1
-  reachDistance: 10
+  moveGameObject: 1
+  maxLifetime: 999
+  destroyOnReachTarget: 0
+  reachDistance: 999
   lineRenderer: {fileID: 0}
   useLineRenderer: 0
   lineWidth: 0.1
@@ -4962,28 +4961,6 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
---- !u!64 &1334615556337943139
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 420936247931946626}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
 --- !u!1 &420936248863232711
 GameObject:
   m_ObjectHideFlags: 0
@@ -5032,7 +5009,7 @@ ParticleSystem:
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
-  looping: 1
+  looping: 0
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
@@ -8605,7 +8582,7 @@ ParticleSystem:
   CollisionModule:
     enabled: 0
     serializedVersion: 4
-    type: 0
+    type: 1
     collisionMode: 0
     colliderForce: 0
     multiplyColliderForceByParticleSize: 0
@@ -8782,7 +8759,7 @@ ParticleSystem:
     radiusScale: 1
     collidesWith:
       serializedVersion: 2
-      m_Bits: 4294967295
+      m_Bits: 136
     maxCollisionShapes: 256
     quality: 0
     voxelSize: 0.5
@@ -13447,7 +13424,7 @@ ParticleSystem:
   CollisionModule:
     enabled: 0
     serializedVersion: 4
-    type: 0
+    type: 1
     collisionMode: 0
     colliderForce: 0
     multiplyColliderForceByParticleSize: 0
@@ -13624,7 +13601,7 @@ ParticleSystem:
     radiusScale: 1
     collidesWith:
       serializedVersion: 2
-      m_Bits: 4294967295
+      m_Bits: 136
     maxCollisionShapes: 256
     quality: 0
     voxelSize: 0.5

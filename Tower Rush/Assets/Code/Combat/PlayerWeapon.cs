@@ -34,8 +34,10 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private float lightRange = 10f;
     [SerializeField] private Color muzzleFlashColor = new Color(1f, 0.8f, 0.3f);
     [SerializeField] private Color particleColor = Color.yellow;
-    [SerializeField] private int particleCount = 10;
-    [SerializeField] private float particleSpeed = 5f;
+    #pragma warning disable 0414 // Field assigned but never used
+    private int particleCount = 10;
+    private float particleSpeed = 5f;
+    #pragma warning restore 0414
 
     [Header("Animation")]
     [SerializeField] private float recoilAmount = 0.1f;

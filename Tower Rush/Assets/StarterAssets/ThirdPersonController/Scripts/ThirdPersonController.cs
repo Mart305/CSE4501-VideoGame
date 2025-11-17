@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
 #endif
@@ -99,7 +99,29 @@ namespace StarterAssets
 
 		private void Start()
 		{
-			_hasAnimator = TryGetComponent(out _animator);
+			// CRITICAL: Find the animator on a CHILD object (not on this GameObject)
+			// The root PlayerArmature has an animator, but the actual character mesh child has the real one
+			Animator[] allAnimators = GetComponentsInChildren<Animator>(true);
+			_animator = null;
+			
+			foreach (Animator anim in allAnimators)
+			{
+				// Skip the animator on THIS GameObject - we want the child's animator
+				if (anim != null && anim.gameObject != this.gameObject && anim.runtimeAnimatorController != null)
+				{
+					_animator = anim;
+					break;
+				}
+			}
+			
+			// Fallback: if no child animator found, try this GameObject
+			if (_animator == null)
+			{
+				TryGetComponent(out _animator);
+			}
+			
+			_hasAnimator = _animator != null;
+			
 			_controller = GetComponent<CharacterController>();
 			_input = GetComponent<StarterAssetsInputs>();
 
@@ -112,7 +134,30 @@ namespace StarterAssets
 
 		private void Update()
 		{
-			_hasAnimator = TryGetComponent(out _animator);
+			// Only re-check if we don't have an animator
+			if (!_hasAnimator || _animator == null)
+			{
+				Animator[] allAnimators = GetComponentsInChildren<Animator>(true);
+				_animator = null;
+				
+				foreach (Animator anim in allAnimators)
+				{
+					// Skip the animator on THIS GameObject - we want the child's animator
+					if (anim != null && anim.gameObject != this.gameObject && anim.runtimeAnimatorController != null)
+					{
+						_animator = anim;
+						break;
+					}
+				}
+				
+				// Fallback: if no child animator found, try this GameObject
+				if (_animator == null)
+				{
+					TryGetComponent(out _animator);
+				}
+				
+				_hasAnimator = _animator != null;
+			}
 
 			// CRITICAL: Check if camera reference is still valid before using it
 			if (_mainCamera == null) {
@@ -137,10 +182,8 @@ namespace StarterAssets
 			_mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
 
 			if (_mainCamera != null) {
-				Debug.Log($"[ThirdPersonController] Camera reference updated: {_mainCamera.name}");
 			}
 			else {
-				Debug.LogWarning("[ThirdPersonController] MainCamera not found! Ensure your camera has the 'MainCamera' tag.");
 			}
 		}
 
@@ -211,6 +254,10 @@ namespace StarterAssets
 				_speed = targetSpeed;
 			}
 			_animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Time.deltaTime * SpeedChangeRate);
+			
+			// Clamp to zero if very small to prevent floating point precision issues
+			if (Mathf.Abs(_animationBlend) < 0.01f)
+				_animationBlend = 0f;
 
 			// normalise input direction
 			Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;

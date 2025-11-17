@@ -36,11 +36,8 @@ public class GameStateManager : MonoBehaviour
             if (CurrencyManager.Instance != null)
                 DontDestroyOnLoad(CurrencyManager.Instance.gameObject);
             
-            // Apply WebGL-specific fixes
-            #if UNITY_WEBGL && !UNITY_EDITOR
-            Debug.Log("[GameStateManager] WebGL platform detected - applying fixes");
+            // Apply platform fixes (works for all platforms including Unity Editor)
             ApplyWebGLFixes();
-            #endif
         }
         else
         {
@@ -99,6 +96,12 @@ public class GameStateManager : MonoBehaviour
     {
         // Pause is now handled by PauseMenuManager using ESC key only
         // Game over input handling can be added later if needed
+        
+        // Continuously monitor and fix animator if it gets disabled (all platforms)
+        if (currentState == GameState.Playing)
+        {
+            MonitorPlayerAnimator();
+        }
     }
     
     
@@ -144,6 +147,17 @@ public class GameStateManager : MonoBehaviour
             return;
         }
         
+        StartCoroutine(StartGameWithFade());
+    }
+    
+    private IEnumerator StartGameWithFade()
+    {
+        // Fade to black
+        if (ScreenFader.Instance != null)
+        {
+            yield return StartCoroutine(ScreenFader.Instance.FadeOut(0.3f));
+        }
+        
         // CRITICAL: Reset all game state for fresh start
         currentState = GameState.Playing;
         Time.timeScale = 1f;
@@ -181,6 +195,12 @@ public class GameStateManager : MonoBehaviour
         }
         
         // Move manager objects to DontDestroyOnLoad before scene transition
+        // Explicitly move SpawnEffectManager first to preserve references
+        if (SpawnEffectManager.Instance != null)
+        {
+            DontDestroyOnLoad(SpawnEffectManager.Instance.gameObject);
+        }
+        
         MoveManagersToDontDestroyOnLoad();
         
         // Start the gameplay through WaveManager (this loads the gameplay scene)
@@ -214,10 +234,8 @@ public class GameStateManager : MonoBehaviour
         // Start coroutine to setup game after scene loads
         StartCoroutine(SetupGameAfterSceneLoad());
         
-        // WebGL: Ensure PlayerArmature components are active when game starts
-        #if UNITY_WEBGL && !UNITY_EDITOR
+        // Ensure PlayerArmature components are active when game starts (all platforms)
         StartCoroutine(EnsurePlayerComponentsActiveOnGameStart());
-        #endif
         
         // Lock cursor for gameplay
         Cursor.lockState = CursorLockMode.Locked;
@@ -229,6 +247,12 @@ public class GameStateManager : MonoBehaviour
         // Wait for scene to load (WaveManager loads it asynchronously)
         // If scene is already loaded (returning from menu), this still gives time for setup
         yield return new WaitForSeconds(0.5f);
+        
+        // Fade in from black
+        if (ScreenFader.Instance != null)
+        {
+            yield return StartCoroutine(ScreenFader.Instance.FadeIn(0.5f));
+        }
         
         // Find GameHUD (including inactive objects since it might be hidden)
         GameObject gameHUDCanvas = null;
@@ -412,8 +436,7 @@ public class GameStateManager : MonoBehaviour
     public GameState GetCurrentState() => currentState;
     public bool IsGameActive() => currentState == GameState.Playing;
     
-    // ===== WebGL-Specific Fixes =====
-    #if UNITY_WEBGL && !UNITY_EDITOR
+    // ===== Platform Fixes (All Platforms) =====
     
     private IEnumerator EnsurePlayerComponentsActiveOnGameStart()
     {
@@ -440,121 +463,134 @@ public class GameStateManager : MonoBehaviour
             
             if (playerArmature != null)
             {
-                Debug.Log($"[GameStateManager] Found PlayerArmature on attempt {attempt + 1} - ensuring all components are active");
-                
                 // Ensure ALL critical components are active
-                Animator animator = playerArmature.GetComponent<Animator>();
-                if (animator != null)
-                {
-                    animator.enabled = true;
-                    Debug.Log("[GameStateManager] GameStart: Enabled Animator");
-                }
-                
                 ThirdPersonController tpc = playerArmature.GetComponent<ThirdPersonController>();
                 if (tpc != null)
                 {
                     tpc.enabled = true;
-                    Debug.Log("[GameStateManager] GameStart: Enabled ThirdPersonController");
                 }
                 
                 CharacterController cc = playerArmature.GetComponent<CharacterController>();
                 if (cc != null)
                 {
                     cc.enabled = true;
-                    Debug.Log("[GameStateManager] GameStart: Enabled CharacterController");
                 }
                 
                 StarterAssetsInputs inputs = playerArmature.GetComponent<StarterAssetsInputs>();
                 if (inputs != null)
                 {
                     inputs.enabled = true;
-                    Debug.Log("[GameStateManager] GameStart: Enabled StarterAssetsInputs");
                 }
                 
-                // Apply animator fixes for WebGL
-                if (animator != null)
+                // Find ALL animators in hierarchy (parent and children)
+                Animator[] allAnimators = playerArmature.GetComponentsInChildren<Animator>(true);
+                
+                foreach (Animator anim in allAnimators)
                 {
-                    FixAnimatorForWebGL(animator);
-                    
-                    // Also check for child animators
-                    Animator[] childAnimators = playerArmature.GetComponentsInChildren<Animator>();
-                    foreach (Animator childAnim in childAnimators)
-                    {
-                        if (childAnim != animator)
-                        {
-                            FixAnimatorForWebGL(childAnim);
-                        }
-                    }
+                    anim.enabled = true;
+                    FixAnimatorForWebGL(anim);
                 }
                 
-                Debug.Log("[GameStateManager] GameStart: Successfully enabled all PlayerArmature components");
                 yield break; // Success, exit coroutine
             }
             
-            Debug.LogWarning($"[GameStateManager] PlayerArmature not found on attempt {attempt + 1}");
             yield return new WaitForSeconds(0.3f);
         }
-        
-        Debug.LogError("[GameStateManager] Failed to find PlayerArmature after 10 attempts!");
     }
     
     private void ApplyWebGLFixes()
     {
-        // Log current quality level
-        int currentQuality = QualitySettings.GetQualityLevel();
-        Debug.Log($"[GameStateManager] WebGL Quality Level: {currentQuality}");
+        // Platform-specific fixes can be added here if needed
     }
     
+    
+    private GameObject lastPlayerArmature = null;
+    private float lastAnimatorCheckTime = 0f;
+    
+    private void MonitorPlayerAnimator()
+    {
+        // Only check every 0.5 seconds to avoid performance issues
+        if (Time.time - lastAnimatorCheckTime < 0.5f) return;
+        lastAnimatorCheckTime = Time.time;
+        
+        // Find player if we don't have it cached
+        if (lastPlayerArmature == null)
+        {
+            lastPlayerArmature = GameObject.FindGameObjectWithTag("Player");
+            if (lastPlayerArmature == null)
+            {
+                lastPlayerArmature = GameObject.Find("PlayerArmature");
+            }
+            if (lastPlayerArmature == null)
+            {
+                ThirdPersonController controller = FindObjectOfType<ThirdPersonController>();
+                if (controller != null)
+                {
+                    lastPlayerArmature = controller.gameObject;
+                }
+            }
+        }
+        
+        if (lastPlayerArmature != null)
+        {
+            // Check ALL animators in hierarchy (not just on root)
+            Animator[] allAnimators = lastPlayerArmature.GetComponentsInChildren<Animator>(true);
+            
+            foreach (Animator animator in allAnimators)
+            {
+                if (animator == null) continue;
+                
+                
+                // Check if animator is disabled or has wrong settings
+                bool needsFix = false;
+                
+                if (!animator.enabled)
+                {
+                    needsFix = true;
+                }
+                else if (animator.cullingMode != AnimatorCullingMode.CullUpdateTransforms)
+                {
+                    needsFix = true;
+                }
+                else if (animator.applyRootMotion != false)
+                {
+                    needsFix = true;
+                }
+                
+                if (needsFix)
+                {
+                    FixAnimatorForWebGL(animator);
+                }
+            }
+        }
+    }
     
     private void FixAnimatorForWebGL(Animator animator)
     {
         if (animator == null) return;
         
-        Debug.Log($"[GameStateManager] Applying animator fixes for WebGL on {animator.gameObject.name} (currently enabled: {animator.enabled})");
-        
-        // CRITICAL: Force enable first - something may be disabling it
-        animator.enabled = true;
-        
-        // Wait a frame to ensure it's actually enabled
-        UnityEngine.Object.DontDestroyOnLoad(animator.gameObject);
-        
-        // Disable first to reset state
-        animator.enabled = false;
-        
-        // Force animator to always animate mode (prevents culling issues in WebGL)
-        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-        
-        // Set update mode to normal (not AnimatePhysics which can cause issues in WebGL)
-        animator.updateMode = AnimatorUpdateMode.Normal;
-        
         // Ensure the animator controller is assigned
         if (animator.runtimeAnimatorController == null)
         {
-            Debug.LogError($"[GameStateManager] Animator on {animator.gameObject.name} has no RuntimeAnimatorController!");
+            return;
         }
         
-        // Re-enable animator
+        // Force animator settings BEFORE enabling
+        animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms; // Use CullUpdateTransforms for proper animation
+        animator.updateMode = AnimatorUpdateMode.AnimatePhysics; // AnimatePhysics for better character controller sync
+        animator.applyRootMotion = false; // CRITICAL: Disable root motion - ThirdPersonController handles movement
+        
+        // Enable animator
         animator.enabled = true;
         
-        // Force animator to update immediately
-        animator.Update(0f);
-        
-        // Rebind animator to refresh all bindings (fixes WebGL state issues)
+        // Rebind animator to refresh all bindings (fixes state issues)
         animator.Rebind();
         
-        // Force play the default state
-        if (animator.runtimeAnimatorController != null && animator.layerCount > 0)
-        {
-            // Get the default state from layer 0
-            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            animator.Play(stateInfo.fullPathHash, 0, 0f);
-        }
-        
-        Debug.Log($"[GameStateManager] Animator fixed: {animator.gameObject.name} - enabled: {animator.enabled}, culling=AlwaysAnimate, updateMode=Normal, rebound");
+        // Force update to initialize state
+        animator.Update(0f);
     }
     
-    #endif
-    // ===== End WebGL-Specific Fixes =====
+    // ===== End Platform Fixes =====
     
     // ===== Terrain Basemap Fix - REMOVED =====
     // No terrain quality modifications per user request
