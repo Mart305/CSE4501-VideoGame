@@ -697,6 +697,119 @@ public class WaveManager : MonoBehaviour
 		bool condition = currentWave > 1 && (currentWave) % 5 == 0;
 
 		if (condition && gameplaySceneNames != null && gameplaySceneNames.Length > 1 && currentSceneIndex < gameplaySceneNames.Length) {
+			// CRITICAL: Stop all spawning immediately BEFORE fade
+			if (currentWaveCoroutine != null)
+			{
+				StopCoroutine(currentWaveCoroutine);
+				currentWaveCoroutine = null;
+			}
+			
+			// Stop wave to prevent any further spawning
+			isWaveActive = false;
+			
+			// Disable the current EnemySpawner to prevent any spawns
+			if (enemySpawner != null)
+			{
+				enemySpawner.enabled = false;
+			}
+			
+			// Also find and disable ALL enemy spawners in all scenes
+			EnemySpawner[] allSpawners = FindObjectsOfType<EnemySpawner>();
+			foreach (EnemySpawner spawner in allSpawners)
+			{
+				if (spawner != null)
+				{
+					spawner.enabled = false;
+				}
+			}
+			
+			// CRITICAL: Clear towers FIRST to prevent them from spawning enemies
+			if (TowerPlacementManager.Instance != null)
+			{
+				TowerPlacementManager.Instance.ClearPlacedTowers();
+			}
+			
+			// Also manually destroy any remaining tower objects
+			BaseTower[] allTowers = FindObjectsOfType<BaseTower>();
+			foreach (BaseTower tower in allTowers)
+			{
+				if (tower != null && tower.gameObject != null)
+				{
+					DestroyImmediate(tower.gameObject);
+				}
+			}
+			
+			// Start continuously destroying enemies during fade
+			Coroutine enemyCleanup = StartCoroutine(ContinuouslyDestroyEnemies());
+			
+			// Fade to black before transition
+			if (ScreenFader.Instance != null)
+			{
+				yield return StartCoroutine(ScreenFader.Instance.FadeOut(0.3f));
+			}
+			
+			// Stop the continuous cleanup
+			if (enemyCleanup != null)
+			{
+				StopCoroutine(enemyCleanup);
+			}
+			
+			// Clear all remaining enemies AGGRESSIVELY using IMMEDIATE destruction
+			// Collect all enemies first to avoid modification during iteration
+			System.Collections.Generic.List<GameObject> enemiesToDestroy = new System.Collections.Generic.List<GameObject>();
+			
+			// Method 1: By tag
+			GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+			foreach (GameObject enemy in enemies)
+			{
+				if (enemy != null && !enemiesToDestroy.Contains(enemy))
+				{
+					enemiesToDestroy.Add(enemy);
+				}
+			}
+			
+			// Method 2: By component (catches enemies without tag)
+			Enemy[] enemyComponents = FindObjectsOfType<Enemy>();
+			foreach (Enemy enemy in enemyComponents)
+			{
+				if (enemy != null && enemy.gameObject != null && !enemiesToDestroy.Contains(enemy.gameObject))
+				{
+					enemiesToDestroy.Add(enemy.gameObject);
+				}
+			}
+			
+			// Method 3: Check all objects in all scenes including DontDestroyOnLoad
+			for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+			{
+				UnityEngine.SceneManagement.Scene scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+				GameObject[] rootObjects = scene.GetRootGameObjects();
+				foreach (GameObject obj in rootObjects)
+				{
+					if (obj != null && (obj.CompareTag("Enemy") || obj.GetComponent<Enemy>() != null))
+					{
+						if (!enemiesToDestroy.Contains(obj))
+						{
+							enemiesToDestroy.Add(obj);
+						}
+					}
+				}
+			}
+			
+			// Now destroy all collected enemies IMMEDIATELY (not deferred)
+			foreach (GameObject enemy in enemiesToDestroy)
+			{
+				if (enemy != null)
+				{
+					DestroyImmediate(enemy);
+				}
+			}
+			
+			// Force garbage collection to clean up
+			System.GC.Collect();
+			
+			// Wait a frame to ensure cleanup is complete
+			yield return null;
+			
 			if (TowerPlacementManager.Instance != null)
 				TowerPlacementManager.Instance.ClearPlacedTowers();
 
@@ -765,6 +878,31 @@ public class WaveManager : MonoBehaviour
 
 			if (gameHUD != null) {
 				StartCoroutine(ShowTowerCostNotification());
+			}
+
+			// Start continuous enemy cleanup during fade in
+			Coroutine fadeInCleanup = StartCoroutine(ContinuouslyDestroyEnemies());
+
+			// Fade in from black after scene is loaded
+			if (ScreenFader.Instance != null)
+			{
+				yield return StartCoroutine(ScreenFader.Instance.FadeIn(0.5f));
+			}
+
+			// Stop continuous cleanup
+			if (fadeInCleanup != null)
+			{
+				StopCoroutine(fadeInCleanup);
+			}
+
+			// Final cleanup pass after fade completes
+			GameObject[] finalEnemies = GameObject.FindGameObjectsWithTag("Enemy");
+			foreach (GameObject enemy in finalEnemies)
+			{
+				if (enemy != null)
+				{
+					DestroyImmediate(enemy);
+				}
 			}
 
 			// Also evaluate defeat at scene-change points
@@ -963,6 +1101,37 @@ public class WaveManager : MonoBehaviour
 
 		// Final frame wait to ensure all updates are applied
 		yield return new WaitForEndOfFrame();
+	}
+
+	// ===== Enemy cleanup helper =====
+	
+	private IEnumerator ContinuouslyDestroyEnemies()
+	{
+		// Continuously destroy enemies every frame until stopped
+		while (true)
+		{
+			// Find and destroy all enemies
+			GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+			foreach (GameObject enemy in enemies)
+			{
+				if (enemy != null)
+				{
+					DestroyImmediate(enemy);
+				}
+			}
+			
+			// Also destroy by component
+			Enemy[] enemyComponents = FindObjectsOfType<Enemy>();
+			foreach (Enemy enemy in enemyComponents)
+			{
+				if (enemy != null && enemy.gameObject != null)
+				{
+					DestroyImmediate(enemy.gameObject);
+				}
+			}
+			
+			yield return null; // Wait one frame and repeat
+		}
 	}
 
 	// ===== No-tower gold drain helpers =====

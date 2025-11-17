@@ -371,6 +371,7 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     protected virtual void UpdateAnimatorVelocity()
     {
         if (animator == null || navAgent == null || isDead) return;
+        if (animator.runtimeAnimatorController == null) return; // Skip if no controller assigned
         
         float velocity = isAttacking ? 0f : navAgent.velocity.magnitude;
         animator.SetFloat(velocityParameterName, velocity);
@@ -379,12 +380,14 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     protected virtual void TriggerAttackAnimation()
     {
         if (animator == null || isDead) return;
+        if (animator.runtimeAnimatorController == null) return; // Skip if no controller assigned
         animator.SetTrigger(attackTriggerName);
     }
     
     protected virtual void TriggerDeathAnimation()
     {
         if (animator == null) return;
+        if (animator.runtimeAnimatorController == null) return; // Skip if no controller assigned
         
         bool hasParameter = false;
         foreach (AnimatorControllerParameter param in animator.parameters)

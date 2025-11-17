@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 public class SpawnEffectManager : MonoBehaviour
 {
+    public static SpawnEffectManager Instance { get; private set; }
+    
     [Header("Portal Effects")]
     public GameObject zombiePortalPrefab;     // Portal red.prefab
     public GameObject ghostPortalPrefab;      // Portal blue.prefab
@@ -31,6 +33,29 @@ public class SpawnEffectManager : MonoBehaviour
     private AudioSource audioSource;
     private Dictionary<string, Queue<GameObject>> effectPools = new Dictionary<string, Queue<GameObject>>();
     private Dictionary<string, GameObject> activePrefabs = new Dictionary<string, GameObject>();
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            // Don't call DontDestroyOnLoad here - let GameStateManager handle it
+            // to preserve prefab references
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    
+    void OnDestroy()
+    {
+        // Clear the instance if THIS object is being destroyed
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
 
     void Start()
     {

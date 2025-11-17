@@ -18,7 +18,15 @@ public class VoidTower : BaseTower
         base.Start();
     }
 
-    protected override void PerformAttack()
+    protected override void ConfigureProjectile(SimpleProjectile projectile)
+    {
+        // Void Tower - Warp Enemy
+        projectile.towerType = "Void";
+        projectile.warpChance = 1.0f; // 100% chance to warp
+        projectile.warpDistance = 20f; // Warp 20 units away
+    }
+    
+    protected void PerformAttack_OLD()
     {
         if (currentTarget == null) return;
 
@@ -37,17 +45,27 @@ public class VoidTower : BaseTower
             GameObject attackFXObj = Instantiate(attackFXPrefab);
             attackFX = attackFXObj.GetComponent<ParticleSystem>();
 
-            float scaleFactor = transform.localScale.x;
-            attackFXObj.transform.localScale = Vector3.one * scaleFactor;
+            attackFXObj.transform.localScale = Vector3.one * 0.3f;
             attackFXObj.transform.position = attackPos;
+            
+            // Also scale all children
+            foreach (Transform child in attackFXObj.transform)
+            {
+                child.localScale = Vector3.one * 0.3f;
+            }
 
             Vector3 enemyCenter = currentTarget.transform.position + Vector3.up * 1f;
             attackFXObj.transform.LookAt(enemyCenter);
 
             if (attackFX != null)
             {
+                // Override particle system stop action to prevent auto-destruction
+                var main = attackFX.main;
+                main.stopAction = ParticleSystemStopAction.None;
+                main.loop = false;
+                
                 attackFX.Play();
-                StartCoroutine(DestroyAttackFXAfterDelay(attackFXObj));
+                // TEMPORARILY DISABLED: StartCoroutine(DestroyAttackFXAfterDelay(attackFXObj));
             }
         }
 
