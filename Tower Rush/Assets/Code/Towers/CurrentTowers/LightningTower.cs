@@ -19,13 +19,13 @@ public class LightningTower : BaseTower
         base.Start();
     }
 
-    protected override void ConfigureProjectile(SimpleProjectile projectile)
+    protected override void ConfigureProjectile(ParticleCollisionHandler collisionHandler)
     {
         // Lightning Tower - Chain Attack
-        projectile.towerType = "Lightning";
-        projectile.chainCount = 3; // Chain to 3 additional enemies
-        projectile.chainRange = 10f;
-        projectile.chainReduction = 0.7f; // Each chain does 70% of previous damage
+        collisionHandler.towerType = "Lightning";
+        collisionHandler.chainCount = 3; // Chain to 3 additional enemies
+        collisionHandler.chainRange = 10f;
+        collisionHandler.chainReduction = 0.7f; // Each chain does 70% of previous damage
     }
     
     protected void PerformAttack_OLD()

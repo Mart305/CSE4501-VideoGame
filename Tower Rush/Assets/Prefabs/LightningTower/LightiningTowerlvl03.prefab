@@ -2169,7 +2169,7 @@ MonoBehaviour:
   damagedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   criticalColor: {r: 1, g: 0, b: 0, a: 1}
   towerFXPrefab: {fileID: 0}
-  attackFXPrefab: {fileID: 346346791297495699, guid: 6d648b595360d224cadc9478d6e05444, type: 3}
+  attackFXPrefab: {fileID: 7078693595930888067, guid: 90275853a4f9f2e4baa7d548f58f6391, type: 3}
   explosionFXPrefab: {fileID: 8161942417590462683, guid: 440b7e95900715e4ebe95c20946fd774, type: 3}
   firePoint: {fileID: 2618926132181044313}
   range: 10

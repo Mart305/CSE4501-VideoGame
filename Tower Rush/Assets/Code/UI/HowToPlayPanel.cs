@@ -32,7 +32,7 @@ public class HowToPlayPanel : MonoBehaviour
 <b>Click:</b> 1. Click tower button  2. Click ground  3. Right-click/ESC to cancel
 <b>Drag & Drop:</b> 1. Hold tower button  2. Drag to location  3. Release to place
 
-<b>TOWER TYPES:</b> Fire - Area damage  |  Ice - Slows enemies  |  Lightning - Chain attacks  |  Ballista - High damage  |  Three Ballista - Multi-shot  |  Void - Special abilities
+<b>TOWER TYPES:</b> Fire - Area damage  |  Ice - Slows enemies  |  Lightning - Chain attacks  |  Void - Special abilities
 
 <b>WAVES & PROGRESSION:</b> 5 waves per scene  |  Enemies get stronger each wave  |  New scene unlocks every 5 waves  |  Wave progress shown at top
 

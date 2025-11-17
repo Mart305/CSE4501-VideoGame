@@ -151,9 +151,7 @@ public class BaseTower : MonoBehaviour
 
     protected virtual void FindTarget()
     {
-        // Only find new target if we don't have one
-        if (currentTarget != null) return;
-        
+        // Always find the closest enemy (retarget every frame)
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
         GameObject closestEnemy = null;
         float closestDistance = float.MaxValue;
@@ -189,7 +187,7 @@ public class BaseTower : MonoBehaviour
             }
         }
 
-        // Set new target (closest enemy)
+        // Set new target (closest enemy) - will be null if no enemies in range
         currentTarget = closestEnemy;
     }
 
@@ -216,46 +214,46 @@ public class BaseTower : MonoBehaviour
             Vector3 attackPos = firePoint != null ? firePoint.position : transform.position;
             GameObject attackFXObj = Instantiate(attackFXPrefab);
             
-            // Remove old scripts but add our simple collision script
+            // Remove old scripts immediately
             MonoBehaviour[] scripts = attackFXObj.GetComponents<MonoBehaviour>();
             foreach (MonoBehaviour script in scripts)
             {
-                Destroy(script);
+                DestroyImmediate(script);
             }
             
-            // Remove any existing colliders and rigidbodies from prefab
+            // Remove any existing colliders and rigidbodies from prefab immediately
             Collider[] existingColliders = attackFXObj.GetComponents<Collider>();
             foreach (Collider col in existingColliders)
             {
-                Destroy(col);
+                DestroyImmediate(col);
             }
             
             Rigidbody[] existingRigidbodies = attackFXObj.GetComponents<Rigidbody>();
             foreach (Rigidbody rb in existingRigidbodies)
             {
-                Destroy(rb);
+                DestroyImmediate(rb);
             }
             
-            // Add kinematic rigidbody (needed for trigger detection)
+            // Add kinematic rigidbody (needed for particle movement)
             Rigidbody projectileRb = attackFXObj.AddComponent<Rigidbody>();
             projectileRb.isKinematic = true;
             projectileRb.useGravity = false;
             projectileRb.interpolation = RigidbodyInterpolation.None;
             projectileRb.collisionDetectionMode = CollisionDetectionMode.Discrete;
             
-            // Add sphere collider as trigger
-            SphereCollider sphereCol = attackFXObj.AddComponent<SphereCollider>();
-            sphereCol.isTrigger = true;
-            sphereCol.radius = 1.5f;
-            sphereCol.center = Vector3.zero;
+            // Add particle collision handler for damage detection
+            ParticleCollisionHandler collisionHandler = attackFXObj.AddComponent<ParticleCollisionHandler>();
+            collisionHandler.damage = damage;
+            collisionHandler.towerPosition = transform.position;
+            collisionHandler.explosionFX = explosionFX;
             
-            // Add simple projectile script for collision detection
+            // Add simple projectile script for movement (homing behavior)
             SimpleProjectile projectile = attackFXObj.AddComponent<SimpleProjectile>();
-            projectile.Initialize(currentTarget, damage, explosionFX);
-            projectile.towerPosition = transform.position; // Store tower position for warp ability
+            projectile.Initialize(currentTarget, 0f, explosionFX); // damage = 0 since ParticleCollisionHandler handles it
+            projectile.towerPosition = transform.position;
             
             // Set tower-specific abilities (override in subclasses)
-            ConfigureProjectile(projectile);
+            ConfigureProjectile(collisionHandler);
             
             // Scale
             attackFXObj.transform.localScale = Vector3.one * 0.3f;
@@ -277,36 +275,10 @@ public class BaseTower : MonoBehaviour
             {
                 attackFXObj.transform.rotation = transform.rotation;
             }
-
-            // Get particle system and configure it
-            ParticleSystem ps = attackFXObj.GetComponent<ParticleSystem>();
-            if (ps != null)
-            {
-                // Set simulation space to Local so particles move with GameObject
-                var main = ps.main;
-                main.simulationSpace = ParticleSystemSimulationSpace.Local;
-                main.stopAction = ParticleSystemStopAction.None;
-                
-                // Disable particle collision (we use GameObject collider instead)
-                var collision = ps.collision;
-                collision.enabled = false;
-                
-                // Disable any velocity modules that might affect direction
-                var velocityOverLifetime = ps.velocityOverLifetime;
-                velocityOverLifetime.enabled = false;
-                
-                var forceOverLifetime = ps.forceOverLifetime;
-                forceOverLifetime.enabled = false;
-                
-                var inheritVelocity = ps.inheritVelocity;
-                inheritVelocity.enabled = false;
-                
-                ps.Play();
-            }
         }
     }
 
-    protected virtual void ConfigureProjectile(SimpleProjectile projectile)
+    protected virtual void ConfigureProjectile(ParticleCollisionHandler collisionHandler)
     {
         // Base implementation does nothing
         // Override in subclasses to add tower-specific abilities

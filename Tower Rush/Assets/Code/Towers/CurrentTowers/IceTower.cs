@@ -18,12 +18,12 @@ public class IceTower : BaseTower
         base.Start();
     }
 
-    protected override void ConfigureProjectile(SimpleProjectile projectile)
+    protected override void ConfigureProjectile(ParticleCollisionHandler collisionHandler)
     {
         // Ice Tower - Slow Effect
-        projectile.towerType = "Ice";
-        projectile.slowAmount = 0.5f; // 50% slow
-        projectile.slowDuration = 3f; // 3 seconds
+        collisionHandler.towerType = "Ice";
+        collisionHandler.slowAmount = 0.5f; // 50% slow
+        collisionHandler.slowDuration = 3f; // 3 seconds
     }
     
     protected void PerformAttack_OLD()
