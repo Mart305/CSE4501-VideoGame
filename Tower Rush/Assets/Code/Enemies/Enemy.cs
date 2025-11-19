@@ -33,7 +33,7 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     [SerializeField] private string attackTriggerName = "attack";
     [SerializeField] private string deathTriggerName = "death";
     private bool isAttacking = false;
-    private bool isDead = false;
+    protected bool isDead = false;
 
     protected virtual void Start()
     {
@@ -118,7 +118,7 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         if (navAgent == null) return;
         
         navAgent.speed = moveSpeed;
-        navAgent.stoppingDistance = attackRange + 1f;
+        navAgent.stoppingDistance = attackRange; // Stop at attack range, not beyond it
         navAgent.acceleration = 8f;
         navAgent.angularSpeed = 120f;
         navAgent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
@@ -126,6 +126,9 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
 
     protected virtual void Update()
     {
+        // Stop all behavior if dead
+        if (isDead) return;
+        
         if (navAgent == null) return;
         
         if (Time.time - lastTargetEvaluationTime >= updateDestinationInterval)
@@ -133,7 +136,7 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
             FindTargetTower();
             lastTargetEvaluationTime = Time.time;
         }
-        
+
         if (targetTower == null || targetTower.GetCurrentHealth() <= 0)
         {
             FindTargetTower();
@@ -162,6 +165,7 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
 
     protected virtual void MoveTowardsTower()
     {
+        if (isDead) return; // Don't move if dead
         if (navAgent == null || targetTower == null) return;
         
         float effectiveMoveSpeed = moveSpeed;
@@ -205,6 +209,8 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
 
     protected virtual void AttackTower()
     {
+        if (isDead) return; // Don't attack if dead
+        
         if (Time.time - lastAttackTime >= attackCooldown)
         {
             targetTower.TakeDamage(damage);
@@ -238,25 +244,30 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
         if (health <= 0) Die();
     }
 
-    protected virtual void Die()
+    public virtual void Die()
     {
         if (isDead) return;
         isDead = true;
         
+        // Immediately stop all movement and attacks
         if (navAgent != null)
         {
             navAgent.isStopped = true;
+            navAgent.enabled = false; // Disable NavMeshAgent completely
         }
+        
+        // Stop attacking
+        isAttacking = false;
         
         TriggerDeathAnimation();
         
+        // Disable colliders to prevent further interactions
         Collider[] colliders = GetComponentsInChildren<Collider>();
         foreach (Collider col in colliders)
         {
             col.enabled = false;
         }
         
-        PlayDeathEffect();
         Invoke(nameof(DestroyAfterDeathEffect), deathEffectDuration);
     }
     
