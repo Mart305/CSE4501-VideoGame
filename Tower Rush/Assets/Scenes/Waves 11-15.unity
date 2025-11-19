@@ -1858,7 +1858,7 @@ MonoBehaviour:
   - {fileID: 1580112522}
   - {fileID: 1294118115}
   - {fileID: 90050263}
-  zombiePrefab: {fileID: 9076115408730096218, guid: e39071724f2532840ac8a31b1fbda11d, type: 3}
+  zombiePrefab: {fileID: 922942687117990643, guid: 8d385f5e76078a442b97715cb67b222c, type: 3}
   ghostPrefab: {fileID: 5163679325591557877, guid: 6f0b711772e2a8541b7916d6c58069e1, type: 3}
   skeletonPrefab: {fileID: 5664305964004973586, guid: b18e04a4c1fde5142a5eb97c10b4b19f, type: 3}
   mutantZombiePrefab: {fileID: 9063911118954261516, guid: 67a8c5d44c4c6c941816f8bbfd72d02b, type: 3}
