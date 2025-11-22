@@ -393,6 +393,12 @@ public class GameStateManager : MonoBehaviour
 			Debug.Log("[GameStateManager] Tower costs reset to base values");
 		}
 
+		// ===== CRITICAL: Reset GameHUD placement instructions =====
+		if (GameHUD.Instance != null) {
+			GameHUD.Instance.ResetPlacementInstructions();
+			Debug.Log("[GameStateManager] GameHUD placement instructions reset");
+		}
+
 		// ===== CRITICAL: Aggressively clear ALL enemies =====
 		// Multiple passes to ensure complete cleanup
 		for (int pass = 0; pass < 3; pass++) {
