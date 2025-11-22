@@ -354,58 +354,109 @@ public class GameStateManager : MonoBehaviour
             
         }
     }
-    
-    public void ReturnToMainMenu()
-    {
-        currentState = GameState.MainMenu;
-        Time.timeScale = 1f; // Unfreeze time temporarily
-        
-        // Stop wave system
-        if (WaveManager.Instance != null)
-        {
-            WaveManager.Instance.StopAllCoroutines();
-        }
-        
-        // Clear all enemies
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach (GameObject enemy in enemies)
-        {
-            Destroy(enemy);
-        }
-        
-        // Clear all placed towers
-        if (TowerPlacementManager.Instance != null)
-        {
-            TowerPlacementManager.Instance.ClearPlacedTowers();
-        }
-        
-        // Hide GameHUD when returning to main menu
-        GameObject gameHUDCanvas = GameObject.Find("GameHUDCanvas");
-        if (gameHUDCanvas != null)
-        {
-            // Stop all coroutines in GameHUD before hiding
-            GameHUD gameHUD = gameHUDCanvas.GetComponent<GameHUD>();
-            if (gameHUD != null)
-            {
-                gameHUD.StopAllCoroutines();
-            }
-            gameHUDCanvas.SetActive(false);
-        }
-        
-        // Show main menu
-        if (mainMenuManager != null)
-        {
-            mainMenuManager.ShowMainMenu();
-        }
-        
-        // Hide pause UI
-        if (pauseUI != null) pauseUI.SetActive(false);
-        
-        // Freeze time for main menu
-        Time.timeScale = 0f;
-    }
-    
-    public void QuitGame()
+
+	public void ReturnToMainMenu()
+	{
+		currentState = GameState.MainMenu;
+		Time.timeScale = 1f; // Unfreeze time temporarily
+
+		// ===== CRITICAL: Stop and reset AudioManager =====
+		if (AudioManager.Instance != null) {
+			AudioManager.Instance.StopAllMusic();
+			// Play main menu music
+			AudioManager.Instance.PlaySceneMusicByIndex(0, skipFade: true);
+			Debug.Log("[GameStateManager] Audio reset to main menu music");
+		}
+
+		// ===== CRITICAL: Reset WaveManager completely =====
+		if (WaveManager.Instance != null) {
+			// Stop all coroutines first
+			WaveManager.Instance.StopAllCoroutines();
+
+			// Reset wave state to initial values (wave 1, scene 0, etc.)
+			WaveManager.Instance.ResetWaveStateImmediate();
+			Debug.Log("[GameStateManager] WaveManager reset");
+		}
+
+		// ===== CRITICAL: Reset CurrencyManager completely =====
+		if (CurrencyManager.Instance != null) {
+			CurrencyManager.Instance.ResetCurrency();
+			Debug.Log("[GameStateManager] Currency reset to starting amount");
+		}
+
+		// ===== CRITICAL: Reset TowerPlacementManager completely =====
+		if (TowerPlacementManager.Instance != null) {
+			// Clear all placed towers
+			TowerPlacementManager.Instance.ClearPlacedTowers();
+			// Reset tower costs to base values
+			TowerPlacementManager.Instance.ResetTowerCosts();
+			Debug.Log("[GameStateManager] Tower costs reset to base values");
+		}
+
+		// ===== CRITICAL: Reset GameHUD placement instructions =====
+		if (GameHUD.Instance != null) {
+			GameHUD.Instance.ResetPlacementInstructions();
+			Debug.Log("[GameStateManager] GameHUD placement instructions reset");
+		}
+
+		// ===== CRITICAL: Aggressively clear ALL enemies =====
+		// Multiple passes to ensure complete cleanup
+		for (int pass = 0; pass < 3; pass++) {
+			// Method 1: By tag
+			GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+			foreach (GameObject enemy in enemies) {
+				if (enemy != null) {
+					Destroy(enemy);
+				}
+			}
+
+			// Method 2: By component
+			Enemy[] enemyComponents = FindObjectsOfType<Enemy>();
+			foreach (Enemy enemy in enemyComponents) {
+				if (enemy != null && enemy.gameObject != null) {
+					Destroy(enemy.gameObject);
+				}
+			}
+		}
+		Debug.Log("[GameStateManager] Cleared all enemies");
+
+		// ===== Hide GameHUD =====
+		GameObject gameHUDCanvas = GameObject.Find("GameHUDCanvas");
+		if (gameHUDCanvas != null) {
+			// Stop all coroutines in GameHUD before hiding
+			GameHUD gameHUD = gameHUDCanvas.GetComponent<GameHUD>();
+			if (gameHUD != null) {
+				gameHUD.StopAllCoroutines();
+			}
+			gameHUDCanvas.SetActive(false);
+		}
+
+		// ===== Hide all game panels =====
+		if (pauseUI != null)
+			pauseUI.SetActive(false);
+
+		if (defeatPanel != null)
+			defeatPanel.gameObject.SetActive(false);
+
+		if (victoryPanel != null)
+			victoryPanel.gameObject.SetActive(false);
+
+		// ===== Show main menu =====
+		if (mainMenuManager != null) {
+			mainMenuManager.ShowMainMenu();
+		}
+
+		// ===== Reset cursor state =====
+		Cursor.lockState = CursorLockMode.None;
+		Cursor.visible = true;
+
+		// ===== Freeze time for main menu =====
+		Time.timeScale = 0f;
+
+		Debug.Log("[GameStateManager] Game completely reset to main menu state");
+	}
+
+	public void QuitGame()
     {
         
         #if UNITY_EDITOR

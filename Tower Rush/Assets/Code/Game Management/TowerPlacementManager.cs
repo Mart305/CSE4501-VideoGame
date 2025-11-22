@@ -178,75 +178,82 @@ public class TowerPlacementManager : MonoBehaviour
             HandleTowerPlacement();
         }
     }
-    
-    public void StartPlacingTower(int towerIndex)
-    {
-        if (towerIndex < 0 || towerIndex >= availableTowers.Count)
-        {
-            return;
-        }
-        
-        // Cancel any existing placement first
-        if (isPlacingTower)
-        {
-            CancelPlacement();
-        }
-        
-        TowerData towerData = availableTowers[towerIndex];
-        
-        // Check if player has enough currency
-        if (CurrencyManager.Instance != null && !CurrencyManager.Instance.HasEnoughCurrency(towerData.cost))
-        {
-            return;
-        }
-        
-        StartPlacingTower(towerData);
-    }
-    
-    public void StartPlacingTower(TowerData towerData)
-    {
-        selectedTowerData = towerData;
-        isPlacingTower = true;
-        
-        // Create preview tower
-        CreatePreviewTower();
-        
-        // Notify listeners
-        OnTowerSelected?.Invoke(towerData);
-    }
-    
-    // New method for drag-based placement from UI buttons
-    public void StartDragPlacement(TowerData towerData)
-    {
-        // Check if player has enough currency
-        if (CurrencyManager.Instance != null && !CurrencyManager.Instance.HasEnoughCurrency(towerData.cost))
-        {
-            return;
-        }
-        
-        dragTowerData = towerData;
-        isDragging = true;
-        dragStartPosition = Input.mousePosition;
-        
-        // Create preview tower for dragging
-        CreatePreviewTower(towerData);
-        
-        // Notify listeners
-        OnTowerSelected?.Invoke(towerData);
-    }
-    
-    // Public method for UI buttons to call with tower index
-    public void StartDragPlacement(int towerIndex)
-    {
-        if (towerIndex < 0 || towerIndex >= availableTowers.Count)
-        {
-            return;
-        }
-        
-        StartDragPlacement(availableTowers[towerIndex]);
-    }
-    
-    public void CancelPlacement()
+
+	public void StartPlacingTower(int towerIndex)
+	{
+		if (towerIndex < 0 || towerIndex >= availableTowers.Count) {
+			return;
+		}
+
+		// CRITICAL: Cancel ANY existing placement IMMEDIATELY
+		// This must happen BEFORE we check for the new tower
+		if (isPlacingTower || isDragging) {
+			CancelPlacement();
+		}
+
+		TowerData towerData = availableTowers[towerIndex];
+
+		// Check if player has enough currency
+		if (CurrencyManager.Instance != null && !CurrencyManager.Instance.HasEnoughCurrency(towerData.cost)) {
+			return;
+		}
+
+		StartPlacingTower(towerData);
+	}
+
+	public void StartPlacingTower(TowerData towerData)
+	{
+		// CRITICAL: Cancel ANY existing placement FIRST
+		// This ensures we don't have two placements active at once
+		if (isPlacingTower || isDragging) {
+			CancelPlacement();
+		}
+
+		selectedTowerData = towerData;
+		isPlacingTower = true;
+		isDragging = false; // Ensure we're not in drag mode
+
+		// Create preview tower
+		CreatePreviewTower();
+
+		// Notify listeners
+		OnTowerSelected?.Invoke(towerData);
+	}
+
+	public void StartDragPlacement(TowerData towerData)
+	{
+		// CRITICAL: Cancel ANY existing placement FIRST
+		if (isPlacingTower || isDragging) {
+			CancelPlacement();
+		}
+
+		// Check if player has enough currency
+		if (CurrencyManager.Instance != null && !CurrencyManager.Instance.HasEnoughCurrency(towerData.cost)) {
+			return;
+		}
+
+		dragTowerData = towerData;
+		isDragging = true;
+		isPlacingTower = false; // Ensure we're not in click mode
+		dragStartPosition = Input.mousePosition;
+
+		// Create preview tower for dragging
+		CreatePreviewTower(towerData);
+
+		// Notify listeners
+		OnTowerSelected?.Invoke(towerData);
+	}
+
+	public void StartDragPlacement(int towerIndex)
+	{
+		if (towerIndex < 0 || towerIndex >= availableTowers.Count) {
+			return;
+		}
+
+		StartDragPlacement(availableTowers[towerIndex]);
+	}
+
+	public void CancelPlacement()
     {
         if (previewTower != null)
         {
