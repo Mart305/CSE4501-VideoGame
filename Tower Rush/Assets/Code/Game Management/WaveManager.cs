@@ -137,7 +137,7 @@ public class WaveManager : MonoBehaviour
 		yield return StartCoroutine(UnloadAllGameplayScenes());
 	}
 
-	private void ResetWaveStateImmediate()
+	public void ResetWaveStateImmediate()
 	{
 		// Reset to wave 1
 		currentWave = 1;

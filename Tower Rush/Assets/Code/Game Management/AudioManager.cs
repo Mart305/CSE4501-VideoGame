@@ -332,6 +332,21 @@ public class AudioManager : MonoBehaviour
 		}
 	}
 
+	public void StopAllMusic()
+	{
+		// Stop the main music source
+		if (musicSource != null && musicSource.isPlaying) {
+			musicSource.Stop();
+			Debug.Log("[AudioManager] Music stopped");
+		}
+
+		// Stop any fade coroutine that's in progress
+		if (musicFadeCoroutine != null) {
+			StopCoroutine(musicFadeCoroutine);
+			musicFadeCoroutine = null;
+		}
+	}
+
 	public void StopAllSounds()
 	{
 		if (musicSource != null)

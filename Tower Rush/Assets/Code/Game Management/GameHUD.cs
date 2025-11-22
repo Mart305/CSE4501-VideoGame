@@ -708,4 +708,10 @@ public class GameHUD : MonoBehaviour
     {
         return towerButtonContainer;
     }
+
+	public void ResetPlacementInstructions()
+	{
+		ShowInitialPlacementInstructions();
+		Debug.Log("[GameHUD] Reset placement instructions for new game");
+	}
 }
