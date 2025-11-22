@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class ShotgunWeapon : PlayerWeapon
 {
@@ -9,10 +10,54 @@ public class ShotgunWeapon : PlayerWeapon
     [SerializeField] private float shotgunDamagePerPellet = 12f;
     [SerializeField] private float shotgunRange = 15f;
 
+    // Cached materials for performance
+    private static Material trailMaterial;
+    private static Material impactMaterial;
+
+    // Object pools for trails and impacts
+    private Queue<GameObject> trailPool = new Queue<GameObject>();
+    private Queue<GameObject> impactPool = new Queue<GameObject>();
+    private int maxPoolSize = 15;
+
     void Awake()
     {
         weaponType = WeaponType.Shotgun;
         weaponName = "Shotgun";
+        InitializeMaterials();
+        PreWarmPools();
+    }
+
+    void InitializeMaterials()
+    {
+        if (trailMaterial == null)
+        {
+            trailMaterial = new Material(Shader.Find("Sprites/Default"));
+            trailMaterial.color = new Color(1f, 0.5f, 0f, 0.6f);
+        }
+
+        if (impactMaterial == null)
+        {
+            impactMaterial = new Material(Shader.Find("Sprites/Default"));
+        }
+    }
+
+    void PreWarmPools()
+    {
+        // Pre-create some trail objects
+        for (int i = 0; i < 5; i++)
+        {
+            GameObject trail = CreatePooledTrailObject();
+            trail.SetActive(false);
+            trailPool.Enqueue(trail);
+        }
+
+        // Pre-create some impact objects
+        for (int i = 0; i < 5; i++)
+        {
+            GameObject impact = CreatePooledImpactObject();
+            impact.SetActive(false);
+            impactPool.Enqueue(impact);
+        }
     }
 
     public override void Fire()
@@ -84,22 +129,53 @@ public class ShotgunWeapon : PlayerWeapon
         }
     }
 
-    void CreatePelletTrail(Vector3 start, Vector3 end)
+    GameObject CreatePooledTrailObject()
     {
         GameObject trailObj = new GameObject("PelletTrail");
-        trailObj.transform.position = start;
+        trailObj.transform.SetParent(transform);
 
         LineRenderer lineRenderer = trailObj.AddComponent<LineRenderer>();
         lineRenderer.startWidth = 0.02f;
         lineRenderer.endWidth = 0.01f;
         lineRenderer.positionCount = 2;
+        lineRenderer.material = trailMaterial;
+        lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        lineRenderer.receiveShadows = false;
+
+        return trailObj;
+    }
+
+    GameObject GetTrailFromPool()
+    {
+        GameObject trail;
+        if (trailPool.Count > 0)
+        {
+            trail = trailPool.Dequeue();
+            trail.SetActive(true);
+        }
+        else
+        {
+            trail = CreatePooledTrailObject();
+        }
+        return trail;
+    }
+
+    void ReturnTrailToPool(GameObject trail, float delay)
+    {
+        StartCoroutine(ReturnToPoolAfterDelay(trail, trailPool, delay));
+    }
+
+    void CreatePelletTrail(Vector3 start, Vector3 end)
+    {
+        GameObject trailObj = GetTrailFromPool();
+        trailObj.transform.position = start;
+
+        LineRenderer lineRenderer = trailObj.GetComponent<LineRenderer>();
         lineRenderer.SetPosition(0, start);
         lineRenderer.SetPosition(1, end);
 
-        Material mat = new Material(Shader.Find("Sprites/Default"));
-        mat.color = new Color(1f, 0.5f, 0f, 0.6f);  // Orange color
-        lineRenderer.material = mat;
-        lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        // Reset material color
+        trailMaterial.color = new Color(1f, 0.5f, 0f, 0.6f);
 
         // Fade out the trail
         StartCoroutine(FadeOutTrail(lineRenderer, trailObj));
@@ -109,25 +185,33 @@ public class ShotgunWeapon : PlayerWeapon
     {
         float duration = 0.1f;
         float elapsed = 0f;
-        Color startColor = lineRenderer.material.color;
+        Color startColor = trailMaterial.color;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float alpha = Mathf.Lerp(startColor.a, 0f, elapsed / duration);
             Color newColor = new Color(startColor.r, startColor.g, startColor.b, alpha);
-            lineRenderer.material.color = newColor;
+            trailMaterial.color = newColor;
             yield return null;
         }
 
-        Destroy(trailObj);
+        // Return to pool instead of destroy
+        trailObj.SetActive(false);
+        if (trailPool.Count < maxPoolSize)
+        {
+            trailPool.Enqueue(trailObj);
+        }
+        else
+        {
+            Destroy(trailObj);
+        }
     }
 
-    void CreateImpactEffect(Vector3 position, Vector3 normal)
+    GameObject CreatePooledImpactObject()
     {
         GameObject impactObj = new GameObject("ShotgunImpact");
-        impactObj.transform.position = position;
-        impactObj.transform.rotation = Quaternion.LookRotation(normal);
+        impactObj.transform.SetParent(transform);
 
         ParticleSystem ps = impactObj.AddComponent<ParticleSystem>();
         var main = ps.main;
@@ -135,8 +219,9 @@ public class ShotgunWeapon : PlayerWeapon
         main.startLifetime = 0.2f;
         main.startSpeed = 3f;
         main.startSize = 0.05f;
-        main.startColor = new Color(1f, 0.5f, 0f);  // Orange impact
+        main.startColor = new Color(1f, 0.5f, 0f);
         main.maxParticles = 5;
+        main.loop = false;
 
         var emission = ps.emission;
         emission.SetBursts(new ParticleSystem.Burst[] {
@@ -148,10 +233,69 @@ public class ShotgunWeapon : PlayerWeapon
         shape.radius = 0.05f;
 
         var renderer = ps.GetComponent<ParticleSystemRenderer>();
-        renderer.material = new Material(Shader.Find("Sprites/Default"));
+        renderer.material = impactMaterial;
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
 
-        Destroy(impactObj, 0.5f);
+        return impactObj;
+    }
+
+    GameObject GetImpactFromPool()
+    {
+        GameObject impact;
+        if (impactPool.Count > 0)
+        {
+            impact = impactPool.Dequeue();
+            impact.SetActive(true);
+        }
+        else
+        {
+            impact = CreatePooledImpactObject();
+        }
+        return impact;
+    }
+
+    void ReturnImpactToPool(GameObject impact)
+    {
+        impact.SetActive(false);
+        if (impactPool.Count < maxPoolSize)
+        {
+            impactPool.Enqueue(impact);
+        }
+        else
+        {
+            Destroy(impact);
+        }
+    }
+
+    IEnumerator ReturnToPoolAfterDelay(GameObject obj, Queue<GameObject> pool, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (obj != null)
+        {
+            obj.SetActive(false);
+            if (pool.Count < maxPoolSize)
+            {
+                pool.Enqueue(obj);
+            }
+            else
+            {
+                Destroy(obj);
+            }
+        }
+    }
+
+    void CreateImpactEffect(Vector3 position, Vector3 normal)
+    {
+        GameObject impactObj = GetImpactFromPool();
+        impactObj.transform.position = position;
+        impactObj.transform.rotation = Quaternion.LookRotation(normal);
+
+        ParticleSystem ps = impactObj.GetComponent<ParticleSystem>();
+        ps.Play();
+
+        StartCoroutine(ReturnToPoolAfterDelay(impactObj, impactPool, 0.5f));
     }
 
     // Helper methods to access protected/private members from base class

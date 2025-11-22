@@ -6,8 +6,13 @@ public class WeaponManager : MonoBehaviour
     [SerializeField] private ShotgunWeapon secondaryWeapon;
     [SerializeField] private WeaponIdentifier weaponIdentifier;
 
+    [Header("Input Settings")]
+    [SerializeField] private float weaponSwitchCooldown = 0.3f;  // Prevent accidental double-switches
+    [SerializeField] private float scrollSensitivity = 0.05f;     // Threshold for scroll detection
+
     private int currentWeaponIndex = 0;
     private PlayerWeapon[] weapons;
+    private float lastSwitchTime = 0f;
 
     void Start()
     {
@@ -28,7 +33,11 @@ public class WeaponManager : MonoBehaviour
 
     void Update()
     {
-        // Weapon switching with number keys
+        // Respect cooldown for smoother switching
+        if (Time.time - lastSwitchTime < weaponSwitchCooldown)
+            return;
+
+        // Weapon switching with number keys (instant, no cooldown check needed)
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             SwitchWeapon(0);
@@ -38,15 +47,18 @@ public class WeaponManager : MonoBehaviour
             SwitchWeapon(1);
         }
 
-        // Mouse scroll weapon switching
+        // Mouse scroll weapon switching with sensitivity threshold
         float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll > 0f)
+        if (Mathf.Abs(scroll) > scrollSensitivity)
         {
-            SwitchWeapon((currentWeaponIndex + 1) % weapons.Length);
-        }
-        else if (scroll < 0f)
-        {
-            SwitchWeapon((currentWeaponIndex - 1 + weapons.Length) % weapons.Length);
+            if (scroll > 0f)
+            {
+                SwitchWeapon((currentWeaponIndex + 1) % weapons.Length);
+            }
+            else if (scroll < 0f)
+            {
+                SwitchWeapon((currentWeaponIndex - 1 + weapons.Length) % weapons.Length);
+            }
         }
     }
 
@@ -65,6 +77,9 @@ public class WeaponManager : MonoBehaviour
         // Enable new weapon
         currentWeaponIndex = weaponIndex;
         weapons[currentWeaponIndex].gameObject.SetActive(true);
+
+        // Update switch time for cooldown
+        lastSwitchTime = Time.time;
 
         // Show weapon identifier
         if (weaponIdentifier != null)
