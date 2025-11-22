@@ -155,8 +155,10 @@ public class PlayerWeapon : MonoBehaviour
                 lightIntensity = 1.5f;
                 particleCount = 8;
                 particleSpeed = 4f;
-                recoilAmount = 0.08f;
-                shakeAmount = 0.03f;
+                recoilAmount = 0.05f;  // Reduced for snappier feel
+                shakeAmount = 0.02f;   // Reduced for smoother camera
+                recoilSpeed = 12f;     // Faster recoil for responsiveness
+                recoilRecoverySpeed = 7f;  // Faster recovery
                 reloadAnimType = ReloadAnimationType.Tactical;
                 break;
 
@@ -166,8 +168,10 @@ public class PlayerWeapon : MonoBehaviour
                 lightIntensity = 2.5f;
                 particleCount = 15;
                 particleSpeed = 6f;
-                recoilAmount = 0.12f;
-                shakeAmount = 0.06f;
+                recoilAmount = 0.08f;  // Reduced for better control
+                shakeAmount = 0.04f;   // Reduced shake
+                recoilSpeed = 14f;     // Snappier recoil
+                recoilRecoverySpeed = 8f;  // Faster recovery
                 reloadAnimType = ReloadAnimationType.Tactical;
                 break;
 
@@ -177,8 +181,10 @@ public class PlayerWeapon : MonoBehaviour
                 lightIntensity = 3.5f;
                 particleCount = 25;
                 particleSpeed = 8f;
-                recoilAmount = 0.2f;
-                shakeAmount = 0.1f;
+                recoilAmount = 0.15f;  // Reduced for less jarring feel
+                shakeAmount = 0.07f;   // Reduced but still punchy
+                recoilSpeed = 10f;     // Smooth but impactful
+                recoilRecoverySpeed = 6f;  // Moderate recovery
                 reloadAnimType = ReloadAnimationType.Shotgun;
                 break;
 
@@ -188,8 +194,10 @@ public class PlayerWeapon : MonoBehaviour
                 lightIntensity = 2f;
                 particleCount = 12;
                 particleSpeed = 7f;
-                recoilAmount = 0.25f;
-                shakeAmount = 0.12f;
+                recoilAmount = 0.18f;  // Heavy but controlled
+                shakeAmount = 0.09f;   // Reduced for precision
+                recoilSpeed = 9f;      // Deliberate recoil
+                recoilRecoverySpeed = 5f;  // Slower recovery (sniper feel)
                 reloadAnimType = ReloadAnimationType.Sniper;
                 break;
         }
