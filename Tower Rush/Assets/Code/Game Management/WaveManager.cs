@@ -17,12 +17,12 @@ public class WaveManager : MonoBehaviour
 
 	[Header("Enemy Count Scaling")]
 	[SerializeField] private int baseEnemiesPerWave = 12; 
-	[SerializeField] private float enemyCountMultiplier = 1.6f; // Increased to make game harder
+	[SerializeField] private float enemyCountMultiplier = 1.7f; // Increased to make game harder
 
 	[Header("Batch Spawning")]
 	[SerializeField] private bool useBatchSpawning = true;
 	[SerializeField] private int baseBatchSize = 2; // How many enemies spawn together
-	[SerializeField] private float batchSizeMultiplier = 1.2f; // Batch size increases with waves
+	[SerializeField] private float batchSizeMultiplier = 1.5f; // Batch size increases with waves
 	[SerializeField] private float timeBetweenBatches = 3f; // Time between each batch
 	[SerializeField] private float batchSpawnDelay = 0.2f; // Small delay between enemies in same batch
 
