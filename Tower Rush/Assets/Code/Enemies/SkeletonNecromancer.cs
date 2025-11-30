@@ -132,8 +132,21 @@ public class SkeletonNecromancer : Enemy
         // Trigger spawn animation
         TriggerSpawnAnimation();
         
-        // Spawn minion near necromancer
-        Vector3 spawnPos = transform.position + Random.insideUnitSphere * summonRange;
+        // Spawn minion in front of necromancer (where it's facing/moving)
+        // Get forward direction - use NavMeshAgent velocity if moving, otherwise use transform.forward
+        Vector3 forwardDirection = transform.forward;
+        if (navAgent != null && navAgent.velocity.magnitude > 0.1f)
+        {
+            forwardDirection = navAgent.velocity.normalized;
+        }
+        
+        // Spawn in front with some spread (left/right variation)
+        float forwardDistance = summonRange * 0.7f; // Spawn mostly in front
+        float sideSpread = summonRange * 0.4f; // Some left/right variation
+        Vector3 forwardOffset = forwardDirection * forwardDistance;
+        Vector3 sideOffset = transform.right * Random.Range(-sideSpread, sideSpread);
+        
+        Vector3 spawnPos = transform.position + forwardOffset + sideOffset;
         spawnPos.y = transform.position.y; // Keep on ground level
         
         // Ensure spawn position is on NavMesh
@@ -179,6 +192,10 @@ public class SkeletonNecromancer : Enemy
         effectObj.transform.position = position;
         
         ParticleSystem ps = effectObj.AddComponent<ParticleSystem>();
+        
+        // Stop the particle system first before modifying properties
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        
         var main = ps.main;
         main.duration = 0.3f;
         main.startLifetime = 0.4f;
@@ -199,6 +216,7 @@ public class SkeletonNecromancer : Enemy
         var renderer = ps.GetComponent<ParticleSystemRenderer>();
         renderer.renderMode = ParticleSystemRenderMode.Billboard;
         
+        // Now play after all properties are set
         ps.Play();
         Destroy(effectObj, 0.5f); // Clean up quickly
     }
@@ -229,6 +247,34 @@ public class SkeletonNecromancer : Enemy
         if (darkBoltPrefab != null)
         {
             darkBolt = Instantiate(darkBoltPrefab);
+            
+            // Clean up prefab - remove any conflicting components
+            // Remove tower projectile scripts that are designed for hitting enemies
+            MonoBehaviour[] scripts = darkBolt.GetComponents<MonoBehaviour>();
+            foreach (MonoBehaviour script in scripts)
+            {
+                // Keep only DarkBoltProjectile if it exists, remove everything else
+                if (!(script is DarkBoltProjectile))
+                {
+                    DestroyImmediate(script);
+                }
+            }
+            
+            // Remove any existing colliders and rigidbodies
+            Collider[] existingColliders = darkBolt.GetComponents<Collider>();
+            foreach (Collider col in existingColliders)
+            {
+                DestroyImmediate(col);
+            }
+            
+            Rigidbody[] existingRigidbodies = darkBolt.GetComponents<Rigidbody>();
+            foreach (Rigidbody rb in existingRigidbodies)
+            {
+                DestroyImmediate(rb);
+            }
+            
+            // Set up proper collider and rigidbody for tower detection
+            SetupProjectileCollider(darkBolt);
         }
         else
         {
@@ -243,7 +289,7 @@ public class SkeletonNecromancer : Enemy
         Vector3 targetPos = targetTower.transform.position + Vector3.up * 1f;
         darkBolt.transform.LookAt(targetPos);
         
-        // Add projectile component
+        // Add projectile component (or get existing one)
         DarkBoltProjectile projectile = darkBolt.GetComponent<DarkBoltProjectile>();
         if (projectile == null)
         {
@@ -251,6 +297,22 @@ public class SkeletonNecromancer : Enemy
         }
         
         projectile.Initialize(targetTower, damage, projectileSpeed);
+    }
+    
+    private void SetupProjectileCollider(GameObject projectile)
+    {
+        // Add Rigidbody for proper trigger detection
+        Rigidbody rb = projectile.AddComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
+        
+        // Add trigger collider
+        SphereCollider trigger = projectile.AddComponent<SphereCollider>();
+        trigger.isTrigger = true;
+        trigger.radius = 0.3f;
+        
+        // Set layer
+        projectile.layer = LayerMask.NameToLayer("Default");
     }
     
     private GameObject CreateDarkBoltProjectile()
@@ -262,6 +324,11 @@ public class SkeletonNecromancer : Enemy
         
         // Set layer to ignore enemy collisions
         bolt.layer = LayerMask.NameToLayer("Default");
+        
+        // Add Rigidbody for proper trigger detection
+        Rigidbody rb = bolt.AddComponent<Rigidbody>();
+        rb.isKinematic = true; // Kinematic so it doesn't fall, but still detects triggers
+        rb.useGravity = false;
         
         // Remove default collider and add trigger
         Destroy(bolt.GetComponent<Collider>());
@@ -381,6 +448,11 @@ public class DarkBoltProjectile : MonoBehaviour
             // Try root
             tower = other.transform.root.GetComponent<BaseTower>();
         }
+        if (tower == null)
+        {
+            // Try searching in children (in case collider is on a child object)
+            tower = other.GetComponentInChildren<BaseTower>();
+        }
         
         // If we have a target, prefer hitting that specific tower, otherwise hit any tower
         if (tower != null)
@@ -393,45 +465,62 @@ public class DarkBoltProjectile : MonoBehaviour
             
             hasHit = true;
             
-            // Deal damage
-            tower.TakeDamage(damage);
-            
-            // Create impact effect
-            CreateImpactEffect(transform.position);
+            // Deal damage - ensure damage is valid
+            if (damage > 0 && tower != null)
+            {
+                tower.TakeDamage(damage);
+            }
             
             // Destroy projectile
             Destroy(gameObject);
         }
     }
     
-    private void CreateImpactEffect(Vector3 position)
+    // Also check for non-trigger collisions (in case tower collider is not a trigger)
+    void OnCollisionEnter(Collision collision)
     {
-        GameObject effectObj = new GameObject("DarkBoltImpact");
-        effectObj.transform.position = position;
+        if (hasHit) return;
         
-        ParticleSystem ps = effectObj.AddComponent<ParticleSystem>();
-        var main = ps.main;
-        main.duration = 0.3f;
-        main.startLifetime = 0.5f;
-        main.startSpeed = 3f;
-        main.startSize = 0.2f;
-        main.startColor = new Color(0.5f, 0.1f, 0.8f); // Purple
-        main.maxParticles = 30;
+        Collider other = collision.collider;
         
-        var emission = ps.emission;
-        emission.SetBursts(new ParticleSystem.Burst[] {
-            new ParticleSystem.Burst(0.0f, 30)
-        });
+        // Check if we hit a tower - try multiple methods to find the tower
+        BaseTower tower = other.GetComponent<BaseTower>();
+        if (tower == null)
+        {
+            // Try parent
+            tower = other.GetComponentInParent<BaseTower>();
+        }
+        if (tower == null)
+        {
+            // Try root
+            tower = other.transform.root.GetComponent<BaseTower>();
+        }
+        if (tower == null)
+        {
+            // Try searching in children
+            tower = other.GetComponentInChildren<BaseTower>();
+        }
         
-        var shape = ps.shape;
-        shape.shapeType = ParticleSystemShapeType.Sphere;
-        shape.radius = 0.2f;
-        
-        var renderer = ps.GetComponent<ParticleSystemRenderer>();
-        renderer.renderMode = ParticleSystemRenderMode.Billboard;
-        
-        ps.Play();
-        Destroy(effectObj, 1f);
+        // If we have a target, prefer hitting that specific tower, otherwise hit any tower
+        if (tower != null)
+        {
+            // If we have a specific target, only hit that one
+            if (target != null && tower != target)
+            {
+                return; // Not our target, ignore
+            }
+            
+            hasHit = true;
+            
+            // Deal damage - ensure damage is valid
+            if (damage > 0 && tower != null)
+            {
+                tower.TakeDamage(damage);
+            }
+            
+            // Destroy projectile
+            Destroy(gameObject);
+        }
     }
 }
 

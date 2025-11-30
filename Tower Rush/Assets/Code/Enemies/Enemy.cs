@@ -26,13 +26,13 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     [SerializeField] private GameObject spawnEffectPrefab;
     [SerializeField] private GameObject deathEffectPrefab;
     [SerializeField] private float spawnEffectDuration = 1f;
-    [SerializeField] private float deathEffectDuration = 2f;
+    [SerializeField] protected float deathEffectDuration = 2f; // Changed to protected so derived classes can modify it
     
     [Header("Animation")]
     [SerializeField] private string velocityParameterName = "velocity";
     [SerializeField] private string attackTriggerName = "attack";
     [SerializeField] private string deathTriggerName = "death";
-    private bool isAttacking = false;
+    protected bool isAttacking = false;
     protected bool isDead = false;
 
     protected virtual void Start()
