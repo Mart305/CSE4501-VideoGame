@@ -647,7 +647,7 @@ MonoBehaviour:
   spawnTriggerName: spawn
   skeletonPrefab: {fileID: 5664305964004973586, guid: b18e04a4c1fde5142a5eb97c10b4b19f, type: 3}
   ghostPrefab: {fileID: 5163679325591557877, guid: 6f0b711772e2a8541b7916d6c58069e1, type: 3}
-  summonCooldown: 2
+  summonCooldown: 3
   initialSummonDelay: 0.5
   summonRange: 3
   maxActiveMinions: 5

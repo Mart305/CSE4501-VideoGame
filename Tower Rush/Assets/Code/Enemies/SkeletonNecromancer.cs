@@ -30,7 +30,7 @@ public class SkeletonNecromancer : Enemy
         // Slower than minions (skeletons 10f, ghosts 7f) so minions protect the mage
         moveSpeed = 2f;    // Much slower than minions - mage stays protected
         health = 180f;     // More health than regular enemies, less than mutant zombie
-        damage = 25f;      // Moderate damage
+        damage = 20f;      // Reduced damage for balance
         attackCooldown = 2.2f; // Slower attack speed
         attackRange = 15f;  // Increased ranged attack range
 
