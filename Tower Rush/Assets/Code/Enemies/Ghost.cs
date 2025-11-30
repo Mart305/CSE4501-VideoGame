@@ -102,7 +102,7 @@ public class Ghost : Enemy
     
     private void CreateDeathEffect()
     {
-        // Create ethereal death particle effect
+        // Create subtle ethereal death particle effect
         GameObject effectObj = new GameObject("GhostDeathEffect");
         effectObj.transform.position = transform.position;
         
@@ -112,27 +112,27 @@ public class Ghost : Enemy
         ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         
         var main = ps.main;
-        main.duration = 0.5f;
-        main.startLifetime = 0.8f;
-        main.startSpeed = 2f;
-        main.startSize = 0.3f;
-        main.startColor = new Color(0.7f, 0.9f, 1f, 0.8f); // Light blue/ethereal color
-        main.maxParticles = 20;
+        main.duration = 0.3f;
+        main.startLifetime = 0.5f;
+        main.startSpeed = 1f;
+        main.startSize = 0.15f; // Smaller particles
+        main.startColor = new Color(0.7f, 0.9f, 1f, 0.4f); // More transparent (lower alpha)
+        main.maxParticles = 8; // Fewer particles
         main.simulationSpace = ParticleSystemSimulationSpace.World;
         
         var emission = ps.emission;
         emission.SetBursts(new ParticleSystem.Burst[] {
-            new ParticleSystem.Burst(0.0f, 20)
+            new ParticleSystem.Burst(0.0f, 8) // Fewer particles
         });
         
         var shape = ps.shape;
         shape.shapeType = ParticleSystemShapeType.Sphere;
-        shape.radius = 0.5f;
+        shape.radius = 0.3f; // Smaller radius
         
         var velocityOverLifetime = ps.velocityOverLifetime;
         velocityOverLifetime.enabled = true;
         velocityOverLifetime.space = ParticleSystemSimulationSpace.Local;
-        velocityOverLifetime.radial = new ParticleSystem.MinMaxCurve(1.5f);
+        velocityOverLifetime.radial = new ParticleSystem.MinMaxCurve(0.8f); // Slower expansion
         
         var renderer = ps.GetComponent<ParticleSystemRenderer>();
         renderer.renderMode = ParticleSystemRenderMode.Billboard;
@@ -141,6 +141,6 @@ public class Ghost : Enemy
         ps.Play();
         
         // Clean up after effect finishes
-        Destroy(effectObj, 1f);
+        Destroy(effectObj, 0.8f);
     }
 }

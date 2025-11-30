@@ -2806,6 +2806,10 @@ PrefabInstance:
       propertyPath: sprint
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7930490122344824380, guid: 76b9d8179905d454e9bf6dcc847231ce, type: 3}
+      propertyPath: m_Avatar
+      value: 
+      objectReference: {fileID: 9000000, guid: f619a59fabbd3d841be2aaabbc7e593c, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
