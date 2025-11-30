@@ -32,7 +32,7 @@ public class SkeletonNecromancer : Enemy
         health = 180f;     // More health than regular enemies, less than mutant zombie
         damage = 25f;      // Moderate damage
         attackCooldown = 2.2f; // Slower attack speed
-        attackRange = 12f;  // Increased ranged attack range
+        attackRange = 15f;  // Increased ranged attack range
 
         // Get or add Health component for health bar system
         healthComponent = GetComponent<Health>();
