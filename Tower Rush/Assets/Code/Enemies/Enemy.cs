@@ -11,7 +11,7 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     public float health = 20f;
 
     protected BaseTower targetTower;
-    private float lastAttackTime;
+    protected float lastAttackTime;
     private SlowEffect slowEffect;
     protected NavMeshAgent navAgent;
     protected Animator animator;
