@@ -11,9 +11,10 @@ public class SkeletonNecromancer : Enemy
     [Header("Summon Settings")]
     [SerializeField] private GameObject skeletonPrefab; // Assign in Inspector or get from EnemySpawner
     [SerializeField] private GameObject ghostPrefab; // Assign in Inspector or get from EnemySpawner
-    [SerializeField] private float summonCooldown = 12f;
+    [SerializeField] private float summonCooldown = 1.2f; // Summon every 1.2 seconds (faster for crew building)
+    [SerializeField] private float initialSummonDelay = 0.5f; // Start summoning 0.5 seconds after spawn
     [SerializeField] private float summonRange = 3f; // Spawn minions nearby
-    [SerializeField] private int maxActiveMinions = 3; // Limit active minions
+    [SerializeField] private int maxActiveMinions = 6; // Limit active minions (increased for crew)
     [SerializeField] private float skeletonSpawnChance = 0.6f; // 60% skeleton, 40% ghost
     private float lastSummonTime = 0f;
     private int activeMinionCount = 0;
@@ -26,11 +27,12 @@ public class SkeletonNecromancer : Enemy
     protected override void Start()
     {
         // Skeleton Necromancer stats - mid-tier threat (between regular enemies and mutant zombies)
-        moveSpeed = 3.5f;  // Slower, caster type
+        // Slower than minions (skeletons 10f, ghosts 7f) so minions protect the mage
+        moveSpeed = 2f;    // Much slower than minions - mage stays protected
         health = 180f;     // More health than regular enemies, less than mutant zombie
         damage = 25f;      // Moderate damage
         attackCooldown = 2.2f; // Slower attack speed
-        attackRange = 7f;  // Ranged attack
+        attackRange = 12f;  // Increased ranged attack range
 
         // Get or add Health component for health bar system
         healthComponent = GetComponent<Health>();
@@ -57,8 +59,8 @@ public class SkeletonNecromancer : Enemy
             GetMinionPrefabsFromSpawner();
         }
         
-        // Initialize summon timer
-        lastSummonTime = Time.time;
+        // Initialize summon timer - start 1 second after spawn
+        lastSummonTime = Time.time + initialSummonDelay;
     }
     
     private void GetMinionPrefabsFromSpawner()
@@ -144,8 +146,8 @@ public class SkeletonNecromancer : Enemy
         // Instantiate minion (no portal effects for summoned minions)
         GameObject minion = Instantiate(minionPrefab, spawnPos, Quaternion.identity);
         
-        // Visual effect at spawn point
-        CreateSummonEffect(spawnPos);
+        // Simple, subtle visual effect - just a small flash
+        CreateSubtleSummonEffect(spawnPos);
     }
     
     private void TriggerSpawnAnimation()
@@ -170,41 +172,35 @@ public class SkeletonNecromancer : Enemy
         }
     }
     
-    private void CreateSummonEffect(Vector3 position)
+    private void CreateSubtleSummonEffect(Vector3 position)
     {
-        // Create dark magic particle effect
+        // Create a subtle, minimal summon effect - just a small flash
         GameObject effectObj = new GameObject("SummonEffect");
         effectObj.transform.position = position;
         
         ParticleSystem ps = effectObj.AddComponent<ParticleSystem>();
         var main = ps.main;
-        main.duration = 1f;
-        main.startLifetime = 1.5f;
-        main.startSpeed = 2f;
-        main.startSize = 0.3f;
-        main.startColor = new Color(0.5f, 0.1f, 0.8f); // Purple/dark magic color
-        main.maxParticles = 50;
+        main.duration = 0.3f;
+        main.startLifetime = 0.4f;
+        main.startSpeed = 1f;
+        main.startSize = 0.2f;
+        main.startColor = new Color(0.6f, 0.2f, 0.9f, 0.7f); // Subtle purple, semi-transparent
+        main.maxParticles = 10; // Much fewer particles
         
         var emission = ps.emission;
         emission.SetBursts(new ParticleSystem.Burst[] {
-            new ParticleSystem.Burst(0.0f, 50)
+            new ParticleSystem.Burst(0.0f, 10)
         });
         
         var shape = ps.shape;
         shape.shapeType = ParticleSystemShapeType.Circle;
-        shape.radius = 0.5f;
-        
-        var velocityOverLifetime = ps.velocityOverLifetime;
-        velocityOverLifetime.enabled = true;
-        velocityOverLifetime.space = ParticleSystemSimulationSpace.Local;
-        velocityOverLifetime.radial = new ParticleSystem.MinMaxCurve(2f);
-        velocityOverLifetime.y = new ParticleSystem.MinMaxCurve(1f, 3f);
+        shape.radius = 0.2f; // Smaller radius
         
         var renderer = ps.GetComponent<ParticleSystemRenderer>();
         renderer.renderMode = ParticleSystemRenderMode.Billboard;
         
         ps.Play();
-        Destroy(effectObj, 2f);
+        Destroy(effectObj, 0.5f); // Clean up quickly
     }
     
     protected override void AttackTower()
@@ -373,16 +369,28 @@ public class DarkBoltProjectile : MonoBehaviour
     {
         if (hasHit) return;
         
-        // Check if we hit a tower
+        // Check if we hit a tower - try multiple methods to find the tower
         BaseTower tower = other.GetComponent<BaseTower>();
         if (tower == null)
         {
             // Try parent
             tower = other.GetComponentInParent<BaseTower>();
         }
-        
-        if (tower != null && tower == target)
+        if (tower == null)
         {
+            // Try root
+            tower = other.transform.root.GetComponent<BaseTower>();
+        }
+        
+        // If we have a target, prefer hitting that specific tower, otherwise hit any tower
+        if (tower != null)
+        {
+            // If we have a specific target, only hit that one
+            if (target != null && tower != target)
+            {
+                return; // Not our target, ignore
+            }
+            
             hasHit = true;
             
             // Deal damage

@@ -5658,7 +5658,7 @@ MonoBehaviour:
   enableRandomBossWaves: 1
   enableSkeletons: 1
   mutantZombieUnlockWave: 7
-  necromancerUnlockWave: 8
+  necromancerUnlockWave: 4
   OnWaveStarted:
     m_PersistentCalls:
       m_Calls: []
@@ -6158,6 +6158,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1229060730572545197, guid: 53d2925a80a014935b4265801644f202, type: 3}
+      propertyPath: necromancerPortalPrefab
+      value: 
+      objectReference: {fileID: 4617036660772024948, guid: 52c7d057cba585641bb68312c10d7791, type: 3}
     - target: {fileID: 3967517662248813808, guid: 53d2925a80a014935b4265801644f202, type: 3}
       propertyPath: m_Name
       value: SpawnEffectManager

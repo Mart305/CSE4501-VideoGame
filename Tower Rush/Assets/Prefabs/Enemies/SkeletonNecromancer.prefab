@@ -480,6 +480,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SkeletonNecromancer
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: cb33a48699d642c99396b004ffbfbd1c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: cb33a48699d642c99396b004ffbfbd1c, type: 3}
       propertyPath: m_Controller
       value: 
@@ -643,10 +647,11 @@ MonoBehaviour:
   spawnTriggerName: spawn
   skeletonPrefab: {fileID: 5664305964004973586, guid: b18e04a4c1fde5142a5eb97c10b4b19f, type: 3}
   ghostPrefab: {fileID: 5163679325591557877, guid: 6f0b711772e2a8541b7916d6c58069e1, type: 3}
-  summonCooldown: 12
+  summonCooldown: 2
+  initialSummonDelay: 0.5
   summonRange: 3
-  maxActiveMinions: 3
+  maxActiveMinions: 5
   skeletonSpawnChance: 0.6
-  darkBoltPrefab: {fileID: 7078693595930888067, guid: 90275853a4f9f2e4baa7d548f58f6391, type: 3}
+  darkBoltPrefab: {fileID: 7078693595930888067, guid: f3e65a982c4518f4794401cc2a9aadbe, type: 3}
   projectileSpeed: 15
   firePoint: {fileID: 6495252603822053049}

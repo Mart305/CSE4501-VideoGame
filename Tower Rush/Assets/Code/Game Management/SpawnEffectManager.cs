@@ -11,6 +11,7 @@ public class SpawnEffectManager : MonoBehaviour
     public GameObject ghostPortalPrefab;      // Portal blue.prefab
     public GameObject skeletonPortalPrefab;   // Portal yellow.prefab
     public GameObject mutantPortalPrefab;     // Portal green.prefab
+    public GameObject necromancerPortalPrefab; // Portal purple/dark magic.prefab
 
     [Header("Magic Circle Effects")]
     public GameObject magicCirclePrefab;      // Magic circle.prefab
@@ -74,7 +75,7 @@ public class SpawnEffectManager : MonoBehaviour
     void PreWarmPools()
     {
         // Pre-warm pools for each enemy type
-        string[] enemyTypes = { "zombie", "ghost", "skeleton", "mutantzombie" };
+        string[] enemyTypes = { "zombie", "ghost", "skeleton", "mutantzombie", "necromancer", "skeletonnecromancer" };
 
         foreach (string enemyType in enemyTypes)
         {
@@ -106,6 +107,8 @@ public class SpawnEffectManager : MonoBehaviour
                 "ghost" => magicCirclePrefab,
                 "skeleton" => magicCirclePrefab,
                 "mutantzombie" => freezeCirclePrefab,
+                "necromancer" => magicCirclePrefab,
+                "skeletonnecromancer" => magicCirclePrefab,
                 _ => magicCirclePrefab
             };
         }
@@ -117,6 +120,8 @@ public class SpawnEffectManager : MonoBehaviour
                 "ghost" => ghostPortalPrefab,
                 "skeleton" => skeletonPortalPrefab,
                 "mutantzombie" => mutantPortalPrefab,
+                "necromancer" => necromancerPortalPrefab ?? skeletonPortalPrefab, // Fallback to skeleton portal if not assigned
+                "skeletonnecromancer" => necromancerPortalPrefab ?? skeletonPortalPrefab,
                 _ => zombiePortalPrefab
             };
         }
@@ -132,6 +137,8 @@ public class SpawnEffectManager : MonoBehaviour
                 "ghost" => magicCirclePrefab,
                 "skeleton" => magicCirclePrefab,
                 "mutantzombie" => freezeCirclePrefab,
+                "necromancer" => magicCirclePrefab,
+                "skeletonnecromancer" => magicCirclePrefab,
                 _ => magicCirclePrefab
             };
         }
@@ -143,6 +150,8 @@ public class SpawnEffectManager : MonoBehaviour
                 "ghost" => ghostPortalPrefab,
                 "skeleton" => skeletonPortalPrefab,
                 "mutantzombie" => mutantPortalPrefab,
+                "necromancer" => necromancerPortalPrefab ?? skeletonPortalPrefab, // Fallback to skeleton portal if not assigned
+                "skeletonnecromancer" => necromancerPortalPrefab ?? skeletonPortalPrefab,
                 _ => zombiePortalPrefab
             };
         }
@@ -211,8 +220,17 @@ public class SpawnEffectManager : MonoBehaviour
 
         if (effect == null)
         {
-            // Fallback: Create a simple portal effect
-            effect = CreateSimplePortalEffect(portalPosition, enemyType);
+            // Fallback: Create a simple portal effect (except for necromancers - they must have a prefab)
+            string enemyTypeLower = enemyType.ToLower();
+            if (enemyTypeLower != "necromancer" && enemyTypeLower != "skeletonnecromancer")
+            {
+                effect = CreateSimplePortalEffect(portalPosition, enemyType);
+            }
+            else
+            {
+                // Necromancers require a portal prefab - spawn without effect if missing
+                Debug.LogWarning($"Necromancer portal prefab not assigned! Spawning necromancer without portal effect.");
+            }
         }
         else
         {
@@ -279,6 +297,8 @@ public class SpawnEffectManager : MonoBehaviour
             "ghost" => Color.blue,
             "skeleton" => Color.yellow,
             "mutantzombie" => Color.green,
+            "necromancer" => new Color(0.5f, 0.1f, 0.8f), // Purple/dark magic color
+            "skeletonnecromancer" => new Color(0.5f, 0.1f, 0.8f), // Purple/dark magic color
             _ => Color.red
         };
     }
