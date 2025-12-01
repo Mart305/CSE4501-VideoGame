@@ -47,7 +47,14 @@ public class PlayerWeapon : MonoBehaviour
     [Header("Camera Shake")]
     [SerializeField] private float shakeAmount = 0.05f;
     [SerializeField] private float shakeDuration = 0.1f;
-    
+
+    [Header("Weapon Positioning")]
+    [SerializeField] private bool enableWallClipping = true;
+    [SerializeField] private float wallCheckDistance = 1.5f;
+    [SerializeField] private float weaponPullbackSpeed = 15f;
+    [SerializeField] private Vector3 weaponPullbackOffset = new Vector3(0, -0.15f, -0.3f);
+    [SerializeField] private LayerMask wallLayers = ~0;
+
     protected float nextFireTime = 0f;
     protected bool isReloading = false;
     protected AudioSource audioSource;
@@ -61,6 +68,8 @@ public class PlayerWeapon : MonoBehaviour
     private float fireSoundCooldown = 0.05f;
     private WaitForSeconds recoilWait;
     private WaitForSeconds shakeWait;
+    private bool isNearWall = false;
+    private Vector3 targetWeaponPosition;
     
     void Start()
     {
@@ -89,6 +98,7 @@ public class PlayerWeapon : MonoBehaviour
 
         originalPosition = transform.localPosition;
         originalRotation = transform.localRotation;
+        targetWeaponPosition = originalPosition;
 
         SetupMuzzleFlashLight();
 
@@ -210,6 +220,13 @@ public class PlayerWeapon : MonoBehaviour
     
     protected virtual void Update()
     {
+        // Check for wall clipping and adjust weapon position
+        if (enableWallClipping)
+        {
+            CheckWallDistance();
+            HandleWeaponPositioning();
+        }
+
         if (isReloading)
             return;
 
@@ -222,6 +239,45 @@ public class PlayerWeapon : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R) && useAmmo && currentAmmo < maxAmmo)
         {
             StartReload();
+        }
+    }
+
+    void CheckWallDistance()
+    {
+        if (playerCamera == null)
+            return;
+
+        RaycastHit hit;
+        Vector3 rayOrigin = playerCamera.transform.position;
+        Vector3 rayDirection = playerCamera.transform.forward;
+
+        // Check if there's a wall in front
+        if (Physics.Raycast(rayOrigin, rayDirection, out hit, wallCheckDistance, wallLayers, QueryTriggerInteraction.Ignore))
+        {
+            isNearWall = true;
+        }
+        else
+        {
+            isNearWall = false;
+        }
+    }
+
+    void HandleWeaponPositioning()
+    {
+        // Determine target position based on wall proximity
+        if (isNearWall)
+        {
+            targetWeaponPosition = originalPosition + weaponPullbackOffset;
+        }
+        else
+        {
+            targetWeaponPosition = originalPosition;
+        }
+
+        // Smoothly interpolate to target position
+        if (!isReloading && recoilCoroutine == null)
+        {
+            transform.localPosition = Vector3.Lerp(transform.localPosition, targetWeaponPosition, Time.deltaTime * weaponPullbackSpeed);
         }
     }
     
@@ -352,29 +408,33 @@ public class PlayerWeapon : MonoBehaviour
     IEnumerator ApplyRecoil()
     {
         float elapsed = 0f;
-        Vector3 targetRecoil = new Vector3(-recoilAmount, Random.Range(-recoilAmount * 0.3f, recoilAmount * 0.3f), 0);
-        Quaternion targetRotation = originalRotation * Quaternion.Euler(targetRecoil * 10f);
-        
+        Vector3 recoilOffset = new Vector3(-recoilAmount, Random.Range(-recoilAmount * 0.3f, recoilAmount * 0.3f), 0);
+        Quaternion targetRotation = originalRotation * Quaternion.Euler(recoilOffset * 10f);
+
+        // Use current target position (which accounts for wall proximity)
+        Vector3 startPosition = transform.localPosition;
+
         while (elapsed < 1f / recoilSpeed)
         {
             elapsed += Time.deltaTime;
             float t = recoilCurve.Evaluate(elapsed * recoilSpeed);
-            transform.localPosition = Vector3.Lerp(originalPosition, originalPosition + targetRecoil, t);
+            transform.localPosition = Vector3.Lerp(startPosition, targetWeaponPosition + recoilOffset, t);
             transform.localRotation = Quaternion.Slerp(originalRotation, targetRotation, t);
             yield return null;
         }
-        
+
         elapsed = 0f;
+        Vector3 recoilEndPosition = transform.localPosition;
         while (elapsed < 1f / recoilRecoverySpeed)
         {
             elapsed += Time.deltaTime;
             float t = recoilCurve.Evaluate(elapsed * recoilRecoverySpeed);
-            transform.localPosition = Vector3.Lerp(transform.localPosition, originalPosition, t);
+            transform.localPosition = Vector3.Lerp(recoilEndPosition, targetWeaponPosition, t);
             transform.localRotation = Quaternion.Slerp(transform.localRotation, originalRotation, t);
             yield return null;
         }
-        
-        transform.localPosition = originalPosition;
+
+        transform.localPosition = targetWeaponPosition;
         transform.localRotation = originalRotation;
     }
     
@@ -446,23 +506,30 @@ public class PlayerWeapon : MonoBehaviour
 
     IEnumerator StandardReloadAnimation(Vector3 startPos)
     {
-        Vector3 reloadPos = startPos + new Vector3(0, -0.2f, 0);
+        Vector3 reloadPos = startPos + new Vector3(0, -0.25f, -0.1f);
         float elapsed = 0f;
 
-        while (elapsed < reloadTime * 0.3f)
+        // Drop down with ease-in
+        while (elapsed < reloadTime * 0.25f)
         {
             elapsed += Time.deltaTime;
-            float t = elapsed / (reloadTime * 0.3f);
-            transform.localPosition = Vector3.Lerp(startPos, reloadPos, t);
+            float t = elapsed / (reloadTime * 0.25f);
+            float smoothT = Mathf.SmoothStep(0, 1, t);
+            transform.localPosition = Vector3.Lerp(startPos, reloadPos, smoothT);
             yield return null;
         }
 
+        // Quick pause at bottom
+        yield return new WaitForSeconds(reloadTime * 0.1f);
+
+        // Return to position with ease-out
         elapsed = 0f;
-        while (elapsed < reloadTime * 0.7f)
+        while (elapsed < reloadTime * 0.65f)
         {
             elapsed += Time.deltaTime;
-            float t = elapsed / (reloadTime * 0.7f);
-            transform.localPosition = Vector3.Lerp(reloadPos, startPos, t);
+            float t = elapsed / (reloadTime * 0.65f);
+            float smoothT = Mathf.SmoothStep(0, 1, t);
+            transform.localPosition = Vector3.Lerp(reloadPos, startPos, smoothT);
             yield return null;
         }
     }

@@ -13,13 +13,17 @@ namespace StarterAssets
 	{
 		[Header("Player")]
 		[Tooltip("Move speed of the character in m/s")]
-		public float MoveSpeed = 4.0f;
+		public float MoveSpeed = 4.5f;
 		[Tooltip("Sprint speed of the character in m/s")]
-		public float SprintSpeed = 6.0f;
+		public float SprintSpeed = 7.0f;
 		[Tooltip("Rotation speed of the character")]
 		public float RotationSpeed = 1.0f;
 		[Tooltip("Acceleration and deceleration")]
-		public float SpeedChangeRate = 10.0f;
+		public float SpeedChangeRate = 12.0f;
+		[Tooltip("Curve for acceleration feel (makes movement more responsive)")]
+		public AnimationCurve AccelerationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+		[Tooltip("Deceleration multiplier (higher = quicker stops)")]
+		public float DecelerationMultiplier = 1.5f;
 
 		[Space(10)]
 		[Tooltip("The height the player can jump")]
@@ -165,11 +169,9 @@ namespace StarterAssets
 			// set target speed based on move speed, sprint speed and if sprint is pressed
 			float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 
-			// a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
-
-			// note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
 			// if there is no input, set the target speed to 0
-			if (_input.move == Vector2.zero) targetSpeed = 0.0f;
+			bool isDecelerating = _input.move == Vector2.zero;
+			if (isDecelerating) targetSpeed = 0.0f;
 
 			// a reference to the players current horizontal velocity
 			float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
@@ -180,9 +182,24 @@ namespace StarterAssets
 			// accelerate or decelerate to target speed
 			if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset)
 			{
-				// creates curved result rather than a linear one giving a more organic speed change
-				// note T in Lerp is clamped, so we don't need to clamp our speed
-				_speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
+				// Calculate lerp factor with deceleration boost for snappier stops
+				float changeRate = SpeedChangeRate;
+				if (isDecelerating)
+				{
+					changeRate *= DecelerationMultiplier;
+				}
+
+				// Use acceleration curve for more natural feel
+				float lerpFactor = Time.deltaTime * changeRate;
+				float curveValue = AccelerationCurve.Evaluate(Mathf.Clamp01(currentHorizontalSpeed / targetSpeed));
+
+				// Apply curve only during acceleration, not deceleration
+				if (!isDecelerating && targetSpeed > 0)
+				{
+					lerpFactor *= curveValue;
+				}
+
+				_speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, lerpFactor);
 
 				// round speed to 3 decimal places
 				_speed = Mathf.Round(_speed * 1000f) / 1000f;
