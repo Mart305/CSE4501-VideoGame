@@ -126,15 +126,12 @@ public class TowerPlacementManager : MonoBehaviour
 			return;
 		}
 
-		// Calculate multiplier: 2^tier
-		int multiplier = 1;
-		for (int i = 0; i < tier; i++) {
-			multiplier *= 2;
-		}
+		// Calculate multiplier: 1.5^tier (reduced from 2^tier for more gradual scaling)
+		float multiplier = Mathf.Pow(1.5f, tier);
 
 		// Apply to all towers
 		for (int i = 0; i < availableTowers.Count && i < baseTowerCosts.Count; i++) {
-			int newCost = baseTowerCosts[i] * multiplier;
+			int newCost = Mathf.RoundToInt(baseTowerCosts[i] * multiplier);
 			availableTowers[i].cost = newCost;
 		}
 

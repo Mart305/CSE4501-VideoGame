@@ -107,7 +107,7 @@ public class GameBalanceConfig : ScriptableObject
     [Tooltip("Base number of enemies in wave 1")]
     public int baseEnemiesPerWave = 12;
     [Tooltip("Additional enemies per wave")]
-    public int enemiesIncreasePerWave = 4;
+    public int enemiesIncreasePerWave = 3;
     [Tooltip("Time between enemy spawns in seconds")]
     public float spawnDelay = 1.5f;
     [Tooltip("Time between waves in seconds")]

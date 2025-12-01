@@ -200,6 +200,30 @@ public class WaveManager : MonoBehaviour
 		// Force garbage collection to clean up old scene resources
 		System.GC.Collect();
 		Resources.UnloadUnusedAssets();
+		
+		// CRITICAL: Clean up any NavMesh objects that might have persisted
+		CleanupPersistentNavMeshObjects();
+	}
+	
+	private void CleanupPersistentNavMeshObjects()
+	{
+		// Find all objects in DontDestroyOnLoad scene
+		GameObject[] allObjects = FindObjectsOfType<GameObject>();
+		foreach (GameObject obj in allObjects)
+		{
+			if (obj.scene.name == "DontDestroyOnLoad")
+			{
+				// Destroy any NavMesh-related objects that shouldn't persist
+				if (obj.GetComponent("NavMeshSurface") != null || 
+				    obj.GetComponent("NavMeshModifier") != null ||
+				    obj.GetComponent("NavMeshModifierVolume") != null ||
+				    obj.name.ToLower().Contains("navmesh"))
+				{
+					Debug.LogWarning($"[WaveManager] Destroying persistent NavMesh object: {obj.name}");
+					Destroy(obj);
+				}
+			}
+		}
 	}
 
 	private IEnumerator LoadFirstGameplayScene()
@@ -922,6 +946,9 @@ public class WaveManager : MonoBehaviour
 				yield return new WaitForEndOfFrame();
 				yield return new WaitForEndOfFrame();
 			}
+			
+			// CRITICAL: Clean up any NavMesh objects from DontDestroyOnLoad after scene change
+			CleanupPersistentNavMeshObjects();
 
 			yield return StartCoroutine(RefreshTerrains());
 

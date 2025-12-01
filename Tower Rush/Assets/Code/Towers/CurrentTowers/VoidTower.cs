@@ -5,15 +5,15 @@ using UnityEngine;
 public class VoidTower : BaseTower
 {
     [Header("Void Tower - Warping Abilities")]
-    [SerializeField] private float warpDistance = 30f; // How far to teleport enemy away from tower
-    [SerializeField] private float warpChance = 1.0f; // 100% chance to warp on hit
+    [SerializeField] private float warpDistance = 10f; // How far to teleport enemy away from tower (reduced to prevent wall clipping)
+    [SerializeField] private float warpChance = 1.0f; // 75% chance to warp on hit (reduced from 100%)
     
     public override void Start()
     {
         // Set void tower specific stats
         damage = 25f;
-        fireRate = 1f; 
-        range = 20f;
+        fireRate = 1f; // Normal fire rate (shoots every 1 second)
+        range = 10f; // Significantly reduced from 20f to limit effective area
         
         base.Start();
     }
@@ -22,8 +22,8 @@ public class VoidTower : BaseTower
     {
         // Void Tower - Warp Enemy
         collisionHandler.towerType = "Void";
-        collisionHandler.warpChance = 1.0f; // 100% chance to warp
-        collisionHandler.warpDistance = 20f; // Warp 20 units away
+        collisionHandler.warpChance = 0.75f; // 75% chance to warp (reduced from 100%)
+        collisionHandler.warpDistance = 10f; // Warp 10 units away (reduced from 20 to prevent wall clipping)
     }
     
     protected void PerformAttack_OLD()

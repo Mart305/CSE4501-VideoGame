@@ -69,6 +69,12 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
     
     public void OnObjectSpawn()
     {
+        // Force disable and re-enable NavMeshAgent to ensure it uses current scene's NavMesh
+        if (navAgent != null)
+        {
+            navAgent.enabled = false;
+        }
+        
         InitializeNavMeshAgent();
         FindTargetTower();
         
@@ -101,14 +107,18 @@ public abstract class Enemy : MonoBehaviour, IPooledObject
             rb.isKinematic = true;
         }
         
+        // Increased sample distance to handle scenes with sparse NavMesh
+        // This ensures enemies can find valid NavMesh positions even in new scenes
         NavMeshHit hit;
-        if (NavMesh.SamplePosition(transform.position, out hit, 0.5f, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(transform.position, out hit, 10f, NavMesh.AllAreas))
         {
             navAgent.Warp(hit.position);
             navAgent.enabled = true;
         }
         else
         {
+            // If still can't find NavMesh, enable anyway and let Unity handle it
+            Debug.LogWarning($"Enemy {gameObject.name} spawned far from NavMesh at {transform.position}");
             navAgent.enabled = true;
         }
     }
