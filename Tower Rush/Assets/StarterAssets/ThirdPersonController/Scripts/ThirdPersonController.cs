@@ -58,6 +58,9 @@ namespace StarterAssets
 		public float CameraAngleOverride = 0.0f;
 		[Tooltip("For locking the camera position on all axis")]
 		public bool LockCameraPosition = false;
+		[Tooltip("Mouse sensitivity multiplier for camera rotation")]
+		[Range(0.1f, 2.0f)]
+		public float MouseSensitivity = 1.0f;
 
 		// cinemachine
 		private float _cinemachineTargetYaw;
@@ -212,8 +215,9 @@ namespace StarterAssets
 		{
 			// if there is an input and camera position is not fixed
 			if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition) {
-				_cinemachineTargetYaw += _input.look.x * Time.deltaTime;
-				_cinemachineTargetPitch += _input.look.y * Time.deltaTime;
+				// Apply mouse sensitivity multiplier to reduce rotation speed
+				_cinemachineTargetYaw += _input.look.x * Time.deltaTime * MouseSensitivity;
+				_cinemachineTargetPitch += _input.look.y * Time.deltaTime * MouseSensitivity;
 			}
 
 			// clamp our rotations so our values are limited 360 degrees
