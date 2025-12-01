@@ -224,16 +224,29 @@ public class SkeletonNecromancer : Enemy
     protected override void AttackTower()
     {
         if (isDead) return;
+
+        // Always rotate to face the target, even when already in range and not moving.
+        if (targetTower != null)
+        {
+            Vector3 lookDirection = targetTower.transform.position - transform.position;
+            lookDirection.y = 0f;
+            if (lookDirection.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection.normalized);
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation,
+                    targetRotation,
+                    Time.deltaTime * 8f
+                );
+            }
+        }
         
         // Ranged attack - fire dark bolt projectile
-        if (Time.time - lastAttackTime >= attackCooldown)
+        if (targetTower != null && Time.time - lastAttackTime >= attackCooldown)
         {
-            if (targetTower != null)
-            {
-                FireDarkBolt();
-                lastAttackTime = Time.time;
-                TriggerAttackAnimation();
-            }
+            FireDarkBolt();
+            lastAttackTime = Time.time;
+            TriggerAttackAnimation();
         }
     }
     

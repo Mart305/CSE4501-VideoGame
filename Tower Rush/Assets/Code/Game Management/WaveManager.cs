@@ -528,8 +528,11 @@ public class WaveManager : MonoBehaviour
 		float baseCount = baseEnemiesPerWave;
 		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, relativeWave - 1);
 		
-		// Progressive difficulty bonus: each new scene is 50% harder than previous
-		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.50f);
+		// Progressive difficulty bonus: each new scene is 30% harder than previous
+		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.30f);
+		
+		// Global reduction: make every scene spawn ~35% fewer enemies than before
+		sceneDifficultyMultiplier *= 0.65f;
 		
 		// Add some randomness (±20%)
 		float randomFactor = Random.Range(0.8f, 1.2f);
