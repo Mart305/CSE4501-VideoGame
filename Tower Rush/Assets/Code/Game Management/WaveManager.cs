@@ -30,7 +30,6 @@ public class WaveManager : MonoBehaviour
 	// Note: Spawn chances are now hardcoded in DetermineEnemyType() method for better control
 	[SerializeField] private float bossWaveChance = 0.12f; // Reduced from 20% to 12% chance for random boss waves
 	[SerializeField] private bool enableRandomBossWaves = true;
-	[SerializeField] private bool enableSkeletons = true; // Skeletons appear every wave
 	[SerializeField] private int mutantZombieUnlockWave = 7; // Mutant zombies start appearing from wave 7
 	[SerializeField] private int necromancerUnlockWave = 4; // Necromancers start appearing from wave 4
 
@@ -529,10 +528,10 @@ public class WaveManager : MonoBehaviour
 		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, relativeWave - 1);
 		
 		// Progressive difficulty bonus: each new scene is 30% harder than previous
-		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.30f);
+		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.35f);
 		
 		// Global reduction: make every scene spawn ~35% fewer enemies than before
-		sceneDifficultyMultiplier *= 0.65f;
+		sceneDifficultyMultiplier *= 0.70f;
 		
 		// Add some randomness (±20%)
 		float randomFactor = Random.Range(0.8f, 1.2f);
@@ -573,14 +572,14 @@ public class WaveManager : MonoBehaviour
 		// Boss wave logic - includes necromancers and mutant zombies
 		if (isRandomBossWave) {
 			float bossRoll = Random.value;
-			// Boss waves: 20% mutant zombies (if unlocked), 27% skeletons, 20% ghosts, 13% necromancers (if unlocked), 20% zombies
-			if (currentWave >= mutantZombieUnlockWave && bossRoll < 0.2f && enemySpawner.mutantZombiePrefab != null)
+			// Boss waves: 9% mutant zombies (if unlocked), 30% skeletons, 22% ghosts, 9% necromancers (if unlocked), 30% zombies
+			if (currentWave >= mutantZombieUnlockWave && bossRoll < 0.09f && enemySpawner.mutantZombiePrefab != null)
 				return enemySpawner.mutantZombiePrefab;
-			else if (bossRoll < 0.47f && enemySpawner.skeletonPrefab != null)
+			else if (bossRoll < 0.39f && enemySpawner.skeletonPrefab != null)
 				return enemySpawner.skeletonPrefab;
-			else if (bossRoll < 0.67f && enemySpawner.ghostPrefab != null)
+			else if (bossRoll < 0.61f && enemySpawner.ghostPrefab != null)
 				return enemySpawner.ghostPrefab;
-			else if (currentWave >= necromancerUnlockWave && bossRoll < 0.80f && enemySpawner.necromancerPrefab != null)
+			else if (currentWave >= necromancerUnlockWave && bossRoll < 0.70f && enemySpawner.necromancerPrefab != null)
 				return enemySpawner.necromancerPrefab;
 			else
 				return enemySpawner.zombiePrefab;
@@ -589,9 +588,9 @@ public class WaveManager : MonoBehaviour
 		// Normal wave logic
 		float roll = Random.value;
 
-		// Wave 1-3: Basic enemies only
+		// Wave 1-3: Basic enemies only (skeletons always enabled)
 		if (currentWave < necromancerUnlockWave) {
-			if (enableSkeletons && enemySpawner.skeletonPrefab != null) {
+			if (enemySpawner.skeletonPrefab != null) {
 				if (roll < 0.33f)
 					return enemySpawner.zombiePrefab;
 				else if (roll < 0.66f)
@@ -600,29 +599,29 @@ public class WaveManager : MonoBehaviour
 					return enemySpawner.skeletonPrefab;
 			}
 			else {
-				// If skeletons disabled, 50/50 zombies and ghosts
+				// Fallback: 50/50 zombies and ghosts
 				return roll < 0.5f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
 			}
 		}
 		// Wave 4-6: Necromancers unlock (before mutant zombies)
 		else if (currentWave < mutantZombieUnlockWave) {
 			if (currentWave >= necromancerUnlockWave && enemySpawner.necromancerPrefab != null) {
-				// Wave 4-6: 30% skeletons, 30% zombies, 27% ghosts, 13% necromancers
-				if (enableSkeletons && enemySpawner.skeletonPrefab != null) {
-					if (roll < 0.30f)
+				// Wave 4-6: 32% skeletons, 32% zombies, 27% ghosts, 9% necromancers
+				if (enemySpawner.skeletonPrefab != null) {
+					if (roll < 0.32f)
 						return enemySpawner.skeletonPrefab;
-					else if (roll < 0.60f)
+					else if (roll < 0.64f)
 						return enemySpawner.zombiePrefab;
-					else if (roll < 0.87f)
+					else if (roll < 0.91f)
 						return enemySpawner.ghostPrefab;
 					else
 						return enemySpawner.necromancerPrefab;
 				}
 				else {
-					// If skeletons disabled: 40% zombies, 35% ghosts, 25% necromancers
-					if (roll < 0.40f)
+					// Fallback: 45% zombies, 46% ghosts, 9% necromancers
+					if (roll < 0.45f)
 						return enemySpawner.zombiePrefab;
-					else if (roll < 0.75f)
+					else if (roll < 0.91f)
 						return enemySpawner.ghostPrefab;
 					else
 						return enemySpawner.necromancerPrefab;
@@ -630,7 +629,7 @@ public class WaveManager : MonoBehaviour
 			}
 			else {
 				// Fallback if necromancer prefab not available
-				if (enableSkeletons && enemySpawner.skeletonPrefab != null) {
+				if (enemySpawner.skeletonPrefab != null) {
 					if (roll < 0.33f)
 						return enemySpawner.zombiePrefab;
 					else if (roll < 0.66f)
@@ -646,58 +645,53 @@ public class WaveManager : MonoBehaviour
 		// Wave 7+: Both necromancers and mutant zombies
 		else {
 			if (currentWave >= necromancerUnlockWave && enemySpawner.necromancerPrefab != null) {
-				// Wave 7+: 30% skeletons, 30% zombies, 20% ghosts, 13% necromancers, 7% mutant zombies
-				if (enableSkeletons && enemySpawner.skeletonPrefab != null && enemySpawner.mutantZombiePrefab != null) {
-					if (roll < 0.30f)
+				// Wave 7+: 31% skeletons, 31% zombies, 20% ghosts, 9% necromancers, 9% mutant zombies
+				if (enemySpawner.skeletonPrefab != null && enemySpawner.mutantZombiePrefab != null) {
+					if (roll < 0.31f)
 						return enemySpawner.skeletonPrefab;
-					else if (roll < 0.60f)
+					else if (roll < 0.62f)
 						return enemySpawner.zombiePrefab;
-					else if (roll < 0.80f)
+					else if (roll < 0.82f)
 						return enemySpawner.ghostPrefab;
-					else if (roll < 0.93f)
+					else if (roll < 0.91f)
 						return enemySpawner.necromancerPrefab;
 					else
 						return enemySpawner.mutantZombiePrefab;
 				}
 				else if (enemySpawner.mutantZombiePrefab != null) {
-					// If skeletons disabled but mutant zombies available
-					// 38% zombies, 32% ghosts, 20% necromancers, 10% mutant zombies
-					if (roll < 0.38f)
+					// Fallback if skeleton prefab is missing but mutants are available
+					if (roll < 0.5f)
 						return enemySpawner.zombiePrefab;
-					else if (roll < 0.70f)
+					else if (roll < 0.9f)
 						return enemySpawner.ghostPrefab;
-					else if (roll < 0.90f)
-						return enemySpawner.necromancerPrefab;
 					else
 						return enemySpawner.mutantZombiePrefab;
 				}
 				else {
-					// If mutant zombies not available but necromancers are
-					if (enableSkeletons && enemySpawner.skeletonPrefab != null) {
-						// 30% skeletons, 30% zombies, 27% ghosts, 13% necromancers
-						if (roll < 0.3f)
+					// Mutant zombies not available but necromancers are
+					// 32% skeletons, 32% zombies, 27% ghosts, 9% necromancers
+					if (enemySpawner.skeletonPrefab != null) {
+						if (roll < 0.32f)
 							return enemySpawner.skeletonPrefab;
-						else if (roll < 0.6f)
+						else if (roll < 0.64f)
 							return enemySpawner.zombiePrefab;
-						else if (roll < 0.87f)
+						else if (roll < 0.91f)
 							return enemySpawner.ghostPrefab;
 						else
 							return enemySpawner.necromancerPrefab;
 					}
 					else {
-						// 40% zombies, 35% ghosts, 25% necromancers
-						if (roll < 0.4f)
+						// Fallback without skeleton prefab
+						if (roll < 0.5f)
 							return enemySpawner.zombiePrefab;
-						else if (roll < 0.75f)
-							return enemySpawner.ghostPrefab;
 						else
-							return enemySpawner.necromancerPrefab;
+							return enemySpawner.ghostPrefab;
 					}
 				}
 			}
 			else {
 				// Fallback if necromancer prefab not available
-				if (enableSkeletons && enemySpawner.skeletonPrefab != null && enemySpawner.mutantZombiePrefab != null) {
+				if (enemySpawner.skeletonPrefab != null && enemySpawner.mutantZombiePrefab != null) {
 					// 35% each basic + 5% mutant zombies
 					if (roll < 0.35f)
 						return enemySpawner.zombiePrefab;
@@ -718,7 +712,7 @@ public class WaveManager : MonoBehaviour
 				}
 				else {
 					// Fallback to basic enemies
-					if (enableSkeletons && enemySpawner.skeletonPrefab != null) {
+					if (enemySpawner.skeletonPrefab != null) {
 						if (roll < 0.33f)
 							return enemySpawner.zombiePrefab;
 						else if (roll < 0.66f)
