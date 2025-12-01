@@ -347,6 +347,16 @@ public class GameStateManager : MonoBehaviour
                     continue;
                 }
                 
+                // Skip NavMesh objects - CRITICAL: each scene must use its own NavMesh
+                // Check for NavMeshSurface, NavMeshModifier, or any NavMesh-related components
+                if (obj.GetComponent("NavMeshSurface") != null || 
+                    obj.GetComponent("NavMeshModifier") != null ||
+                    obj.GetComponent("NavMeshModifierVolume") != null ||
+                    obj.name.ToLower().Contains("navmesh"))
+                {
+                    continue;
+                }
+                
                 // Move other objects to DontDestroyOnLoad
                 DontDestroyOnLoad(obj);
                 movedCount++;

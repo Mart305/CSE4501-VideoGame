@@ -353,94 +353,81 @@ public class CameraModeManager : MonoBehaviour
             playerCharacter = GameObject.Find("Player");
         }
     }
-    
-    void Update()
-    {
-        // Don't allow RTS mode in ManagerScene and keep cursor visible
-        string currentSceneName = SceneManager.GetActiveScene().name;
-        if (currentSceneName == "ManagerScene")
-        {
-            // Always keep cursor visible and unlocked in ManagerScene
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            return;
-        }
-        
-        // Toggle camera mode
-        if (Input.GetKeyDown(toggleModeKey))
-        {
-            ToggleCameraMode();
-        }
-        
-        // Always ensure PlayerArmature components are active (WebGL fix) - EXCEPT when in RTS mode
-        if (playerCharacter != null && !isRTSModeActive)
-        {
-            // Force enable all critical components every frame (only in Third Person mode)
-            if (thirdPersonController != null && !thirdPersonController.enabled)
-            {
-                thirdPersonController.enabled = true;
-            }
-            
-            var animator = playerCharacter.GetComponent<Animator>();
-            if (animator != null && !animator.enabled)
-            {
-                animator.enabled = true;
-            }
-            
-            var charController = playerCharacter.GetComponent<CharacterController>();
-            if (charController != null && !charController.enabled)
-            {
-                charController.enabled = true;
-            }
-        }
-        
-        // Block ALL player input when in RTS mode
-        if (isRTSModeActive && playerCharacter != null)
-        {
-            // CRITICAL: Disable ThirdPersonController entirely to prevent arrow key movement in WebGL
-            if (thirdPersonController != null && thirdPersonController.enabled)
-            {
-                thirdPersonController.enabled = false;
-            }
-            
-            // Also zero out input as backup
-            var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
-            if (starterInput != null)
-            {
-                starterInput.move = Vector2.zero;
-                starterInput.look = Vector2.zero;
-                starterInput.jump = false;
-                starterInput.sprint = false;
-            }
-            
-            // Keep animator parameters at 0 to prevent movement animations
-            Animator[] animators = playerCharacter.GetComponentsInChildren<Animator>();
-            foreach (Animator anim in animators)
-            {
-                if (anim != null && anim.enabled)
-                {
-                    anim.SetFloat("Speed", 0f);
-                    anim.SetFloat("MotionSpeed", 0f);
-                }
-            }
-        }
-        else if (!isRTSModeActive && playerCharacter != null)
-        {
-            // Re-enable ThirdPersonController when not in RTS mode
-            if (thirdPersonController != null && !thirdPersonController.enabled)
-            {
-                thirdPersonController.enabled = true;
-            }
-        }
-        
-        // Update message timer
-        if (messageTimer > 0f)
-        {
-            messageTimer -= Time.deltaTime;
-        }
-    }
-    
-    void SetupRTSCamera()
+
+	void Update()
+	{
+		// Don't allow RTS mode in ManagerScene and keep cursor visible
+		string currentSceneName = SceneManager.GetActiveScene().name;
+		if (currentSceneName == "ManagerScene") {
+			// Always keep cursor visible and unlocked in ManagerScene
+			Cursor.lockState = CursorLockMode.None;
+			Cursor.visible = true;
+			return;
+		}
+
+		// Toggle camera mode
+		if (Input.GetKeyDown(toggleModeKey)) {
+			ToggleCameraMode();
+		}
+
+		// Always ensure PlayerArmature components are active (WebGL fix) - EXCEPT when in RTS mode
+		if (playerCharacter != null && !isRTSModeActive) {
+			// Force enable all critical components every frame (only in Third Person mode)
+			if (thirdPersonController != null && !thirdPersonController.enabled) {
+				thirdPersonController.enabled = true;
+			}
+
+			var animator = playerCharacter.GetComponent<Animator>();
+			if (animator != null && !animator.enabled) {
+				animator.enabled = true;
+			}
+
+			var charController = playerCharacter.GetComponent<CharacterController>();
+			if (charController != null && !charController.enabled) {
+				charController.enabled = true;
+			}
+		}
+
+		// Block ALL player input when in RTS mode
+		if (isRTSModeActive && playerCharacter != null) {
+			// CRITICAL: Disable ThirdPersonController entirely to prevent arrow key movement in WebGL
+			if (thirdPersonController != null && thirdPersonController.enabled) {
+				thirdPersonController.enabled = false;
+			}
+
+			// Also zero out movement input only (not sprint/jump - let them be managed by Input System)
+			var starterInput = playerCharacter.GetComponent<StarterAssets.StarterAssetsInputs>();
+			if (starterInput != null) {
+				starterInput.move = Vector2.zero;
+				starterInput.look = Vector2.zero;
+				// REMOVED: starterInput.jump = false;
+				// REMOVED: starterInput.sprint = false;
+				// Let Input System manage these naturally
+			}
+
+			// Keep animator parameters at 0 to prevent movement animations
+			Animator[] animators = playerCharacter.GetComponentsInChildren<Animator>();
+			foreach (Animator anim in animators) {
+				if (anim != null && anim.enabled) {
+					anim.SetFloat("Speed", 0f);
+					anim.SetFloat("MotionSpeed", 0f);
+				}
+			}
+		}
+		else if (!isRTSModeActive && playerCharacter != null) {
+			// Re-enable ThirdPersonController when not in RTS mode
+			if (thirdPersonController != null && !thirdPersonController.enabled) {
+				thirdPersonController.enabled = true;
+			}
+		}
+
+		// Update message timer
+		if (messageTimer > 0f) {
+			messageTimer -= Time.deltaTime;
+		}
+	}
+
+	void SetupRTSCamera()
     {
         // Create RTS camera GameObject as root object (not parented)
         rtsCamera = new GameObject("RTS Camera");
@@ -608,8 +595,8 @@ public class CameraModeManager : MonoBehaviour
             {
                 starterInput.move = Vector2.zero;
                 starterInput.look = Vector2.zero;
-                starterInput.jump = false;
-                starterInput.sprint = false;
+                //starterInput.jump = false;
+                //starterInput.sprint = false;
             }
             
             // Stop character controller movement

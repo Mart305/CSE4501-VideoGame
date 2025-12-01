@@ -870,6 +870,7 @@ MonoBehaviour:
   ghostPrefab: {fileID: 5163679325591557877, guid: 6f0b711772e2a8541b7916d6c58069e1, type: 3}
   skeletonPrefab: {fileID: 5664305964004973586, guid: b18e04a4c1fde5142a5eb97c10b4b19f, type: 3}
   mutantZombiePrefab: {fileID: 9063911118954261516, guid: 67a8c5d44c4c6c941816f8bbfd72d02b, type: 3}
+  necromancerPrefab: {fileID: 2134496398993642946, guid: 3f547194efe35884685e7d3f91f07d1c, type: 3}
   spawnEffectManager: {fileID: 0}
   usePortalEffects: 1
   showSpawnPoints: 1
@@ -2649,6 +2650,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5762160803773358998, guid: 76b9d8179905d454e9bf6dcc847231ce, type: 3}
+      propertyPath: MouseSensitivity
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5762160803773358998, guid: 76b9d8179905d454e9bf6dcc847231ce, type: 3}
       propertyPath: GroundLayers.m_Bits
       value: 8
       objectReference: {fileID: 0}
@@ -2718,6 +2723,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6589440287070451230, guid: 76b9d8179905d454e9bf6dcc847231ce, type: 3}
       propertyPath: jump
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6589440287070451230, guid: 76b9d8179905d454e9bf6dcc847231ce, type: 3}
+      propertyPath: sprint
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6589440287070451230, guid: 76b9d8179905d454e9bf6dcc847231ce, type: 3}
@@ -2800,6 +2809,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 7930490122344824380, guid: 76b9d8179905d454e9bf6dcc847231ce, type: 3}
+      propertyPath: m_Avatar
+      value: 
+      objectReference: {fileID: 9000000, guid: f619a59fabbd3d841be2aaabbc7e593c, type: 3}
     - target: {fileID: 7930490122344824380, guid: 76b9d8179905d454e9bf6dcc847231ce, type: 3}
       propertyPath: m_Controller
       value: 

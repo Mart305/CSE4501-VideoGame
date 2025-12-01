@@ -24,7 +24,7 @@ public class HowToPlayPanel : MonoBehaviour
         
         instructionsText.text = @"<b>OBJECTIVE:</b> Defend your base from waves of enemies by placing towers strategically!
 
-<b>CONTROLS:</b> WASD - Move  |  Mouse - Aim/Shoot  |  E - Lock Camera  |  V - RTS Mode  |  ESC - Pause
+<b>CONTROLS:</b> WASD - Move  |  Mouse - Aim/Shoot  |  E - Toggle mouse cursor  |  V - RTS Mode  |  ESC - Pause
 
 <b>RTS MODE:</b> Press V to toggle RTS camera view  |  Arrow Keys - Move camera  |  Mouse Wheel - Zoom in/out  |  Z/C - Rotate camera  |  Perfect for tower placement and strategy
 

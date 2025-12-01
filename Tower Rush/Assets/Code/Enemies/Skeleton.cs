@@ -31,6 +31,9 @@ public class Skeleton : Enemy
         }
 
         base.Start();
+        
+        // Shorten death animation duration for skeletons
+        deathEffectDuration = 0.8f; // Reduced from 2f to 0.8f for faster death animation
     }
 
     public override void TakeDamage(float amount)

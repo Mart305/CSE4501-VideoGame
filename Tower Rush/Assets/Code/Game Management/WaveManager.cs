@@ -17,7 +17,7 @@ public class WaveManager : MonoBehaviour
 
 	[Header("Enemy Count Scaling")]
 	[SerializeField] private int baseEnemiesPerWave = 12; 
-	[SerializeField] private float enemyCountMultiplier = 1.7f; // Increased to make game harder
+	[SerializeField] private float enemyCountMultiplier = 1.3f; // Reduced to make game easier
 
 	[Header("Batch Spawning")]
 	[SerializeField] private bool useBatchSpawning = true;
@@ -30,12 +30,8 @@ public class WaveManager : MonoBehaviour
 	// Note: Spawn chances are now hardcoded in DetermineEnemyType() method for better control
 	[SerializeField] private float bossWaveChance = 0.12f; // Reduced from 20% to 12% chance for random boss waves
 	[SerializeField] private bool enableRandomBossWaves = true;
-	[SerializeField] private bool enableSkeletons = true; // Skeletons appear every wave
-	[SerializeField] private int mutantZombieUnlockWave = 8; // Mutant zombies start appearing from wave 8 (delayed from 5)
-
-	[Header("Future Enemy Types")]
-	[SerializeField] private GameObject[] futureEnemyTypes; // For later enemy variety
-	[SerializeField] private int[] enemyUnlockWaves; // Which waves unlock new enemy types
+	[SerializeField] private int mutantZombieUnlockWave = 7; // Mutant zombies start appearing from wave 7
+	[SerializeField] private int necromancerUnlockWave = 4; // Necromancers start appearing from wave 4
 
 	[Header("Events")]
 	public UnityEvent<int> OnWaveStarted;
@@ -56,7 +52,6 @@ public class WaveManager : MonoBehaviour
 	private int totalEnemiesDefeated = 0; // Track across all waves
 	private Coroutine currentWaveCoroutine;
 
-	// Add these fields to WaveManager
 	[SerializeField] private string[] gameplaySceneNames; // Assign your 4 scene names in the Inspector
 	private int currentSceneIndex = 0;
 
@@ -102,17 +97,6 @@ public class WaveManager : MonoBehaviour
 		}
 	}
 
-	void Start()
-	{
-		StartCoroutine(InitializeAfterSceneLoad());
-	}
-
-	private IEnumerator InitializeAfterSceneLoad()
-	{
-		// Don't load gameplay scene automatically - wait for Start button
-		// Don't start wave system yet - wait for StartGameplay() call
-		yield break; // End the coroutine
-	}
 
 	public void StartGameplay()
 	{
@@ -216,6 +200,30 @@ public class WaveManager : MonoBehaviour
 		// Force garbage collection to clean up old scene resources
 		System.GC.Collect();
 		Resources.UnloadUnusedAssets();
+		
+		// CRITICAL: Clean up any NavMesh objects that might have persisted
+		CleanupPersistentNavMeshObjects();
+	}
+	
+	private void CleanupPersistentNavMeshObjects()
+	{
+		// Find all objects in DontDestroyOnLoad scene
+		GameObject[] allObjects = FindObjectsOfType<GameObject>();
+		foreach (GameObject obj in allObjects)
+		{
+			if (obj.scene.name == "DontDestroyOnLoad")
+			{
+				// Destroy any NavMesh-related objects that shouldn't persist
+				if (obj.GetComponent("NavMeshSurface") != null || 
+				    obj.GetComponent("NavMeshModifier") != null ||
+				    obj.GetComponent("NavMeshModifierVolume") != null ||
+				    obj.name.ToLower().Contains("navmesh"))
+				{
+					Debug.LogWarning($"[WaveManager] Destroying persistent NavMesh object: {obj.name}");
+					Destroy(obj);
+				}
+			}
+		}
 	}
 
 	private IEnumerator LoadFirstGameplayScene()
@@ -543,8 +551,11 @@ public class WaveManager : MonoBehaviour
 		float baseCount = baseEnemiesPerWave;
 		float scaledCount = baseCount * Mathf.Pow(enemyCountMultiplier, relativeWave - 1);
 		
-		// Progressive difficulty bonus: each new scene is 50% harder than previous
-		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.50f);
+		// Progressive difficulty bonus: each new scene is 30% harder than previous
+		float sceneDifficultyMultiplier = 1.0f + (sceneNumber * 0.35f);
+		
+		// Global reduction: make every scene spawn ~35% fewer enemies than before
+		sceneDifficultyMultiplier *= 0.70f;
 		
 		// Add some randomness (±20%)
 		float randomFactor = Random.Range(0.8f, 1.2f);
@@ -574,23 +585,26 @@ public class WaveManager : MonoBehaviour
 
 		// Check if any prefabs are assigned
 		if (enemySpawner.zombiePrefab == null && enemySpawner.ghostPrefab == null &&
-			enemySpawner.skeletonPrefab == null && enemySpawner.mutantZombiePrefab == null) {
+			enemySpawner.skeletonPrefab == null && enemySpawner.mutantZombiePrefab == null &&
+			enemySpawner.necromancerPrefab == null) {
 			return null;
 		}
 
 		// Check if this is a random boss wave (only after wave 7)
 		bool isRandomBossWave = enableRandomBossWaves && currentWave >= 8 && Random.value < bossWaveChance;
 
-		// Boss wave logic - reduced mutant zombie spawn rate
-		if (isRandomBossWave && currentWave >= mutantZombieUnlockWave && enemySpawner.mutantZombiePrefab != null) {
+		// Boss wave logic - includes necromancers and mutant zombies
+		if (isRandomBossWave) {
 			float bossRoll = Random.value;
-			// Boss waves: 25% mutant zombies, 35% skeletons, 25% ghosts, 15% zombies
-			if (bossRoll < 0.25f)
+			// Boss waves: 9% mutant zombies (if unlocked), 30% skeletons, 22% ghosts, 9% necromancers (if unlocked), 30% zombies
+			if (currentWave >= mutantZombieUnlockWave && bossRoll < 0.09f && enemySpawner.mutantZombiePrefab != null)
 				return enemySpawner.mutantZombiePrefab;
-			else if (bossRoll < 0.6f)
+			else if (bossRoll < 0.39f && enemySpawner.skeletonPrefab != null)
 				return enemySpawner.skeletonPrefab;
-			else if (bossRoll < 0.85f)
+			else if (bossRoll < 0.61f && enemySpawner.ghostPrefab != null)
 				return enemySpawner.ghostPrefab;
+			else if (currentWave >= necromancerUnlockWave && bossRoll < 0.70f && enemySpawner.necromancerPrefab != null)
+				return enemySpawner.necromancerPrefab;
 			else
 				return enemySpawner.zombiePrefab;
 		}
@@ -598,9 +612,9 @@ public class WaveManager : MonoBehaviour
 		// Normal wave logic
 		float roll = Random.value;
 
-		// Before mutant zombies unlock (waves 1-4): 33% each
-		if (currentWave < mutantZombieUnlockWave) {
-			if (enableSkeletons && enemySpawner.skeletonPrefab != null) {
+		// Wave 1-3: Basic enemies only (skeletons always enabled)
+		if (currentWave < necromancerUnlockWave) {
+			if (enemySpawner.skeletonPrefab != null) {
 				if (roll < 0.33f)
 					return enemySpawner.zombiePrefab;
 				else if (roll < 0.66f)
@@ -609,34 +623,37 @@ public class WaveManager : MonoBehaviour
 					return enemySpawner.skeletonPrefab;
 			}
 			else {
-				// If skeletons disabled, 50/50 zombies and ghosts
+				// Fallback: 50/50 zombies and ghosts
 				return roll < 0.5f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
 			}
 		}
-		else {
-			// After mutant zombies unlock (wave 8+): 35% each + 5% mutant zombies (reduced from 10%)
-			if (enableSkeletons && enemySpawner.skeletonPrefab != null && enemySpawner.mutantZombiePrefab != null) {
-				if (roll < 0.35f)
-					return enemySpawner.zombiePrefab;
-				else if (roll < 0.7f)
-					return enemySpawner.ghostPrefab;
-				else if (roll < 0.95f)
-					return enemySpawner.skeletonPrefab;
-				else
-					return enemySpawner.mutantZombiePrefab;
-			}
-			else if (enemySpawner.mutantZombiePrefab != null) {
-				// If skeletons disabled but mutant zombies available
-				if (roll < 0.475f)
-					return enemySpawner.zombiePrefab;
-				else if (roll < 0.95f)
-					return enemySpawner.ghostPrefab;
-				else
-					return enemySpawner.mutantZombiePrefab;
+		// Wave 4-6: Necromancers unlock (before mutant zombies)
+		else if (currentWave < mutantZombieUnlockWave) {
+			if (currentWave >= necromancerUnlockWave && enemySpawner.necromancerPrefab != null) {
+				// Wave 4-6: 32% skeletons, 32% zombies, 27% ghosts, 9% necromancers
+				if (enemySpawner.skeletonPrefab != null) {
+					if (roll < 0.32f)
+						return enemySpawner.skeletonPrefab;
+					else if (roll < 0.64f)
+						return enemySpawner.zombiePrefab;
+					else if (roll < 0.91f)
+						return enemySpawner.ghostPrefab;
+					else
+						return enemySpawner.necromancerPrefab;
+				}
+				else {
+					// Fallback: 45% zombies, 46% ghosts, 9% necromancers
+					if (roll < 0.45f)
+						return enemySpawner.zombiePrefab;
+					else if (roll < 0.91f)
+						return enemySpawner.ghostPrefab;
+					else
+						return enemySpawner.necromancerPrefab;
+				}
 			}
 			else {
-				// Fallback to basic enemies if mutant zombies not available
-				if (enableSkeletons && enemySpawner.skeletonPrefab != null) {
+				// Fallback if necromancer prefab not available
+				if (enemySpawner.skeletonPrefab != null) {
 					if (roll < 0.33f)
 						return enemySpawner.zombiePrefab;
 					else if (roll < 0.66f)
@@ -646,6 +663,90 @@ public class WaveManager : MonoBehaviour
 				}
 				else {
 					return roll < 0.5f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
+				}
+			}
+		}
+		// Wave 7+: Both necromancers and mutant zombies
+		else {
+			if (currentWave >= necromancerUnlockWave && enemySpawner.necromancerPrefab != null) {
+				// Wave 7+: 31% skeletons, 31% zombies, 20% ghosts, 9% necromancers, 9% mutant zombies
+				if (enemySpawner.skeletonPrefab != null && enemySpawner.mutantZombiePrefab != null) {
+					if (roll < 0.31f)
+						return enemySpawner.skeletonPrefab;
+					else if (roll < 0.62f)
+						return enemySpawner.zombiePrefab;
+					else if (roll < 0.82f)
+						return enemySpawner.ghostPrefab;
+					else if (roll < 0.91f)
+						return enemySpawner.necromancerPrefab;
+					else
+						return enemySpawner.mutantZombiePrefab;
+				}
+				else if (enemySpawner.mutantZombiePrefab != null) {
+					// Fallback if skeleton prefab is missing but mutants are available
+					if (roll < 0.5f)
+						return enemySpawner.zombiePrefab;
+					else if (roll < 0.9f)
+						return enemySpawner.ghostPrefab;
+					else
+						return enemySpawner.mutantZombiePrefab;
+				}
+				else {
+					// Mutant zombies not available but necromancers are
+					// 32% skeletons, 32% zombies, 27% ghosts, 9% necromancers
+					if (enemySpawner.skeletonPrefab != null) {
+						if (roll < 0.32f)
+							return enemySpawner.skeletonPrefab;
+						else if (roll < 0.64f)
+							return enemySpawner.zombiePrefab;
+						else if (roll < 0.91f)
+							return enemySpawner.ghostPrefab;
+						else
+							return enemySpawner.necromancerPrefab;
+					}
+					else {
+						// Fallback without skeleton prefab
+						if (roll < 0.5f)
+							return enemySpawner.zombiePrefab;
+						else
+							return enemySpawner.ghostPrefab;
+					}
+				}
+			}
+			else {
+				// Fallback if necromancer prefab not available
+				if (enemySpawner.skeletonPrefab != null && enemySpawner.mutantZombiePrefab != null) {
+					// 35% each basic + 5% mutant zombies
+					if (roll < 0.35f)
+						return enemySpawner.zombiePrefab;
+					else if (roll < 0.7f)
+						return enemySpawner.ghostPrefab;
+					else if (roll < 0.95f)
+						return enemySpawner.skeletonPrefab;
+					else
+						return enemySpawner.mutantZombiePrefab;
+				}
+				else if (enemySpawner.mutantZombiePrefab != null) {
+					if (roll < 0.475f)
+						return enemySpawner.zombiePrefab;
+					else if (roll < 0.95f)
+						return enemySpawner.ghostPrefab;
+					else
+						return enemySpawner.mutantZombiePrefab;
+				}
+				else {
+					// Fallback to basic enemies
+					if (enemySpawner.skeletonPrefab != null) {
+						if (roll < 0.33f)
+							return enemySpawner.zombiePrefab;
+						else if (roll < 0.66f)
+							return enemySpawner.ghostPrefab;
+						else
+							return enemySpawner.skeletonPrefab;
+					}
+					else {
+						return roll < 0.5f ? enemySpawner.zombiePrefab : enemySpawner.ghostPrefab;
+					}
 				}
 			}
 		}
@@ -680,17 +781,6 @@ public class WaveManager : MonoBehaviour
 		return baseDelay * waveFactor;
 	}
 
-	public void CompleteCurrentWave()
-	{
-		if (isWaveActive) {
-			enemiesKilledThisWave = totalEnemiesThisWave;
-		}
-	}
-
-	public void ToggleBatchSpawning()
-	{
-		useBatchSpawning = !useBatchSpawning;
-	}
 
 	private IEnumerator CheckAndChangeScene()
 	{
@@ -856,6 +946,9 @@ public class WaveManager : MonoBehaviour
 				yield return new WaitForEndOfFrame();
 				yield return new WaitForEndOfFrame();
 			}
+			
+			// CRITICAL: Clean up any NavMesh objects from DontDestroyOnLoad after scene change
+			CleanupPersistentNavMeshObjects();
 
 			yield return StartCoroutine(RefreshTerrains());
 
@@ -988,17 +1081,14 @@ public class WaveManager : MonoBehaviour
 			hasStoredOriginalCosts = true;
 		}
 
-		// Calculate multiplier: 2^(currentSceneIndex)
-		int multiplier = 1;
-		for (int i = 0; i < currentSceneIndex; i++) {
-			multiplier *= 2;
-		}
+		// Calculate multiplier: 1.5^(currentSceneIndex) for gradual scaling
+		float multiplier = Mathf.Pow(1.5f, currentSceneIndex);
 
 		// Apply multiplier to each tower
 		var towers = TowerPlacementManager.Instance.GetAvailableTowers();
 		foreach (var tower in towers) {
 			if (originalTowerCosts.TryGetValue(tower.towerName, out int originalCost)) {
-				tower.cost = originalCost * multiplier;
+				tower.cost = Mathf.RoundToInt(originalCost * multiplier);
 			}
 		}
 
@@ -1056,10 +1146,10 @@ public class WaveManager : MonoBehaviour
 	{
 		if (gameHUD?.placementText == null) yield break;
 
-		// Calculate the current multiplier
+		// Calculate the current multiplier (matches ApplyTowerCostMultiplier logic)
 		int multiplier = 1;
 		for (int i = 0; i < currentSceneIndex; i++) {
-			multiplier *= 3;
+			multiplier *= 2;
 		}
 
 		string originalText = gameHUD.placementText.text;

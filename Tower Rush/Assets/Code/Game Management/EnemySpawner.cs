@@ -9,6 +9,7 @@ public class EnemySpawner : MonoBehaviour
     public GameObject ghostPrefab;
     public GameObject skeletonPrefab;
     public GameObject mutantZombiePrefab;
+    public GameObject necromancerPrefab;
     
     [Header("Spawn Effects")]
     public SpawnEffectManager spawnEffectManager;
