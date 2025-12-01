@@ -250,6 +250,7 @@ public class BaseTower : MonoBehaviour
             // Add simple projectile script for movement (homing behavior)
             SimpleProjectile projectile = attackFXObj.AddComponent<SimpleProjectile>();
             projectile.Initialize(currentTarget, 0f, explosionFX); // damage = 0 since ParticleCollisionHandler handles it
+            projectile.disableHoming = true;
             projectile.towerPosition = transform.position;
             
             // Set tower-specific abilities (override in subclasses)

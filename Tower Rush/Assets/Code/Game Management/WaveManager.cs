@@ -1081,17 +1081,14 @@ public class WaveManager : MonoBehaviour
 			hasStoredOriginalCosts = true;
 		}
 
-		// Calculate multiplier: 2^(currentSceneIndex)
-		int multiplier = 1;
-		for (int i = 0; i < currentSceneIndex; i++) {
-			multiplier *= 2;
-		}
+		// Calculate multiplier: 1.5^(currentSceneIndex) for gradual scaling
+		float multiplier = Mathf.Pow(1.5f, currentSceneIndex);
 
 		// Apply multiplier to each tower
 		var towers = TowerPlacementManager.Instance.GetAvailableTowers();
 		foreach (var tower in towers) {
 			if (originalTowerCosts.TryGetValue(tower.towerName, out int originalCost)) {
-				tower.cost = originalCost * multiplier;
+				tower.cost = Mathf.RoundToInt(originalCost * multiplier);
 			}
 		}
 

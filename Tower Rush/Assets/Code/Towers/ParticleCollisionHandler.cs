@@ -118,7 +118,7 @@ public class ParticleCollisionHandler : MonoBehaviour
                 }
                 
                 // Destroy projectile after particles finish (longer delay for visual completion)
-                Destroy(gameObject, 0.5f);
+                Destroy(gameObject, ps.main.startLifetime.constantMax);
             }
         }
         else if (isGroundLayer)
